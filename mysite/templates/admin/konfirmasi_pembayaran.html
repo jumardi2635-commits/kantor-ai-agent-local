@@ -1,0 +1,551 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}Konfirmasi Pembayaran{% endblock %}
+
+{% block content %}
+<div x-data="konfirmasiPembayaran()" x-init="init()" class="relative">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center">
+                    <i class="fas fa-money-check-alt text-white text-lg"></i>
+                </div>
+                Konfirmasi Pembayaran
+            </h1>
+            <p class="text-gray-400 mt-1 text-sm">Verifikasi dan konfirmasi pembayaran pesanan</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" class="flex items-center gap-2 px-4 py-2.5 admin-card backdrop-blur-sm border border-gray-700/50 text-gray-700 text-sm font-medium rounded-xl hover:bg-dark-800/50 hover:text-emerald-600 transition-all shadow-sm">
+                <i class="fas fa-eye"></i> Detail Order
+            </a>
+            <a href="{{ url_for('admin_orders') }}" class="flex items-center gap-2 px-4 py-2.5 admin-card backdrop-blur-sm border border-gray-700/50 text-gray-700 text-sm font-medium rounded-xl hover:bg-dark-800/50 hover:text-emerald-600 transition-all shadow-sm">
+                <i class="fas fa-arrow-left"></i> Kembali
+            </a>
+        </div>
+    </div>
+
+    <!-- Info Rekening Tujuan (dinamis dari pengaturan) -->
+    {% set bank_name = get_setting('bank_name', 'Bank BCA') %}
+    {% set bank_number = get_setting('bank_account_number', '1234567890') %}
+    {% set bank_holder = get_setting('bank_account_holder', global_settings.site_name) %}
+    <div class="bg-blue-500/10 border border-blue-500/25 rounded-xl p-4 mb-6 text-sm flex flex-wrap items-center gap-4">
+        <div class="flex items-center gap-2 font-semibold text-blue-300">
+            <i class="fas fa-university text-blue-600"></i> Rekening Tujuan:
+        </div>
+        <div class="font-bold text-blue-200">{{ bank_name }} {{ bank_number }} a.n. {{ bank_holder }}</div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Payment Status Banner -->
+            <div class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 text-white relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-40 h-40 admin-card rounded-full"></div>
+                <div class="absolute -left-10 -bottom-10 w-32 h-32 admin-card rounded-full"></div>
+                <div class="relative z-10 flex items-center justify-between">
+                    <div>
+                        <div class="text-emerald-100 text-sm font-medium mb-1">Status Pembayaran</div>
+                        <div class="text-2xl font-bold">Menunggu Konfirmasi</div>
+                        <div class="text-emerald-100 text-sm mt-1">Order {{ order.order_number }}</div>
+                    </div>
+                    <div class="w-16 h-16 rounded-2xl admin-card flex items-center justify-center backdrop-blur-sm">
+                        <i class="fas fa-clock text-3xl text-white"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order & Customer Info -->
+            <div class="admin-card p-6">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-info-circle text-blue-600"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-gray-100">Detail Order</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Order Details -->
+                    <div class="space-y-4">
+                        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Informasi Order</div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center p-3 bg-dark-600/40 rounded-xl">
+                                <span class="text-sm text-gray-400">No. Order</span>
+                                <span class="font-bold text-gray-100">{{ order.order_number }}</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-dark-600/40 rounded-xl">
+                                <span class="text-sm text-gray-400">Tanggal</span>
+                                <span class="font-semibold text-gray-100">{{ order.created_at.strftime('%d %B %Y, %H:%M') }}</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-dark-600/40 rounded-xl">
+                                <span class="text-sm text-gray-400">Metode</span>
+                                <span class="font-semibold text-gray-100">{{ order.payment_method }}</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                                <span class="text-sm text-emerald-400 font-medium">Total Tagihan</span>
+                                <span class="font-bold text-lg text-emerald-400">{{ format_price(order.total) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Details -->
+                    <div class="space-y-4">
+                        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Data Pelanggan</div>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3 p-3 bg-dark-600/40 rounded-xl">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-user text-blue-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-gray-400">Nama</div>
+                                    <div class="font-semibold text-gray-100">{{ order.customer_name }}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 p-3 bg-dark-600/40 rounded-xl">
+                                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                    <i class="fab fa-whatsapp text-green-600 text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-xs text-gray-400">WhatsApp</div>
+                                    <div class="font-semibold text-gray-100">{{ order.customer_phone }}</div>
+                                </div>
+                                <a href="https://wa.me/{{ order.customer_phone|replace('+','')|replace('-','')|replace(' ','') }}" target="_blank" class="text-green-600 hover:text-green-700">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
+                            <div class="flex items-start gap-3 p-3 bg-dark-600/40 rounded-xl">
+                                <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <i class="fas fa-map-marker-alt text-orange-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-gray-400">Alamat</div>
+                                    <div class="font-semibold text-gray-800 text-sm">{{ order.shipping_address }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Verification Form -->
+            <div class="admin-card p-6">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                        <i class="fas fa-check-double text-emerald-600"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-gray-100">Verifikasi Pembayaran</h2>
+                </div>
+
+                <form @submit.prevent="confirmPayment()" class="space-y-5">
+                    <!-- Payment Amount Verification -->
+                    <div class="p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                        <label class="flex items-center gap-3 cursor-pointer mb-4">
+                            <input type="checkbox" x-model="paymentCheck.amountMatch" class="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                            <div>
+                                <div class="font-semibold text-gray-100">Jumlah Pembayaran Sesuai</div>
+                                <div class="text-xs text-gray-400">Nominal transfer sesuai dengan total tagihan</div>
+                            </div>
+                        </label>
+                        <div x-show="!paymentCheck.amountMatch" x-transition class="mt-3 p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/25">
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Jumlah yang Diterima (Rp)</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">Rp</span>
+                                <input x-model="paymentCheck.actualAmount" type="number" class="w-full pl-12 pr-4 py-2.5 bg-white border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all" placeholder="Masukkan jumlah yang diterima">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Proof Upload -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">
+                            <i class="fas fa-image text-emerald-500 mr-1"></i> Bukti Pembayaran (opsional)
+                        </label>
+                        <div class="border-2 border-dashed border-white/15 rounded-xl p-6 text-center hover:border-emerald-500/60 hover:bg-emerald-500/8 transition-all cursor-pointer relative" @click="$refs.proofInput.click()">
+                            <input x-ref="proofInput" type="file" accept="image/*" @change="handleFileUpload($event)" class="hidden">
+                            <template x-if="!paymentProof">
+                                <div>
+                                    <div class="w-14 h-14 rounded-full bg-white/8 flex items-center justify-center mx-auto mb-3">
+                                        <i class="fas fa-cloud-upload-alt text-2xl text-gray-400"></i>
+                                    </div>
+                                    <div class="text-sm font-medium text-gray-300">Klik untuk upload bukti transfer</div>
+                                    <div class="text-xs text-gray-400 mt-1">JPG, PNG, atau PDF (max 5MB)</div>
+                                </div>
+                            </template>
+                            <template x-if="paymentProof">
+                                <div>
+                                    <div class="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+                                        <i class="fas fa-check text-2xl text-emerald-600"></i>
+                                    </div>
+                                    <div class="text-sm font-medium text-emerald-400" x-text="paymentProof.name"></div>
+                                    <div class="text-xs text-gray-400 mt-1">Klik untuk ganti file</div>
+                                    <!-- Preview Image -->
+                                    <img x-show="paymentPreviewUrl" :src="paymentPreviewUrl" class="mt-4 mx-auto max-h-48 rounded-xl shadow-md" alt="Preview bukti">
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Payment Details -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-300 mb-2">Bank Pengirim</label>
+                            <select x-model="paymentDetails.senderBank" class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all appearance-none">
+                                <option value="">Pilih Bank</option>
+                                <option value="bca">BCA</option>
+                                <option value="bni">BNI</option>
+                                <option value="bri">BRI</option>
+                                <option value="mandiri">Mandiri</option>
+                                <option value="gopay">GoPay</option>
+                                <option value="ovo">OVO</option>
+                                <option value="dana">DANA</option>
+                                <option value="other">Lainnya</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-300 mb-2">Nama Pengirim</label>
+                            <input x-model="paymentDetails.senderName" type="text" class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all" placeholder="Nama pemilik rekening">
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Catatan Verifikasi</label>
+                        <textarea x-model="paymentDetails.notes" rows="2" class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all resize-none" placeholder="Catatan tambahan..."></textarea>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                        <button type="button" @click="rejectPayment()" :disabled="submitting" class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold rounded-xl transition-all border border-red-500/25">
+                            <i class="fas fa-times-circle"></i> Tolak Pembayaran
+                        </button>
+                        <button type="submit" :disabled="submitting || !canConfirm" class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 text-white font-bold rounded-xl transition-all">
+                            <i class="fas fa-check-circle" :class="{ 'fa-spin': submitting }"></i>
+                            <span x-text="submitting ? 'Memproses...' : 'Konfirmasi Pembayaran'"></span>
+                        </button>
+                    </div>
+                    <!-- Notifikasi Manual -->
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" @click="sendManualNotification('wa')" class="text-xs text-green-600 hover:underline flex items-center gap-1">
+                            <i class="fab fa-whatsapp"></i> Kirim WA Konfirmasi
+                        </button>
+                        <button type="button" @click="sendManualNotification('telegram')" class="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                            <i class="fab fa-telegram"></i> Kirim Telegram
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar (tidak berubah) -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Order Items -->
+            <div class="admin-card p-6 sticky top-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-shopping-bag text-emerald-600"></i> Item Pesanan
+                </h3>
+
+                <div class="space-y-3 mb-4">
+                    {% for item in order.items %}
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-dark-600/40 hover:bg-dark-800/50 transition-colors">
+                        <div class="w-12 h-12 rounded-lg bg-white border border-gray-700/50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {% if item.product and item.product.image_filename %}
+                            <img src="{{ url_for('uploaded_product_file', filename=item.product.image_filename) }}" alt="{{ item.name }}" class="w-full h-full object-cover">
+                            {% else %}
+                            <i class="fas fa-mobile-alt text-lg text-gray-300"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-800 truncate">{{ item.name }}</div>
+                            <div class="text-xs text-gray-400">{{ item.brand }} {{ item.model }}</div>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ item.condition }}</span>
+                                <span class="text-xs text-gray-400">x{{ item.quantity }}</span>
+                            </div>
+                        </div>
+                        <div class="text-sm font-bold text-gray-100">{{ format_price(item.price * item.quantity) }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="border-t border-gray-700/50 pt-4 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Subtotal</span>
+                        <span class="font-semibold">{{ format_price(order.subtotal) }}</span>
+                    </div>
+                    {% if order.shipping_cost > 0 %}
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Ongkir</span>
+                        <span class="font-semibold">{{ format_price(order.shipping_cost) }}</span>
+                    </div>
+                    {% endif %}
+                    {% if order.discount > 0 %}
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Diskon</span>
+                        <span class="font-semibold text-red-600">- {{ format_price(order.discount) }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="border-t border-gray-700/50 pt-2 flex justify-between items-center">
+                        <span class="font-bold text-gray-100">Total</span>
+                        <span class="font-bold text-xl text-emerald-400">{{ format_price(order.total) }}</span>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="mt-6 pt-4 border-t border-gray-700/50 space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Aksi Cepat</div>
+                    <a href="https://wa.me/{{ order.customer_phone|replace('+','')|replace('-','')|replace(' ','') }}" target="_blank" class="flex items-center gap-3 p-3 rounded-xl bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 transition-all group">
+                        <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                            <i class="fab fa-whatsapp text-white text-sm"></i>
+                        </div>
+                        <span class="text-sm font-medium text-gray-100">Hubungi Pelanggan</span>
+                    </a>
+                    <a href="{{ url_for('invoice', order_id=order.id) }}" target="_blank" class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+                        <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-file-invoice text-white text-sm"></i>
+                        </div>
+                        <span class="text-sm font-medium text-gray-100">Lihat Invoice</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div x-show="showSuccessModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" x-transition>
+        <div class="admin-card rounded-2xl w-full max-w-md mx-4 p-8 text-center border border-white/10" @click.away="showSuccessModal = false">
+            <div class="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4 animate-bounce">
+                <i class="fas fa-check text-3xl text-emerald-600"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-100 mb-2">Pembayaran Dikonfirmasi!</h3>
+            <p class="text-gray-300 text-sm mb-2">Order <span class="font-semibold text-emerald-600">{{ order.order_number }}</span> telah dibayar.</p>
+            <p class="text-gray-400 text-xs mb-6">Status order akan diubah menjadi "Paid" dan siap diproses.</p>
+            <div class="space-y-2">
+                <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" class="block w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all">
+                    Lihat Detail Order
+                </a>
+                <a href="{{ url_for('admin_orders') }}" class="block w-full py-3 bg-white/10 hover:bg-white/15 text-gray-200 font-semibold rounded-xl transition-all">
+                    Kembali ke Daftar Order
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div x-show="showRejectModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" x-transition>
+        <div class="admin-card rounded-2xl w-full max-w-md mx-4 p-6 border border-white/10" @click.away="showRejectModal = false">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-red-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-100">Tolak Pembayaran</h3>
+            </div>
+            <p class="text-sm text-gray-400 mb-4">Berikan alasan penolakan agar pelanggan dapat mengirim ulang pembayaran yang benar.</p>
+            <div class="space-y-3">
+                <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-700/50 hover:border-red-400/50 hover:bg-red-500/10 transition-all cursor-pointer">
+                    <input type="radio" x-model="rejectReason" value="insufficient" name="reject_reason" class="w-4 h-4 text-red-600 focus:ring-red-500">
+                    <span class="text-sm text-gray-200">Nominal kurang dari tagihan</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-700/50 hover:border-red-400/50 hover:bg-red-500/10 transition-all cursor-pointer">
+                    <input type="radio" x-model="rejectReason" value="wrong_account" name="reject_reason" class="w-4 h-4 text-red-600 focus:ring-red-500">
+                    <span class="text-sm text-gray-200">Transfer ke rekening salah</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-700/50 hover:border-red-400/50 hover:bg-red-500/10 transition-all cursor-pointer">
+                    <input type="radio" x-model="rejectReason" value="unclear_proof" name="reject_reason" class="w-4 h-4 text-red-600 focus:ring-red-500">
+                    <span class="text-sm text-gray-200">Bukti transfer tidak jelas/palsu</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-700/50 hover:border-red-400/50 hover:bg-red-500/10 transition-all cursor-pointer">
+                    <input type="radio" x-model="rejectReason" value="other" name="reject_reason" class="w-4 h-4 text-red-600 focus:ring-red-500">
+                    <span class="text-sm text-gray-200">Lainnya</span>
+                </label>
+                <textarea x-show="rejectReason === 'other'" x-transition x-model="rejectOtherReason" rows="2" class="w-full px-4 py-2 border border-gray-700/50 rounded-xl focus:ring-2 focus:ring-red-500 resize-none" placeholder="Jelaskan alasan penolakan..."></textarea>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button @click="showRejectModal = false" class="flex-1 px-4 py-2.5 border border-white/15 rounded-xl text-gray-300 hover:bg-white/8 font-medium transition-all">Batal</button>
+                <button @click="submitReject()" :disabled="!rejectReason || submitting" class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-xl font-medium transition-all">
+                    <span x-text="submitting ? 'Memproses...' : 'Tolak Pembayaran'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.show" x-transition class="fixed top-6 right-6 z-50">
+        <div class="px-6 py-3 rounded-xl shadow-lg flex items-center gap-3" :class="toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'">
+            <i class="fas" :class="toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+            <span x-text="toast.message"></span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function konfirmasiPembayaran() {
+    return {
+        paymentCheck: {
+            amountMatch: true,
+            actualAmount: ''
+        },
+        paymentProof: null,
+        paymentPreviewUrl: null,
+        paymentDetails: {
+            senderBank: '',
+            senderName: '',
+            notes: ''
+        },
+        submitting: false,
+        showSuccessModal: false,
+        showRejectModal: false,
+        rejectReason: '',
+        rejectOtherReason: '',
+        toast: { show: false, message: '', type: 'success' },
+
+        get canConfirm() {
+            if (this.paymentCheck.amountMatch) return true;
+            return this.paymentCheck.actualAmount && parseInt(this.paymentCheck.actualAmount) > 0;
+        },
+
+        init() {},
+
+        handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    this.showToast('File terlalu besar (max 5MB)', 'error');
+                    return;
+                }
+                this.paymentProof = file;
+                const reader = new FileReader();
+                reader.onload = (e) => { this.paymentPreviewUrl = e.target.result; };
+                reader.readAsDataURL(file);
+            }
+        },
+
+        async uploadPaymentProof() {
+            if (!this.paymentProof) return true;
+            const formData = new FormData();
+            formData.append('proof', this.paymentProof);
+
+            try {
+                const res = await fetch('{{ url_for("upload_payment_proof", order_id=order.id) }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+                    body: formData
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    this.showToast('Gagal mengunggah bukti: ' + (data.message || ''), 'error');
+                    return false;
+                }
+                return true;
+            } catch (err) {
+                this.showToast('Gagal mengunggah bukti: ' + err, 'error');
+                return false;
+            }
+        },
+
+        async confirmPayment() {
+            if (!this.canConfirm) {
+                this.showToast('Lengkapi data verifikasi', 'error');
+                return;
+            }
+
+            this.submitting = true;
+
+            // Upload proof if available
+            if (this.paymentProof) {
+                const uploaded = await this.uploadPaymentProof();
+                if (!uploaded) {
+                    this.submitting = false;
+                    return;
+                }
+            }
+
+            // Build notes
+            let notes = [];
+            if (this.paymentDetails.senderBank) notes.push(`Bank Pengirim: ${this.paymentDetails.senderBank}`);
+            if (this.paymentDetails.senderName) notes.push(`Nama Pengirim: ${this.paymentDetails.senderName}`);
+            if (this.paymentDetails.notes) notes.push(`Catatan: ${this.paymentDetails.notes}`);
+            if (!this.paymentCheck.amountMatch) notes.push(`Jumlah Diterima: Rp ${this.paymentCheck.actualAmount}`);
+            const notesStr = notes.join('; ');
+
+            try {
+                const res = await fetch('{{ url_for("admin_update_order_status", order_id=order.id) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        status: 'Paid',
+                        notes: notesStr || null
+                    })
+                });
+                const data = await res.json();
+                this.submitting = false;
+
+                if (data.success) {
+                    this.showSuccessModal = true;
+                } else {
+                    this.showToast(data.message || 'Gagal mengkonfirmasi pembayaran', 'error');
+                }
+            } catch (err) {
+                this.submitting = false;
+                this.showToast('Terjadi kesalahan: ' + err, 'error');
+            }
+        },
+
+        rejectPayment() {
+            this.showRejectModal = true;
+        },
+
+        async submitReject() {
+            if (!this.rejectReason) {
+                this.showToast('Pilih alasan penolakan', 'error');
+                return;
+            }
+            this.submitting = true;
+
+            const reason = this.rejectReason === 'other' ? this.rejectOtherReason : this.rejectReason;
+            const rejectionNote = `PEMBAYARAN DITOLAK – Alasan: ${reason}`;
+
+            try {
+                const res = await fetch('{{ url_for("admin_update_order_status", order_id=order.id) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        status: 'Pending',   // Tetap Pending
+                        notes: rejectionNote
+                    })
+                });
+                const data = await res.json();
+                this.submitting = false;
+                this.showRejectModal = false;
+
+                if (data.success) {
+                    this.showToast('Pembayaran ditolak, pelanggan akan diberitahu', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    this.showToast(data.message || 'Gagal menolak pembayaran', 'error');
+                }
+            } catch (err) {
+                this.submitting = false;
+                this.showToast('Terjadi kesalahan: ' + err, 'error');
+            }
+        },
+
+        sendManualNotification(channel) {
+            this.showToast(`Notifikasi ${channel === 'wa' ? 'WhatsApp' : 'Telegram'} akan dikirim (simulasi)`, 'success');
+        },
+
+        showToast(message, type = 'success') {
+            this.toast = { show: true, message, type };
+            setTimeout(() => this.toast.show = false, 3000);
+        }
+    }
+}
+</script>
+{% endblock %}

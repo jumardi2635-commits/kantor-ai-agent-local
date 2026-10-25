@@ -1,0 +1,70 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
+        <i class="fas fa-sliders-h text-2xl" style="color: var(--primary);"></i>
+        {{ _('hero_slider') }}
+    </h1>
+    <a href="{{ url_for('admin_hero_new') }}" class="inline-flex items-center gap-2 btn-primary">
+        <i class="fas fa-plus"></i> {{ _('add_new') }}
+    </a>
+</div>
+
+<div class="admin-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-dark-800/50 border-b border-gray-700/50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ _('image') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ _('title') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ _('subtitle') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ _('order') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ _('active') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ _('action') }}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for slide in slides %}
+                <tr class="hover:bg-dark-800/50 transition">
+                    <td class="px-6 py-4">
+                        <img src="{{ url_for('uploaded_hero_file', filename=slide.image_filename) }}"
+                             alt="{{ slide.title }}"
+                             class="w-24 h-14 object-cover rounded-lg ring-2 ring-gray-100">
+                    </td>
+                    <td class="px-6 py-4 font-medium text-white">{{ slide.title or '-' }}</td>
+                    <td class="px-6 py-4 text-gray-600">{{ slide.subtitle or '-' }}</td>
+                    <td class="px-6 py-4 text-gray-600">{{ slide.sort_order }}</td>
+                    <td class="px-6 py-4">
+                        {% if slide.is_active %}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium badge badge-success">
+                            <i class="fas fa-circle text-[8px]"></i> {{ _('active') }}
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            <i class="fas fa-circle text-[8px]"></i> {{ _('inactive') }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <a href="{{ url_for('admin_hero_edit', id=slide.id) }}"
+                               class="text-blue-600 hover:text-blue-800 transition"
+                               title="{{ _('edit') }}">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('admin_hero_delete', id=slide.id) }}"
+                               class="text-red-600 hover:text-red-800 transition"
+                               title="{{ _('delete') }}"
+                               onclick="return confirm(this.getAttribute('data-confirm'))" data-confirm="{{ _('delete_confirm') }}">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

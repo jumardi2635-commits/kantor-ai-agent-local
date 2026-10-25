@@ -1,0 +1,169 @@
+{# =========================================================================
+   _shipment_tracker.html — modal lacak resi + riwayat status.
+
+   PASANG: simpan di templates/, lalu di orders.html (dan/atau profile.html)
+   sebelum {% endblock %} / </body>:
+       {% include '_shipment_tracker.html' %}
+
+   PAKAI: tombol di tiap pesanan yang punya resi:
+       {% if order.tracking_number %}
+       <button type="button" onclick="openShipmentTracker('{{ order.tracking_number|e }}')">Lacak Paket</button>
+       {% endif %}
+
+   Memanggil GET /api/shipments/<resi> (proxy di app.py) — API key tidak
+   pernah menyentuh browser. Semua teks dari API dirender lewat textContent
+   (bukan innerHTML), jadi aman dari XSS.
+   ========================================================================= #}
+<style>
+.st-overlay{position:fixed;inset:0;background:rgba(2,6,23,.7);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+.st-overlay.open{display:flex}
+.st-box{background:#0f172a;color:#e2e8f0;border:1px solid #1e293b;border-radius:16px;width:100%;max-width:460px;max-height:85vh;overflow:auto;padding:20px}
+.st-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.st-title{font-size:16px;font-weight:700;margin:0}
+.st-sub{font-size:12px;color:#94a3b8;margin-top:2px;word-break:break-all}
+.st-close{background:none;border:0;color:#94a3b8;font-size:22px;line-height:1;cursor:pointer}
+.st-badge{display:inline-block;background:#6366f1;color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+.st-meta{font-size:13px;color:#cbd5e1;margin:10px 0 14px;display:grid;gap:4px}
+.st-list{list-style:none;margin:0;padding:0 0 0 14px;border-left:2px solid #1e293b}
+.st-item{position:relative;padding:0 0 14px 12px}
+.st-item::before{content:"";position:absolute;left:-21px;top:4px;width:10px;height:10px;border-radius:50%;background:#334155}
+.st-item:first-child::before{background:#6366f1}
+.st-s{font-size:14px;font-weight:600}
+.st-d{font-size:13px;color:#cbd5e1}
+.st-t{font-size:12px;color:#94a3b8;margin-top:2px}
+.st-msg{font-size:14px;color:#cbd5e1;padding:8px 0}
+.st-err{color:#fca5a5}
+.st-raw{margin-top:10px;font-size:11px;color:#94a3b8}
+.st-raw pre{white-space:pre-wrap;word-break:break-word;background:#020617;padding:8px;border-radius:8px}
+</style>
+
+<div class="st-overlay" id="stOverlay" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+  <div class="st-box">
+    <div class="st-head">
+      <div>
+        <h3 class="st-title" id="stTitle">Lacak Paket</h3>
+        <div class="st-sub" id="stResi"></div>
+      </div>
+      <button type="button" class="st-close" id="stClose" aria-label="Tutup">&times;</button>
+    </div>
+    <div id="stBody"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const overlay = document.getElementById('stOverlay');
+  const body = document.getElementById('stBody');
+  const resiEl = document.getElementById('stResi');
+  let reqId = 0;
+
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  };
+  const pick = (o, keys) => {
+    for (const k of keys) if (o && o[k] != null && o[k] !== '') return o[k];
+    return null;
+  };
+  const fmtTime = (v) => {
+    if (!v) return '';
+    const d = new Date(v);
+    return isNaN(d) ? String(v) : d.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+  };
+  const pretty = (s) => String(s || '').replace(/_/g, ' ');
+
+  // Skema respons API belum pasti -> baca beberapa nama field umum.
+  // Sesuaikan daftar kunci di bawah bila API memakai nama lain.
+  function normalize(payload) {
+    const d = payload && payload.data !== undefined ? payload.data : payload;
+    const s = (d && (d.shipment || d)) || {};
+    const hist = pick(s, ['history', 'events', 'timeline', 'tracking_history', 'status_history']);
+    return {
+      status: pick(s, ['status', 'current_status', 'status_name']),
+      carrier: pick(s, ['carrier', 'courier', 'kurir']),
+      location: pick(s, ['current_location', 'location']),
+      eta: pick(s, ['estimated_delivery', 'eta', 'estimated_arrival']),
+      history: Array.isArray(hist) ? hist.map((e) => ({
+        status: pick(e, ['status', 'title', 'status_name']),
+        desc: pick(e, ['description', 'status_description', 'note', 'message']),
+        loc: pick(e, ['location', 'city']),
+        time: pick(e, ['timestamp', 'event_time', 'created_at', 'time', 'date']),
+      })) : [],
+      raw: d,
+    };
+  }
+
+  function render(data) {
+    body.replaceChildren();
+    const n = normalize(data);
+
+    if (n.status) body.appendChild(el('span', 'st-badge', pretty(n.status)));
+    const meta = el('div', 'st-meta');
+    if (n.carrier) meta.appendChild(el('div', null, 'Kurir: ' + n.carrier));
+    if (n.location) meta.appendChild(el('div', null, 'Posisi terakhir: ' + n.location));
+    if (n.eta) meta.appendChild(el('div', null, 'Estimasi tiba: ' + fmtTime(n.eta)));
+    if (meta.childNodes.length) body.appendChild(meta);
+
+    if (n.history.length) {
+      const ul = el('ul', 'st-list');
+      // Terbaru di atas: urutkan berdasarkan waktu bila semua event punya waktu valid.
+      const items = n.history.slice();
+      if (items.every((e) => e.time && !isNaN(new Date(e.time)))) {
+        items.sort((a, b) => new Date(b.time) - new Date(a.time));
+      }
+      items.forEach((e) => {
+        const li = el('li', 'st-item');
+        li.appendChild(el('div', 'st-s', pretty(e.status) || 'Update status'));
+        if (e.desc) li.appendChild(el('div', 'st-d', e.desc));
+        const t = [fmtTime(e.time), e.loc].filter(Boolean).join(' • ');
+        if (t) li.appendChild(el('div', 'st-t', t));
+        ul.appendChild(li);
+      });
+      body.appendChild(ul);
+    } else if (!n.status) {
+      // Tidak ada field yang dikenali -> tampilkan mentah supaya mudah disesuaikan.
+      body.appendChild(el('div', 'st-msg', 'Data pelacakan diterima, tetapi formatnya belum dikenali.'));
+      const det = el('details', 'st-raw');
+      det.appendChild(el('summary', null, 'Lihat data mentah'));
+      det.appendChild(el('pre', null, JSON.stringify(n.raw, null, 2)));
+      body.appendChild(det);
+    } else {
+      body.appendChild(el('div', 'st-msg', 'Belum ada riwayat perjalanan.'));
+    }
+  }
+
+  function showMsg(text, isErr) {
+    body.replaceChildren(el('div', 'st-msg' + (isErr ? ' st-err' : ''), text));
+  }
+
+  function close() { overlay.classList.remove('open'); reqId++; }
+
+  window.openShipmentTracker = async function (resi) {
+    const my = ++reqId;
+    resiEl.textContent = resi;
+    showMsg('Memuat data pelacakan…');
+    overlay.classList.add('open');
+    try {
+      const r = await fetch('/api/shipments/' + encodeURIComponent(resi), {
+        headers: { Accept: 'application/json' },
+        credentials: 'same-origin',
+      });
+      const j = await r.json().catch(() => ({}));
+      if (my !== reqId) return;                 // modal sudah ditutup / diganti
+      if (!r.ok || j.success === false) {
+        showMsg(j.message || 'Gagal memuat data pelacakan.', true);
+        return;
+      }
+      render(j);
+    } catch (e) {
+      if (my === reqId) showMsg('Koneksi bermasalah. Coba lagi.', true);
+    }
+  };
+
+  document.getElementById('stClose').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+})();
+</script>

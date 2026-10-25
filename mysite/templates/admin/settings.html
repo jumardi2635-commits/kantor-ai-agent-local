@@ -1,0 +1,1892 @@
+{% extends "admin/base_admin.html" %}
+{% block page_title %}Pengaturan Toko{% endblock %}
+{% block extra_css %}
+<style>
+    [x-cloak] { display: none !important; }
+
+    /* Premium Toggle Switch */
+    .premium-toggle {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 26px;
+        flex-shrink: 0;
+    }
+    .premium-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .premium-toggle .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background-color: #cbd5e1;
+        transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 26px;
+    }
+    .premium-toggle .slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .premium-toggle input:checked + .slider {
+        background: linear-gradient(135deg, #1E3A8A 0%, #2563eb 100%);
+    }
+    .premium-toggle input:checked + .slider:before {
+        transform: translateX(22px);
+    }
+    .premium-toggle input:focus + .slider {
+        box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+    }
+
+    /* Upload Zone */
+    .upload-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 1rem;
+        padding: 2.5rem 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.4);
+        position: relative;
+        overflow: hidden;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+        border-color: #1E3A8A;
+        background: rgba(30, 58, 138, 0.03);
+    }
+    .upload-zone.dragover {
+        transform: scale(1.01);
+    }
+
+    /* Form Inputs */
+    .premium-input {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(203, 213, 225, 0.6);
+        border-radius: 0.75rem;
+        font-size: 0.875rem;
+        color: #1f2937;
+        transition: all 0.2s ease;
+        outline: none;
+    }
+    .premium-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        background: rgba(255, 255, 255, 0.9);
+    }
+    .premium-input::placeholder {
+        color: #94a3b8;
+    }
+
+    /* Tab Buttons */
+    .tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.75rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: #64748b;
+        background: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(226, 232, 240, 0.6);
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .tab-btn:hover {
+        background: rgba(255, 255, 255, 0.8);
+        color: #1E3A8A;
+        border-color: rgba(30, 58, 138, 0.2);
+    }
+    .tab-btn.active {
+        background: linear-gradient(135deg, #1E3A8A 0%, #2563eb 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.25);
+    }
+
+    /* Courier Card */
+    .courier-glass {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 1rem;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+    }
+    .courier-glass:hover {
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
+    }
+    .courier-glass.inactive {
+        opacity: 0.55;
+        background: rgba(241, 245, 249, 0.5);
+    }
+    .courier-glass.inactive:hover {
+        opacity: 0.75;
+    }
+
+    /* Payment Card */
+    .payment-glass {
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    .payment-glass:hover {
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Notification Row */
+    .notif-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 0.75rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(226, 232, 240, 0.4);
+    }
+    .notif-row:hover {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(30, 58, 138, 0.15);
+    }
+
+    /* Modal */
+    .modal-glass {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 1.25rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Section Title */
+    .section-heading {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+    }
+    .section-heading i {
+        color: #1E3A8A;
+        font-size: 1rem;
+    }
+
+    /* Service Row */
+    .service-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        gap: 1rem;
+    }
+    .service-row label {
+        font-size: 0.85rem;
+        color: #475569;
+        flex: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .service-cost-input {
+        width: 120px;
+        font-size: 0.85rem;
+        padding: 0.375rem 0.75rem;
+        background: rgba(255,255,255,0.7);
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        outline: none;
+    }
+    .service-cost-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+    }
+
+    /* Bank Account Item */
+    .bank-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: rgba(248, 250, 252, 0.8);
+        border-radius: 0.75rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid rgba(226, 232, 240, 0.5);
+    }
+    .bank-item .bank-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 0.5rem;
+        background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+        color: #1E3A8A;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    /* Custom checkbox */
+    .custom-checkbox {
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid #cbd5e1;
+        border-radius: 0.25rem;
+        appearance: none;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s;
+    }
+    .custom-checkbox:checked {
+        background: #1E3A8A;
+        border-color: #1E3A8A;
+    }
+    .custom-checkbox:checked::after {
+        content: '';
+        position: absolute;
+        left: 4px;
+        top: 1px;
+        width: 4px;
+        height: 8px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    /* Free shipping row */
+    .highlight-row {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.05) 100%);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+
+    /* Smooth transitions for Alpine */
+    .fade-enter { opacity: 0; transform: translateY(8px); }
+    .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.3s ease; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="{
+    activeTab: 'general',
+    showBankModal: false,
+    bankAccounts: [],
+    init() {
+        try {
+            const raw = document.getElementById('bankAccountsJson').value;
+            this.bankAccounts = JSON.parse(raw) || [];
+        } catch(e) { this.bankAccounts = []; }
+        if (window.location.hash === '#api') {
+            this.activeTab = 'api';
+        }
+    }
+}" x-init="init()" x-cloak @close-bank-modal.window="showBankModal = false">
+
+    <!-- Header -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-1">Pengaturan Toko</h2>
+        <p class="text-sm text-gray-400">Kelola identitas toko, konfigurasi pengiriman, metode pembayaran, dan notifikasi</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+        <button @click="activeTab = 'general'" :class="activeTab === 'general' ? 'active' : ''" class="tab-btn">
+            <i class="fas fa-store"></i> Umum
+        </button>
+        <button @click="activeTab = 'shipping'" :class="activeTab === 'shipping' ? 'active' : ''" class="tab-btn">
+            <i class="fas fa-truck"></i> Pengiriman
+        </button>
+        <button @click="activeTab = 'payment'" :class="activeTab === 'payment' ? 'active' : ''" class="tab-btn">
+            <i class="fas fa-credit-card"></i> Pembayaran
+        </button>
+        <button @click="activeTab = 'notifications'" :class="activeTab === 'notifications' ? 'active' : ''" class="tab-btn">
+            <i class="fas fa-bell"></i> Notifikasi
+        </button>
+        <button @click="activeTab = 'openrouter'" :class="activeTab === 'openrouter' ? 'active' : ''" class="tab-btn">
+            <i class="fas fa-comments"></i> OpenRouter
+        </button>
+        <button @click="activeTab = 'api'" :class="activeTab === 'api' ? 'active' : ''" class="tab-btn">
+            <i class="fas fa-plug"></i> Integrasi API
+        </button>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB UMUM -->
+    <!-- ============================================================ -->
+    <div x-show="activeTab === 'general'" x-transition:enter="fade-enter" x-transition:enter-start="fade-enter" x-transition:enter-end="fade-enter-active">
+        <form method="POST" action="{{ url_for('admin_settings') }}" enctype="multipart/form-data" id="formGeneral">
+            <input type="hidden" name="tab" value="general">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- LOGO TOKO -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-image"></i> Logo Toko
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <div class="upload-zone" id="logoUploadArea">
+                            <input type="file" name="logo" id="logoInput" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml">
+
+                            <div id="logoPreviewWrap" {% if settings.get('logo_url') %}style="display:inline-block;"{% else %}style="display:none;"{% endif %} class="relative inline-block">
+                                <img id="logoPreview"
+                                     src="{{ url_for('uploaded_logo_file', filename=settings.get('logo_url', '')) if settings.get('logo_url') else '' }}"
+                                     class="max-h-24 max-w-xs rounded-lg object-contain shadow-sm"
+                                     alt="Logo Toko">
+                                <button type="button" id="logoRemoveBtn"
+                                        class="absolute -top-2 -right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs shadow-md transition">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                <input type="hidden" name="logo_remove" id="logoRemoveInput" value="0">
+                            </div>
+
+                            <div id="logoPlaceholder" {% if settings.get('logo_url') %}style="display:none;"{% else %}style="display:block;"{% endif %}>
+                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-300 mb-3 block"></i>
+                                <p class="text-gray-400 text-sm">Drag & drop gambar, atau <span class="text-primary-700 font-semibold cursor-pointer" onclick="document.getElementById('logoInput').click()">klik untuk pilih</span></p>
+                                <p class="text-xs text-gray-400 mt-2">PNG, JPG, WebP, SVG — Maks. 2 MB</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-3 flex items-center gap-1.5">
+                            <i class="fas fa-info-circle text-primary-500"></i>
+                            Logo akan ditampilkan di header website, invoice, dan email konfirmasi pesanan.
+                        </p>
+                    </div>
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-4 border border-gray-100">
+                        <div class="font-semibold text-sm text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-lightbulb text-yellow-500"></i> Tips Logo Ideal
+                        </div>
+                        <ul class="text-xs text-gray-600 space-y-2 pl-1">
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-primary-500 mt-0.5 text-[10px]"></i> Resolusi minimal <strong>300×100 px</strong></li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-primary-500 mt-0.5 text-[10px]"></i> Gunakan format <strong>PNG transparan</strong></li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-primary-500 mt-0.5 text-[10px]"></i> Rasio 3:1 atau 4:1 (landscape)</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-primary-500 mt-0.5 text-[10px]"></i> Background transparan atau putih</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INFORMASI TOKO -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-store"></i> Informasi Toko
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Toko <span class="text-red-500">*</span></label>
+                        <input type="text" name="store_name" class="premium-input" value="{{ settings.get('store_name', '') }}" placeholder="Contoh: WatchHub Premium" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tagline / Slogan</label>
+                        <input type="text" name="store_tagline" class="premium-input" value="{{ settings.get('store_tagline', '') }}" placeholder="Contoh: Jam Tangan Mewah Terpercaya">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Email Toko <span class="text-red-500">*</span></label>
+                        <input type="email" name="store_email" class="premium-input" value="{{ settings.get('store_email', '') }}" placeholder="toko@email.com" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">No. WhatsApp</label>
+                        <div class="flex">
+                            <span class="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-700/50 rounded-l-lg text-gray-400 text-sm">+</span>
+                            <input type="text" name="store_whatsapp" class="premium-input rounded-l-none" value="{{ settings.get('store_whatsapp', '') }}" placeholder="628123456789">
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Alamat Toko</label>
+                        <textarea name="store_address" class="premium-input" rows="2" placeholder="Jl. Contoh No. 1, Makassar">{{ settings.get('store_address', '') }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Kota</label>
+                        <input type="text" name="store_city" class="premium-input" value="{{ settings.get('store_city', '') }}" placeholder="Makassar">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Provinsi</label>
+                        <input type="text" name="store_province" class="premium-input" value="{{ settings.get('store_province', '') }}" placeholder="Sulawesi Selatan">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Kode Pos</label>
+                        <input type="text" name="store_postal" class="premium-input" value="{{ settings.get('store_postal', '') }}" placeholder="90111">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Mata Uang</label>
+                            <select name="currency" class="premium-input">
+                                <option value="IDR" {{ 'selected' if settings.get('currency','IDR')=='IDR' }}>IDR — Rupiah</option>
+                                <option value="USD" {{ 'selected' if settings.get('currency')=='USD' }}>USD — Dollar</option>
+                                <option value="SGD" {{ 'selected' if settings.get('currency')=='SGD' }}>SGD — SGD</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Zona Waktu</label>
+                            <select name="timezone" class="premium-input">
+                                <option value="Asia/Jakarta" {{ 'selected' if settings.get('timezone', 'Asia/Jakarta') in ['Asia/Jakarta', ''] }}>WIB — Asia/Jakarta</option>
+                                <option value="Asia/Makassar" {{ 'selected' if settings.get('timezone')=='Asia/Makassar' }}>WITA — Asia/Makassar</option>
+                                <option value="Asia/Jayapura" {{ 'selected' if settings.get('timezone')=='Asia/Jayapura' }}>WIT — Asia/Jayapura</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tanggal & Waktu -->
+                <div class="admin-card p-6 mb-6">
+                    <div class="section-heading">
+                        <i class="fas fa-calendar-alt"></i> Format Tanggal & Waktu
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Format Tanggal</label>
+                            <select name="date_format" class="premium-input">
+                                <option value="dd/MM/yyyy" {{ 'selected' if settings.get('date_format')=='dd/MM/yyyy' }}>dd/MM/yyyy — 06/06/2026</option>
+                                <option value="dd-MM-yyyy" {{ 'selected' if settings.get('date_format')=='dd-MM-yyyy' }}>dd-MM-yyyy — 06-06-2026</option>
+                                <option value="dd.MM.yyyy" {{ 'selected' if settings.get('date_format')=='dd.MM.yyyy' }}>dd.MM.yyyy — 06.06.2026</option>
+                                <option value="yyyy/MM/dd" {{ 'selected' if settings.get('date_format')=='yyyy/MM/dd' }}>yyyy/MM/dd — 2026/06/06</option>
+                                <option value="MM/dd/yyyy" {{ 'selected' if settings.get('date_format')=='MM/dd/yyyy' }}>MM/dd/yyyy — 06/06/2026</option>
+                            </select>
+                            <p class="text-xs text-gray-400 mt-1">Format untuk tampilan tanggal di seluruh sistem</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Format Waktu</label>
+                            <select name="time_format" class="premium-input">
+                                <option value="HH:mm" {{ 'selected' if settings.get('time_format')=='HH:mm' }}>HH:mm — 15:30</option>
+                                <option value="HH:mm:ss" {{ 'selected' if settings.get('time_format')=='HH:mm:ss' }}>HH:mm:ss — 15:30:45</option>
+                            </select>
+                            <p class="text-xs text-gray-400 mt-1">Format untuk tampilan waktu</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Gaya Tampilan Tanggal</label>
+                            <div class="flex gap-3">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="date_display_style" value="short" {{ 'checked' if settings.get('date_display_style')=='short' }} class="form-check-input">
+                                    <span class="text-sm text-gray-700">Short (6/6/26)</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="date_display_style" value="medium" {{ 'checked' if settings.get('date_display_style') in ('medium', '') }} class="form-check-input">
+                                    <span class="text-sm text-gray-700">Medium (Jun 6, 2026)</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="date_display_style" value="long" {{ 'checked' if settings.get('date_display_style')=='long' }} class="form-check-input">
+                                    <span class="text-sm text-gray-700">Long (June 6, 2026)</span>
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">Gaya tampilan alternatif untuk tanggal di halaman tertentu</p>
+                        </div>
+                        <div class="md:col-span-2 p-4 rounded-lg bg-gradient-to-br from-blue-50/50 to-blue-50/30 border border-blue-100">
+                            <div class="text-sm font-semibold text-gray-800 mb-2">Preview:</div>
+                            <div class="space-y-1 text-sm text-gray-700 font-mono">
+                                <div id="datePreview">Tanggal: <strong id="previewDate">06/06/2026</strong></div>
+                                <div id="timePreview">Waktu: <strong id="previewTime">15:30</strong></div>
+                                <div id="datetimePreview">Tanggal & Waktu: <strong id="previewDatetime">06/06/2026 15:30</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEO -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-search"></i> SEO & Meta
+                </div>
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Meta Title</label>
+                        <input type="text" name="meta_title" class="premium-input" value="{{ settings.get('meta_title', '') }}" placeholder="Toko Jam Tangan Mewah Pre-Owned | WatchHub">
+                        <p class="text-xs text-gray-400 mt-1">Idealnya 50–60 karakter</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Meta Description</label>
+                        <textarea name="meta_description" class="premium-input" rows="2" placeholder="Deskripsi singkat toko untuk mesin pencari...">{{ settings.get('meta_description', '') }}</textarea>
+                        <p class="text-xs text-gray-400 mt-1">Idealnya 120–160 karakter</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LINK PREVIEW / OPEN GRAPH -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-share-alt"></i> Preview Link (WhatsApp / Facebook)
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <div class="upload-zone" id="previewLogoUploadArea">
+                            <input type="file" name="preview_logo" id="previewLogoInput" accept="image/png,image/jpeg,image/webp,image/gif">
+                            
+                            <div id="previewLogoPreviewWrap" {% if settings.get('preview_logo_url') %}style="display:inline-block;"{% else %}style="display:none;"{% endif %} class="relative inline-block">
+                                <img id="previewLogoPreview"
+                                     src="{{ url_for('uploaded_logo_file', filename=settings.get('preview_logo_url', '')) if settings.get('preview_logo_url') else '' }}"
+                                     class="max-h-24 max-w-xs rounded-lg object-contain shadow-sm"
+                                     alt="Preview Logo">
+                                <button type="button" id="previewLogoRemoveBtn"
+                                        class="absolute -top-2 -right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs shadow-md transition">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                <input type="hidden" name="preview_logo_remove" id="previewLogoRemoveInput" value="0">
+                            </div>
+                            
+                            <div id="previewLogoPlaceholder" {% if settings.get('preview_logo_url') %}style="display:none;"{% else %}style="display:block;"{% endif %}>
+                                <i class="fas fa-image text-4xl text-gray-300 mb-3 block"></i>
+                                <p class="text-gray-400 text-sm">Drag & drop thumbnail, atau <span class="text-primary-700 font-semibold cursor-pointer" onclick="document.getElementById('previewLogoInput').click()">klik untuk pilih</span></p>
+                                <p class="text-xs text-gray-400 mt-2">Disarankan 1200x630px atau 1:1 (Minimal 200x200px)</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-3 flex items-center gap-1.5">
+                            <i class="fas fa-info-circle text-primary-500"></i>
+                            Gambar ini akan muncul sebagai kotak pratinjau ketika link dibagikan di Telegram, WA, atau IG.
+                        </p>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Preview Title</label>
+                            <input type="text" name="preview_title" class="premium-input" value="{{ settings.get('preview_title', '') }}" placeholder="Kosong = pakai Nama Situs">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Preview Description</label>
+                            <textarea name="preview_description" class="premium-input" rows="3" placeholder="Kosong = pakai Tagline / Slogan">{{ settings.get('preview_description', '') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPENROUTER AI INTEGRATION -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-brain"></i> OpenRouter AI Integration
+                </div>
+                <div class="bg-gradient-to-br from-blue-50/50 to-blue-50/30 rounded-xl p-5 border border-blue-100">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                                <i class="fas fa-robot text-2xl text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-semibold text-gray-800 flex items-center gap-2">
+                                    OpenRouter AI
+                                    {% if settings.get('openrouter_api_key') %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                            <span class="w-2 h-2 mr-1.5 bg-green-500 rounded-full animate-pulse"></span> Active
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-700/50">
+                                            <span class="w-2 h-2 mr-1.5 bg-gray-400 rounded-full"></span> Inactive
+                                        </span>
+                                    {% endif %}
+                                </h3>
+                                <p class="text-sm text-gray-400 mt-1">
+                                    Model: <code class="text-xs admin-card px-2 py-0.5 rounded">{{ settings.get('openrouter_model', 'openrouter/free') or 'Not configured' }}</code>
+                                    <span class="mx-1 text-gray-300">|</span>
+                                    Endpoint: <code class="text-xs admin-card px-2 py-0.5 rounded">{{ settings.get('openrouter_base_url', 'https://openrouter.ai/api/v1') or 'Not configured' }}</code>
+                                </p>
+                                {% if settings.get('openrouter_app_name') %}
+                                <p class="text-xs text-gray-400 mt-1">
+                                    <i class="fas fa-tag mr-1"></i> App: {{ settings.get('openrouter_app_name') }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <a href="{{ url_for('admin_ai_config') }}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-all shadow-sm shrink-0">
+                            <i class="fas fa-cog"></i> Configure
+                        </a>
+                    </div>
+
+                    <!-- Quick Info Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-blue-100/60">
+                        <div class="admin-card rounded-lg p-3">
+                            <div class="text-xs text-gray-400 mb-1">Base URL</div>
+                            <div class="text-sm font-medium text-gray-700 truncate" title="{{ settings.get('openrouter_base_url', 'https://openrouter.ai/api/v1') }}">
+                                {{ settings.get('openrouter_base_url', 'https://openrouter.ai/api/v1')[:30] }}{% if settings.get('openrouter_base_url', '')|length > 30 %}...{% endif %}
+                            </div>
+                        </div>
+                        <div class="admin-card rounded-lg p-3">
+                            <div class="text-xs text-gray-400 mb-1">Model</div>
+                            <div class="text-sm font-medium text-gray-700 truncate" title="{{ settings.get('openrouter_model', 'openrouter/free') }}">
+                                {{ settings.get('openrouter_model', 'openrouter/free') }}
+                            </div>
+                        </div>
+                        <div class="admin-card rounded-lg p-3">
+                            <div class="text-xs text-gray-400 mb-1">API Key</div>
+                            <div class="text-sm font-medium text-gray-700">
+                                {% if settings.get('openrouter_api_key') %}
+                                    <span class="text-green-600"><i class="fas fa-check-circle mr-1"></i>Configured</span>
+                                {% else %}
+                                    <span class="text-red-500"><i class="fas fa-times-circle mr-1"></i>Not Set</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="admin-card rounded-lg p-3">
+                            <div class="text-xs text-gray-400 mb-1">Site URL</div>
+                            <div class="text-sm font-medium text-gray-700 truncate" title="{{ settings.get('openrouter_site_url', '-') }}">
+                                {{ settings.get('openrouter_site_url', '-') or '-' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if not settings.get('openrouter_api_key') %}
+                    <div class="mt-4 p-3 bg-amber-50/70 border border-amber-200 rounded-lg flex items-start gap-3">
+                        <i class="fas fa-exclamation-triangle text-amber-500 mt-0.5"></i>
+                        <div class="text-sm text-amber-800">
+                            <strong>AI belum dikonfigurasi.</strong> Chatbot dan asisten AI tidak akan berfungsi. Klik tombol <strong>Configure</strong> untuk mengatur API key dan model.
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="reset" class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-white border border-gray-700/50 hover:bg-dark-800/50 transition">Reset</button>
+                <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-sm">
+                    <i class="fas fa-save mr-2"></i>Simpan Pengaturan Umum
+                </button>
+            </div>
+        </form>
+    </div>
+
+        <!-- ============================================================ -->
+    <!-- TAB PENGIRIMAN -->
+    <!-- ============================================================ -->
+    <div x-show="activeTab === 'shipping'" x-transition:enter="fade-enter" x-transition:enter-start="fade-enter" x-transition:enter-end="fade-enter-active" style="display:none;">
+        <form method="POST" action="{{ url_for('admin_settings') }}" id="formShipping">
+            <input type="hidden" name="tab" value="shipping">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Pengiriman Gratis -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-gift"></i> Gratis Ongkir
+                </div>
+                <div class="highlight-row flex items-center justify-between gap-4 mb-4">
+                    <div>
+                        <div class="font-semibold text-gray-800 text-sm">Aktifkan Gratis Ongkir Otomatis</div>
+                        <div class="text-xs text-gray-400">Pembeli mendapat gratis ongkir jika total pesanan mencapai minimal tertentu</div>
+                    </div>
+                    <label class="premium-toggle">
+                        <input type="checkbox" name="free_shipping_enabled" id="freeShippingToggle" value="1" {{ 'checked' if settings.get('free_shipping_enabled')=='1' or settings.get('free_shipping_enabled')=='true' }} onchange="toggleFreeShipping(this)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div id="freeShippingThreshold" {% if settings.get('free_shipping_enabled') not in ('1','true') %}style="display:none;"{% endif %}>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Minimal Pembelian untuk Gratis Ongkir</label>
+                    <div class="flex max-w-xs">
+                        <span class="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-700/50 rounded-l-lg text-gray-400 text-sm">Rp</span>
+                        <input type="number" name="free_shipping_min" class="premium-input rounded-l-none" value="{{ settings.get('free_shipping_min', '500000') }}" placeholder="500000" min="0" step="1000">
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">0 = gratis ongkir untuk semua pesanan</p>
+                </div>
+            </div>
+
+            <!-- Default Shipping Cost & Provinces -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-cogs"></i> Konfigurasi Dasar Pengiriman
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Biaya Pengiriman Default</label>
+                        <div class="flex">
+                            <span class="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-700/50 rounded-l-lg text-gray-400 text-sm">Rp</span>
+                            <input type="number" name="shipping_default_cost" class="premium-input rounded-l-none" value="{{ settings.get('shipping_default_cost', '0') }}" placeholder="0" min="0" step="1000">
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">Biaya fallback jika kalkulasi otomatis gagal</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Provinsi Tujuan (pisahkan koma)</label>
+                        <input type="text" name="shipping_provinces" class="premium-input" value="{{ settings.get('shipping_provinces', '') }}" placeholder="Sulawesi Selatan, Jawa Barat, DKI Jakarta">
+                        <p class="text-xs text-gray-400 mt-1">Kosongkan = semua provinsi</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ekspedisi -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-shipping-fast"></i> Ekspedisi & Layanan
+                </div>
+                <p class="text-sm text-gray-400 mb-4">Aktifkan ekspedisi yang tersedia dan atur biaya per layanan. Biaya ini akan ditampilkan otomatis di halaman checkout.</p>
+
+                {% set couriers = [
+                    {'key': 'fedex', 'name': 'FEDEX', 'desc': 'Jalur Eka Nugraha', 'services': [
+                        {'key': 'reg', 'label': 'REG (2–3 hari)'},
+                        {'key': 'yes', 'label': 'YES – Yakin Esok Sampai (1 hari)'},
+                        {'key': 'oke', 'label': 'OKE (4–6 hari)'},
+                        {'key': 'jnd', 'label': 'JND – J&D Express (1–2 hari)'}
+                    ]},
+                    {'key': 'jnt', 'name': 'J&T Express', 'desc': 'J&T Express Indonesia', 'services': [
+                        {'key': 'reg', 'label': 'Regular (2–3 hari)'},
+                        {'key': 'ez', 'label': 'EZ (1–2 hari)'},
+                        {'key': 'eco', 'label': 'Economy (4–7 hari)'}
+                    ]},
+                    {'key': 'sicepat', 'name': 'SiCepat', 'desc': 'SiCepat Ekspres', 'services': [
+                        {'key': 'reg', 'label': 'HALU – Regular (2–3 hari)'},
+                        {'key': 'best', 'label': 'BEST – Best Service (1–2 hari)'}
+                    ]},
+                    {'key': 'anteraja', 'name': 'AnterAja', 'desc': 'AnterAja Delivery Service', 'services': [
+                        {'key': 'reg', 'label': 'Regular (2–4 hari)'},
+                        {'key': 'ndd', 'label': 'Next Day Delivery (1 hari)'},
+                        {'key': 'sdd', 'label': 'Same Day Delivery (hari ini)'}
+                    ]},
+                    {'key': 'pos', 'name': 'Pos Indonesia', 'desc': 'Layanan Pos Nasional', 'services': [
+                        {'key': 'biasa', 'label': 'Pos Biasa (5–7 hari)'},
+                        {'key': 'kilat', 'label': 'Pos Kilat Khusus (2–3 hari)'},
+                        {'key': 'ekspres', 'label': 'Pos Ekspres (1 hari)'}
+                    ]},
+                    {'key': 'tiki', 'name': 'TIKI', 'desc': 'Titipan Kilat', 'services': [
+                        {'key': 'reg', 'label': 'Regular (3–5 hari)'},
+                        {'key': 'ons', 'label': 'ONS – Over Night Service (1 hari)'},
+                        {'key': 'eco', 'label': 'Economy (5–7 hari)'}
+                    ]}
+                ] %}
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {% for courier in couriers %}
+                    {% set courier_active = settings.get('courier_' + courier.key + '_active') in ('1', 'true') %}
+                    <div class="courier-glass {{ 'active' if courier_active else 'inactive' }}" id="courier-{{ courier.key }}">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <div class="font-bold text-gray-800">{{ courier.name }}</div>
+                                <div class="text-xs text-gray-400">{{ courier.desc }}</div>
+                            </div>
+                            <label class="premium-toggle">
+                                <input type="checkbox" name="courier_{{ courier.key }}_active" value="1" {{ 'checked' if courier_active }} onchange="toggleCourier('{{ courier.key }}', this)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="courier-services border-t border-gray-700/50/60 pt-3 mt-2 {{ 'hidden' if not courier_active else '' }}">
+                            {% for svc in courier.services %}
+                            <div class="service-row">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" class="custom-checkbox" name="svc_{{ courier.key }}_{{ svc.key }}_active" value="1" {{ 'checked' if settings.get('svc_' + courier.key + '_' + svc.key + '_active') in ('1', 'true') }}>
+                                    <span>{{ svc.label }}</span>
+                                </label>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-gray-400 text-xs">Rp</span>
+                                    <input type="number" name="svc_{{ courier.key }}_{{ svc.key }}_cost" class="service-cost-input" value="{{ settings.get('svc_' + courier.key + '_' + svc.key + '_cost', '0') }}" placeholder="0" min="0" step="1000">
+                                    <span class="text-gray-400 text-xs">/kg</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                                <i class="fas fa-info-circle"></i> Biaya dihitung berdasarkan berat produk × tarif per kg. Set 0 untuk flat rate.
+                            </p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Asuransi & Packaging -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-box"></i> Kemasan & Asuransi
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Biaya Kemasan (opsional)</label>
+                        <div class="flex">
+                            <span class="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-700/50 rounded-l-lg text-gray-400 text-sm">Rp</span>
+                            <input type="number" name="packaging_cost" class="premium-input rounded-l-none" value="{{ settings.get('packaging_cost', '0') }}" placeholder="0" min="0">
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">Biaya tambahan untuk kemasan premium. 0 = gratis.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Asuransi Pengiriman</label>
+                        <select name="insurance_mode" class="premium-input">
+                            <option value="none" {{ 'selected' if settings.get('insurance_mode','none')=='none' }}>Tidak Ada</option>
+                            <option value="optional" {{ 'selected' if settings.get('insurance_mode')=='optional' }}>Opsional (pilihan pembeli)</option>
+                            <option value="mandatory" {{ 'selected' if settings.get('insurance_mode')=='mandatory' }}>Wajib (untuk semua pesanan)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="reset" class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-white border border-gray-700/50 hover:bg-dark-800/50 transition">Reset</button>
+                <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-sm">
+                    <i class="fas fa-save mr-2"></i>Simpan Pengaturan Pengiriman
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB PEMBAYARAN -->
+    <!-- ============================================================ -->
+    <div x-show="activeTab === 'payment'" x-transition:enter="fade-enter" x-transition:enter-start="fade-enter" x-transition:enter-end="fade-enter-active" style="display:none;">
+        <form method="POST" action="{{ url_for('admin_settings') }}" enctype="multipart/form-data" id="formPayment">
+            <input type="hidden" name="tab" value="payment">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="bank_accounts_json" id="bankAccountsJson" value="{{ settings.get('bank_accounts_json', '[]') }}">
+
+            <!-- Transfer Bank -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-university"></i> Transfer Bank
+                </div>
+                <div class="payment-glass" id="paymentBankCard">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 text-blue-700 flex items-center justify-center text-lg">
+                                <i class="fas fa-university"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800 text-sm">Transfer Bank</div>
+                                <div class="text-xs text-gray-400">BCA, BRI, BNI, Mandiri, BSI, dll.</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <label class="premium-toggle">
+                                <input type="checkbox" name="payment_bank_transfer_enabled" value="1" {{ 'checked' if settings.get('payment_bank_transfer_enabled','1') in ('1', 'true') }} onchange="togglePaymentCard('paymentBankCard', this)">
+                                <span class="slider"></span>
+                            </label>
+                            <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 transition" onclick="toggleBankList()">
+                                <i class="fas fa-chevron-down transition-transform" id="bankChevron"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="bankAccountsList" class="mt-4 pt-4 border-t border-gray-700/50/60">
+                        <div class="font-semibold text-sm text-gray-700 mb-3">Daftar Rekening</div>
+                        <div id="bankAccountsContainer">
+                            <p class="text-sm text-gray-400">Memuat...</p>
+                        </div>
+                        <button type="button" @click="showBankModal = true" class="mt-3 w-full py-2.5 rounded-lg border border-dashed border-primary-400 text-primary-700 text-sm font-medium hover:bg-primary-50 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-plus text-xs"></i> Tambah Rekening Bank
+                        </button>
+
+                        <div class="mt-5 space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Instruksi Transfer</label>
+                                <textarea name="bank_transfer_instructions" class="premium-input" rows="3" placeholder="Contoh: Harap transfer dalam 24 jam...">{{ settings.get('bank_transfer_instructions', '') }}</textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Batas Waktu Pembayaran</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" name="payment_deadline_hours" class="premium-input max-w-[100px]" value="{{ settings.get('payment_deadline_hours', '24') }}" min="1" max="72">
+                                    <span class="text-sm text-gray-400">jam sejak pesanan dibuat</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- E-Wallet -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-mobile-alt"></i> E-Wallet / QRIS
+                </div>
+                <div class="payment-glass">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-50 text-orange-600 flex items-center justify-center text-lg">
+                                <i class="fas fa-qrcode"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800 text-sm">QRIS (GoPay, OVO, DANA, ShopeePay)</div>
+                                <div class="text-xs text-gray-400">Scan QR untuk bayar</div>
+                            </div>
+                        </div>
+                        <label class="premium-toggle">
+                            <input type="checkbox" name="payment_qris_enabled" value="1" {{ 'checked' if settings.get('payment_qris_enabled') in ('1', 'true') }}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        {% if settings.get('qris_code') %}
+                        <img src="{{ url_for('uploaded_logo_file', filename=settings.get('qris_code', '')) }}" class="w-24 h-24 object-contain border border-gray-700/50 rounded-lg p-1 bg-white" alt="QRIS">
+                        {% endif %}
+                        <div class="flex-1">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Upload Gambar QR Code</label>
+                            <input type="file" name="qris_code" class="premium-input text-sm py-2" accept="image/*">
+                            <p class="text-xs text-gray-400 mt-1">Format PNG/JPG, ukuran ideal 500×500px</p>
+                            <p class="text-xs text-gray-400 mt-1">
+                                <i class="fas fa-info-circle text-primary-500"></i>
+                                QRIS manual ini berdiri sendiri (tidak butuh gateway otomatis). Opsi hanya muncul di checkout jika toggle aktif <strong>dan</strong> gambar QR sudah diunggah. Pembeli membayar dengan scan QR lalu mengunggah bukti bayar; admin mengonfirmasi manual.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NotivGo (QRIS Otomatis) -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-bolt text-amber-500"></i>
+                        <span>Pembayaran Otomatis (NotivGo QRIS)</span>
+                    </div>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Pencocokan Notifikasi
+                    </span>
+                </div>
+                <div class="payment-glass">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/30">
+                                <i class="fas fa-satellite-dish"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800 text-sm">Pembayaran Otomatis via NotivGo</div>
+                                <div class="text-xs text-gray-400">QRIS dinamis; uang masuk langsung ke rekening/QRIS Anda, pesanan lunas otomatis setelah notifikasi HP cocok</div>
+                            </div>
+                        </div>
+                        <label class="premium-toggle">
+                            <input type="checkbox" name="payment_notivgo_enabled" value="1" {{ 'checked' if settings.get('payment_notivgo_enabled', '1') in ('1', 'true') }}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-700/50">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                NotivGo API Key <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="password" name="notivgo_api_key" id="notivgoApiKey" class="premium-input text-sm pr-10"
+                                       placeholder="ngk_..." autocomplete="off"
+                                       value="{{ settings.get('notivgo_api_key', '') }}">
+                                <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                        onclick="toggleSecretVisibility('notivgoApiKey', this)">
+                                    <i class="fas fa-eye text-xs"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">Portal NotivGo &rarr; menu Kunci API</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                Webhook Secret <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="password" name="notivgo_webhook_secret" id="notivgoWebhookSecret" class="premium-input text-sm pr-10"
+                                       placeholder="Kunci rahasia dari Tujuan kiriman" autocomplete="off"
+                                       value="{{ settings.get('notivgo_webhook_secret', '') }}">
+                                <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                        onclick="toggleSecretVisibility('notivgoWebhookSecret', this)">
+                                    <i class="fas fa-eye text-xs"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">Portal NotivGo &rarr; Tujuan kiriman &rarr; Kunci rahasia (verifikasi HMAC-SHA256)</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                Batas Konfirmasi Otomatis (Rp, opsional)
+                            </label>
+                            <input type="number" min="0" name="notivgo_auto_confirm_max" class="premium-input text-sm"
+                                   placeholder="0 = tanpa batas"
+                                   value="{{ settings.get('notivgo_auto_confirm_max', '0') }}">
+                            <p class="text-xs text-gray-400 mt-1">Pesanan di atas nilai ini tidak dikonfirmasi otomatis; cek mutasi lalu konfirmasi manual.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                NotivGo Base URL
+                            </label>
+                            <input type="text" name="notivgo_base_url" class="premium-input text-sm"
+                                   placeholder="https://portal.notivgo.com"
+                                   value="{{ settings.get('notivgo_base_url', 'https://portal.notivgo.com') }}">
+                        </div>
+                    </div>
+
+                    <!-- URL Webhook Box -->
+                    <div class="mt-5 p-4 rounded-xl bg-gray-100 border border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-xs font-semibold uppercase tracking-wider text-amber-700 flex items-center gap-1.5">
+                                <i class="fas fa-link"></i> URL Webhook untuk Portal NotivGo (Tujuan kiriman)
+                            </div>
+                            <button type="button" onclick="copyWebhookUrl()" class="text-xs font-medium px-2.5 py-1 rounded bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition flex items-center gap-1">
+                                <i class="fas fa-copy"></i> Salin URL
+                            </button>
+                        </div>
+                        <div class="bg-white rounded-lg p-2.5 font-mono text-xs text-gray-800 select-all break-all border border-gray-300" id="webhookUrlDisplay">
+                            {{ request.url_root.rstrip('/') }}/api/notivgo/webhook
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle text-primary mr-1"></i>
+                            Tambahkan URL di atas sebagai <strong>Tujuan kiriman</strong> di portal NotivGo. Pastikan aplikasi NotivGo di HP Android aktif dan <strong>Pencocokan Pembayaran</strong> dinyalakan.
+                        </p>
+                    </div>
+
+                    <!-- Test Button & Status -->
+                    <div class="mt-4 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-700/20">
+                        <div id="notivgoTestResult" class="text-xs font-medium text-gray-500 flex items-center gap-2">
+                            <span>Status: Siap diuji coba</span>
+                        </div>
+                        <button type="button" id="btnTestNotivgo" onclick="testNotivgoConnection()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-900 text-white transition flex items-center gap-2 shadow-sm">
+                            <i class="fas fa-plug"></i> Test Koneksi NotivGo
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COD -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-hand-holding-usd"></i> Bayar di Tempat (COD)
+                </div>
+                <div class="payment-glass">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800 text-sm">Cash on Delivery (COD)</div>
+                                <div class="text-xs text-gray-400">Bayar saat barang diterima</div>
+                            </div>
+                        </div>
+                        <label class="premium-toggle">
+                            <input type="checkbox" name="payment_cod_enabled" value="1" {{ 'checked' if settings.get('payment_cod_enabled') in ('1', 'true') }} onchange="toggleCodOptions(this)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div id="codOptions" class="grid grid-cols-1 md:grid-cols-2 gap-4 {{ 'hidden' if settings.get('payment_cod_enabled') not in ('1', 'true') else '' }}">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Biaya Tambahan COD</label>
+                            <div class="flex">
+                                <span class="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-700/50 rounded-l-lg text-gray-400 text-sm">Rp</span>
+                                <input type="number" name="cod_fee" class="premium-input rounded-l-none" value="{{ settings.get('cod_fee', '0') }}" min="0" step="500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Maksimal Nilai Pesanan COD</label>
+                            <div class="flex">
+                                <span class="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-700/50 rounded-l-lg text-gray-400 text-sm">Rp</span>
+                                <input type="number" name="cod_max_order" class="premium-input rounded-l-none" value="{{ settings.get('cod_max_order', '0') }}" min="0" step="10000" placeholder="0 = tidak ada batas">
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Kota/Area yang Mendukung COD</label>
+                            <input type="text" name="cod_areas" class="premium-input" value="{{ settings.get('cod_areas', '') }}" placeholder="Makassar, Gowa, Maros, Takalar (kosongkan = semua area)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="reset" class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-white border border-gray-700/50 hover:bg-dark-800/50 transition">Reset</button>
+                <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-sm">
+                    <i class="fas fa-save mr-2"></i>Simpan Pengaturan Pembayaran
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB NOTIFIKASI -->
+    <!-- ============================================================ -->
+    <div x-show="activeTab === 'notifications'" x-transition:enter="fade-enter" x-transition:enter-start="fade-enter" x-transition:enter-end="fade-enter-active" style="display:none;">
+        <form method="POST" action="{{ url_for('admin_settings') }}" id="formNotif">
+            <input type="hidden" name="tab" value="notifications">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- TELEGRAM NOTIFICATIONS -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fab fa-telegram-plane"></i> Notifikasi Telegram
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Bot Token</label>
+                    <input type="password" name="telegram_bot_token" class="premium-input" value="{{ settings.get('telegram_bot_token', '') }}" placeholder="123456:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg">
+                    <p class="text-xs text-gray-400 mt-1">Dapatkan dari <a href="https://t.me/botfather" target="_blank" class="text-blue-600 hover:underline">@BotFather</a></p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Chat ID Admin</label>
+                    <input type="text" name="telegram_chat_id" class="premium-input" value="{{ settings.get('telegram_chat_id', '') }}" placeholder="123456789">
+                    <p class="text-xs text-gray-400 mt-1">ID Chat untuk menerima notifikasi</p>
+                </div>
+                {% set tg_notifs = [
+                    ('telegram_notif_new_order', 'Pesanan baru masuk'),
+                    ('telegram_notif_payment_received', 'Pembayaran diterima'),
+                    ('telegram_notif_order_shipped', 'Pesanan dikirim'),
+                    ('telegram_notif_order_completed', 'Pesanan selesai'),
+                ] %}
+                <div class="space-y-2">
+                    {% for key, label in tg_notifs %}
+                    <div class="notif-row">
+                        <span class="text-sm text-gray-700">{{ label }}</span>
+                        <label class="premium-toggle">
+                            <input type="checkbox" name="{{ key }}" value="1" {{ 'checked' if settings.get(key) in ('1', 'true') else '' }}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- WHATSAPP NOTIFICATIONS -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fab fa-whatsapp"></i> Notifikasi WhatsApp
+                </div>
+                {% set wa_notifs = [
+                    ('wa_notif_new_order', 'Pesanan baru masuk'),
+                    ('wa_notif_payment_received', 'Pembayaran diterima/dikonfirmasi'),
+                    ('wa_notif_order_shipped', 'Pesanan dikirim'),
+                    ('wa_notif_order_done', 'Pesanan selesai'),
+                    ('wa_notif_order_cancelled', 'Pesanan dibatalkan'),
+                ] %}
+                <div class="space-y-2">
+                    {% for key, label in wa_notifs %}
+                    <div class="notif-row">
+                        <span class="text-sm text-gray-700">{{ label }}</span>
+                        <label class="premium-toggle">
+                            <input type="checkbox" name="{{ key }}" value="1" {{ 'checked' if settings.get(key) in ('1', 'true') }}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-envelope"></i> Notifikasi Email
+                </div>
+                {% set email_notifs = [
+                    ('email_notif_new_order', 'Pesanan baru (ke admin)'),
+                    ('email_notif_to_buyer', 'Konfirmasi pesanan (ke pembeli)'),
+                    ('email_notif_shipped', 'Pesanan dikirim (ke pembeli)'),
+                ] %}
+                <div class="space-y-2">
+                    {% for key, label in email_notifs %}
+                    <div class="notif-row">
+                        <span class="text-sm text-gray-700">{{ label }}</span>
+                        <label class="premium-toggle">
+                            <input type="checkbox" name="{{ key }}" value="1" {{ 'checked' if settings.get(key) in ('1', 'true') }}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-sm">
+                    <i class="fas fa-save mr-2"></i>Simpan Notifikasi
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB OPENROUTER -->
+    <!-- ============================================================ -->
+    <div x-show="activeTab === 'openrouter'" x-transition:enter="fade-enter" x-transition:enter-start="fade-enter" x-transition:enter-end="fade-enter-active" style="display:none;">
+        <form method="POST" action="{{ url_for('admin_settings') }}" id="formOpenRouter">
+            <input type="hidden" name="tab" value="openrouter">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- OpenRouter Configuration -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-robot"></i> Konfigurasi OpenRouter API
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
+                    <div class="p-3 rounded-lg" :class="{{ 'true' if settings.get('openrouter_enabled') in ('1', 'true') else 'false' }} ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'">
+                        <span class="text-sm" :class="{{ 'true' if settings.get('openrouter_enabled') in ('1', 'true') else 'false' }} ? 'text-green-700' : 'text-red-700'">
+                            <i :class="{{ 'true' if settings.get('openrouter_enabled') in ('1', 'true') else 'false' }} ? 'fas fa-check-circle' : 'fas fa-times-circle'" class="mr-2"></i>
+                            {{ 'Aktif' if settings.get('openrouter_enabled') in ('1', 'true') else 'Tidak Aktif' }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">API Key</label>
+                    <input type="password" name="openrouter_api_key" class="premium-input" value="{{ settings.get('openrouter_api_key', '') }}" placeholder="sk-or-v1-...">
+                    <p class="text-xs text-gray-400 mt-1">Dapatkan dari <a href="https://openrouter.ai/keys" target="_blank" class="text-blue-600 hover:underline">openrouter.ai/keys</a></p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Model Default</label>
+                    <select name="openrouter_model" class="premium-input">
+                        <option value="openrouter/free" {{ 'selected' if settings.get('openrouter_model') == 'openrouter/free' }}>OpenRouter Free (Recommended)</option>
+                        <option value="anthropic/claude-3.5-sonnet" {{ 'selected' if settings.get('openrouter_model') == 'anthropic/claude-3.5-sonnet' }}>Claude 3.5 Sonnet</option>
+                        <option value="openai/gpt-4o" {{ 'selected' if settings.get('openrouter_model') == 'openai/gpt-4o' }}>GPT-4O</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">App Name</label>
+                    <input type="text" name="openrouter_app_name" class="premium-input" value="{{ settings.get('openrouter_app_name', 'ATLANTIS CELULAR') }}">
+                    <p class="text-xs text-gray-400 mt-1">Nama aplikasi untuk header X-Title</p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Site URL</label>
+                    <input type="url" name="openrouter_site_url" class="premium-input" value="{{ settings.get('openrouter_site_url', '') }}" placeholder="https://pusatgadaiidn.pythonanywhere.com">
+                    <p class="text-xs text-gray-400 mt-1">URL untuk HTTP-Referer header</p>
+                </div>
+            </div>
+
+            <!-- OpenRouter Widget Settings -->
+            <div class="admin-card p-6 mb-6">
+                <div class="section-heading">
+                    <i class="fas fa-comments"></i> Pengaturan Widget Chat
+                </div>
+
+                <div class="mb-4">
+                    <label class="flex items-center gap-3">
+                        <input type="checkbox" name="admin_ui_enable_chat_widget" value="1" {{ 'checked' if settings.get('admin_ui_enable_chat_widget') in ('1', 'true') }} class="w-4 h-4">
+                        <span class="text-sm font-semibold text-gray-700">Aktifkan Chat Widget di Admin</span>
+                    </label>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="text-sm text-gray-600 font-semibold mb-3">Notifikasi OpenRouter:</p>
+                    {% set openrouter_notifs = [
+                        ('openrouter_notify_new_order', 'Notifikasi pesanan baru'),
+                        ('openrouter_notify_status_update', 'Notifikasi update status'),
+                        ('openrouter_notify_product_update', 'Notifikasi update produk'),
+                    ] %}
+                    {% for key, label in openrouter_notifs %}
+                    <div class="notif-row">
+                        <span class="text-sm text-gray-700">{{ label }}</span>
+                        <label class="premium-toggle">
+                            <input type="checkbox" name="{{ key }}" value="1" {{ 'checked' if settings.get(key) in ('1', 'true') }}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-sm">
+                    <i class="fas fa-save mr-2"></i>Simpan Pengaturan OpenRouter
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB INTEGRASI API -->
+    <!-- ============================================================ -->
+    <div id="tab-api" x-show="activeTab === 'api'" x-transition:enter="fade-enter" x-transition:enter-start="fade-enter" x-transition:enter-end="fade-enter-active" style="display:none;">
+
+        <!-- Tambah API Key -->
+        <div class="admin-card p-6 mb-6">
+            <div class="section-heading">
+                <i class="fas fa-key"></i> API Key Partner
+            </div>
+            <p class="text-sm text-gray-400 mb-4">Buat API Key untuk mitra/partner yang ingin mengintegrasikan sistem mereka dengan {{ settings.get('store_name') or 'toko ini' }}, misalnya untuk melacak resi secara otomatis.</p>
+
+            <form method="POST" action="{{ url_for('admin_api_key_new') }}" class="mb-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" name="partner_name" class="premium-input flex-1" placeholder="Nama partner, mis. Aplikasi Mitra ABC" required>
+                    <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-sm whitespace-nowrap">
+                        <i class="fas fa-plus mr-2"></i>Buat API Key
+                    </button>
+                </div>
+                <div class="mt-3">
+                    <label class="text-xs text-gray-400">Integrasikan API Key pelacakan paket yang sudah ada (opsional — kosongkan untuk generate otomatis)</label>
+                    <input type="text" name="custom_key" class="premium-input w-full mt-1 font-mono text-xs" placeholder="dmk_...">
+                </div>
+            </form>
+        </div>
+
+        <!-- Daftar API Key -->
+        <div class="admin-card p-6 mb-6">
+            <div class="section-heading">
+                <i class="fas fa-list"></i> Daftar API Key
+            </div>
+
+            {% if api_keys %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-gray-400 border-b border-gray-100">
+                            <th class="py-2 pr-4 font-semibold">Partner</th>
+                            <th class="py-2 pr-4 font-semibold">API Key</th>
+                            <th class="py-2 pr-4 font-semibold">Status</th>
+                            <th class="py-2 pr-4 font-semibold">Terakhir Dipakai</th>
+                            <th class="py-2 pr-4 font-semibold text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for k in api_keys %}
+                        <tr class="border-b border-gray-50">
+                            <td class="py-3 pr-4 font-medium text-gray-700">{{ k.partner_name }}</td>
+                            <td class="py-3 pr-4">
+                                <div class="flex items-center gap-2">
+                                    <code class="text-xs bg-gray-50 px-2 py-1 rounded-lg text-gray-600">{{ k.masked_key() }}</code>
+                                    <button type="button" class="text-gray-400 hover:text-primary-600 transition" title="Salin API Key" onclick="copyApiKey('{{ k.key }}', this)">
+                                        <i class="fas fa-copy text-xs"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="py-3 pr-4">
+                                {% if k.is_active %}
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700">Aktif</span>
+                                {% else %}
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700">Nonaktif</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 pr-4 text-gray-400 text-xs">{{ k.last_used_at | format_datetime if k.last_used_at else '—' }}</td>
+                            <td class="py-3 pr-4">
+                                <div class="flex items-center justify-end gap-2">
+                                    <form method="POST" action="{{ url_for('admin_api_key_toggle', id=k.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 hover:bg-gray-100 text-gray-600 transition">
+                                            {{ 'Nonaktifkan' if k.is_active else 'Aktifkan' }}
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('admin_api_key_delete', id=k.id) }}" onsubmit="return confirm('Hapus API Key untuk {{ k.partner_name }}? Integrasi partner ini akan langsung berhenti berfungsi.');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="w-8 h-8 rounded-lg hover:bg-red-50 text-red-500 flex items-center justify-center transition">
+                                            <i class="fas fa-trash-alt text-xs"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-400 py-2">Belum ada API Key. Buat API Key pertama di atas untuk mulai mengintegrasikan partner.</p>
+            {% endif %}
+        </div>
+
+        <!-- Dokumentasi Endpoint -->
+        <div class="admin-card p-6 mb-6">
+            <div class="section-heading">
+                <i class="fas fa-book"></i> Dokumentasi Endpoint
+            </div>
+            <p class="text-sm text-gray-400 mb-4">Sertakan API Key pada setiap request lewat header <code class="text-xs bg-gray-50 px-1.5 py-0.5 rounded">X-API-Key</code>.</p>
+
+            <div class="mb-2">
+                <span class="inline-block px-2 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 mr-2">GET</span>
+                <code class="text-sm text-gray-700">/api/v1/shipments/&lt;resi&gt;</code>
+            </div>
+            <p class="text-xs text-gray-400 mb-3">Lacak status pengiriman berdasarkan nomor resi, lengkap dengan riwayat status.</p>
+            <pre class="bg-gray-900 text-gray-100 text-xs rounded-xl p-4 overflow-x-auto"><code>curl -X GET "{{ request.url_root.rstrip('/') }}/api/v1/shipments/RESI123456" \
+  -H "X-API-Key: dmk_xxxxxxxxxxxxxxxxxxxxxxxx"</code></pre>
+
+            <p class="text-xs text-gray-400 mt-4 mb-1">Contoh respons:</p>
+            <pre class="bg-gray-900 text-gray-100 text-xs rounded-xl p-4 overflow-x-auto"><code>{
+  "success": true,
+  "data": {
+    "tracking_number": "RESI123456",
+    "carrier": "JNE",
+    "status": "In_Transit",
+    "current_location": "Jakarta",
+    "order_number": "ORD-000123",
+    "estimated_delivery": "2026-10-01T00:00:00",
+    "history": [
+      {
+        "status": "In_Transit",
+        "status_description": "Paket sedang dikirim oleh kurir.",
+        "location": "Jakarta",
+        "event_time": "2026-09-24T10:00:00"
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL TAMBAH REKENING BANK -->
+    <!-- ============================================================ -->
+    <div x-show="showBankModal" class="fixed inset-0 z-50 flex items-center justify-center" x-cloak style="display:none;">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showBankModal = false"></div>
+        <div class="modal-glass relative w-full max-w-md mx-4 p-6" @click.away="showBankModal = false">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-university text-primary-600"></i> Tambah Rekening Bank
+                </h3>
+                <button type="button" @click="showBankModal = false" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Bank <span class="text-red-500">*</span></label>
+                    <select class="premium-input" id="addBankName" onchange="document.getElementById('otherBankWrap').style.display = this.value === 'Lainnya' ? 'block' : 'none'">
+                        <option value="">-- Pilih Bank --</option>
+                        <option>BCA</option><option>BRI</option><option>BNI</option>
+                        <option>Bank Mandiri</option><option>BSI</option>
+                        <option>CIMB Niaga</option><option>Danamon</option>
+                        <option>Permata</option><option>BTN</option><option>Lainnya</option>
+                    </select>
+                </div>
+                <div id="otherBankWrap" style="display:none">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Bank (lainnya)</label>
+                    <input type="text" class="premium-input" id="addBankNameOther" placeholder="Masukkan nama bank">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nomor Rekening <span class="text-red-500">*</span></label>
+                    <input type="text" class="premium-input" id="addAccountNumber" placeholder="Contoh: 1234567890">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Pemilik Rekening <span class="text-red-500">*</span></label>
+                    <input type="text" class="premium-input" id="addAccountHolder" placeholder="Sesuai rekening bank">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-100">
+                <button type="button" @click="showBankModal = false" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 bg-dark-800/50 hover:bg-gray-100 transition">Batal</button>
+                <button type="button" class="btn-primary px-5 py-2 rounded-lg text-sm" onclick="saveBankAccount()">
+                    <i class="fas fa-plus mr-1"></i>Tambah Rekening
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+    <script src="{{ url_for('static', filename='js/chat_widget.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/openrouter.js') }}"></script>
+<script>
+// ================================================================
+// LOGO UPLOAD
+// ================================================================
+const logoArea = document.getElementById('logoUploadArea');
+const logoInput = document.getElementById('logoInput');
+const logoPreview = document.getElementById('logoPreview');
+const logoPreviewWrap = document.getElementById('logoPreviewWrap');
+const logoPlaceholder = document.getElementById('logoPlaceholder');
+const logoRemoveBtn = document.getElementById('logoRemoveBtn');
+
+if (logoInput) {
+    logoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file terlalu besar. Maks. 2 MB.');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            logoPreview.src = ev.target.result;
+            logoPreviewWrap.style.display = 'inline-block';
+            logoPlaceholder.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+if (logoRemoveBtn) {
+    logoRemoveBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        logoPreview.src = '';
+        logoPreviewWrap.style.display = 'none';
+        logoPlaceholder.style.display = 'block';
+        logoInput.value = '';
+        document.getElementById('logoRemoveInput').value = '1';
+    });
+}
+
+// Drag & Drop
+if (logoArea) {
+    logoArea.addEventListener('dragover', e => { e.preventDefault(); logoArea.classList.add('dragover'); });
+    logoArea.addEventListener('dragleave', () => logoArea.classList.remove('dragover'));
+    logoArea.addEventListener('drop', e => {
+        e.preventDefault();
+        logoArea.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            logoInput.files = dt.files;
+            logoInput.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+// ================================================================
+// PREVIEW LOGO UPLOAD
+// ================================================================
+const pLogoArea = document.getElementById('previewLogoUploadArea');
+const pLogoInput = document.getElementById('previewLogoInput');
+const pLogoPreview = document.getElementById('previewLogoPreview');
+const pLogoPreviewWrap = document.getElementById('previewLogoPreviewWrap');
+const pLogoPlaceholder = document.getElementById('previewLogoPlaceholder');
+const pLogoRemoveBtn = document.getElementById('previewLogoRemoveBtn');
+
+if (pLogoInput) {
+    pLogoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file terlalu besar. Maks. 2 MB.');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            pLogoPreview.src = ev.target.result;
+            pLogoPreviewWrap.style.display = 'inline-block';
+            pLogoPlaceholder.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+if (pLogoRemoveBtn) {
+    pLogoRemoveBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        pLogoPreview.src = '';
+        pLogoPreviewWrap.style.display = 'none';
+        pLogoPlaceholder.style.display = 'block';
+        pLogoInput.value = '';
+        document.getElementById('previewLogoRemoveInput').value = '1';
+    });
+}
+
+// Drag & Drop for Preview Logo
+if (pLogoArea) {
+    pLogoArea.addEventListener('dragover', e => { e.preventDefault(); pLogoArea.classList.add('dragover'); });
+    pLogoArea.addEventListener('dragleave', () => pLogoArea.classList.remove('dragover'));
+    pLogoArea.addEventListener('drop', e => {
+        e.preventDefault();
+        pLogoArea.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            pLogoInput.files = dt.files;
+            pLogoInput.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+// ================================================================
+// SHIPPING TOGGLES
+// ================================================================
+function toggleCourier(key, checkbox) {
+    const card = document.getElementById('courier-' + key);
+    const services = card.querySelector('.courier-services');
+    if (checkbox.checked) {
+        card.classList.add('active');
+        card.classList.remove('inactive');
+        services.classList.remove('hidden');
+    } else {
+        card.classList.remove('active');
+        card.classList.add('inactive');
+        services.classList.add('hidden');
+    }
+}
+
+function toggleFreeShipping(cb) {
+    const el = document.getElementById('freeShippingThreshold');
+    if (cb.checked) {
+        el.style.display = '';
+        el.classList.add('fade-enter-active');
+    } else {
+        el.style.display = 'none';
+    }
+}
+
+// Init courier cards on load
+document.querySelectorAll('[id^="courier-"]').forEach(card => {
+    const toggle = card.querySelector('input[type=checkbox]');
+    if (toggle && toggle.checked) {
+        card.classList.add('active');
+        card.classList.remove('inactive');
+        const svc = card.querySelector('.courier-services');
+        if (svc) svc.classList.remove('hidden');
+    }
+});
+
+// ================================================================
+// PAYMENT TOGGLES
+// ================================================================
+function togglePaymentCard(cardId, cb) {
+    const card = document.getElementById(cardId);
+    if (card) card.style.opacity = cb.checked ? '1' : '0.5';
+}
+
+function toggleBankList() {
+    const list = document.getElementById('bankAccountsList');
+    const chevron = document.getElementById('bankChevron');
+    if (list.style.display === 'none') {
+        list.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+    } else {
+        list.style.display = 'none';
+        chevron.style.transform = 'rotate(0deg)';
+    }
+}
+
+function toggleCodOptions(cb) {
+    const el = document.getElementById('codOptions');
+    if (cb.checked) {
+        el.classList.remove('hidden');
+    } else {
+        el.classList.add('hidden');
+    }
+}
+
+// ================================================================
+// BANK ACCOUNTS JSON MANAGEMENT
+// ================================================================
+let bankAccounts = [];
+
+try {
+    const raw = document.getElementById('bankAccountsJson').value;
+    bankAccounts = JSON.parse(raw) || [];
+} catch(e) { bankAccounts = []; }
+
+function renderBankAccounts() {
+    const container = document.getElementById('bankAccountsContainer');
+    if (!container) return;
+    if (bankAccounts.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-400 py-2">Belum ada rekening. Klik "+ Tambah Rekening" untuk menambah.</p>';
+        return;
+    }
+    container.innerHTML = bankAccounts.map((acc, i) => `
+        <div class="bank-item">
+            <div class="bank-icon"><i class="fas fa-university"></i></div>
+            <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm text-gray-800">${escapeHtml(acc.bank)}</div>
+                <div class="text-xs text-gray-400">${escapeHtml(acc.number)}</div>
+                <div class="text-xs text-gray-400">a/n ${escapeHtml(acc.holder)}</div>
+            </div>
+            <button type="button" class="w-8 h-8 rounded-lg hover:bg-red-50 text-red-500 flex items-center justify-center transition" onclick="removeBankAccount(${i})">
+                <i class="fas fa-trash-alt text-xs"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+function saveBankAccount() {
+    const bankSel = document.getElementById('addBankName').value;
+    const bankOther = document.getElementById('addBankNameOther').value.trim();
+    const number = document.getElementById('addAccountNumber').value.trim();
+    const holder = document.getElementById('addAccountHolder').value.trim();
+    const bank = bankSel === 'Lainnya' ? bankOther : bankSel;
+
+    if (!bank) { alert('Pilih atau masukkan nama bank'); return; }
+    if (!number) { alert('Masukkan nomor rekening'); return; }
+    if (!holder) { alert('Masukkan nama pemilik rekening'); return; }
+
+    bankAccounts.push({ bank, number, holder });
+    document.getElementById('bankAccountsJson').value = JSON.stringify(bankAccounts);
+    renderBankAccounts();
+
+    // Close modal via Alpine event
+    window.dispatchEvent(new CustomEvent('close-bank-modal'));
+
+    // Reset fields
+    document.getElementById('addBankName').value = '';
+    document.getElementById('addBankNameOther').value = '';
+    document.getElementById('addAccountNumber').value = '';
+    document.getElementById('addAccountHolder').value = '';
+    document.getElementById('otherBankWrap').style.display = 'none';
+}
+
+function removeBankAccount(i) {
+    if (!confirm('Hapus rekening ini?')) return;
+    bankAccounts.splice(i, 1);
+    document.getElementById('bankAccountsJson').value = JSON.stringify(bankAccounts);
+    renderBankAccounts();
+}
+
+function escapeHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ================================================================
+// INTEGRASI API — salin API Key ke clipboard
+// ================================================================
+function copyApiKey(key, btn) {
+    navigator.clipboard.writeText(key).then(function() {
+        const icon = btn.querySelector('i');
+        const original = icon.className;
+        icon.className = 'fas fa-check text-xs text-green-600';
+        setTimeout(function() { icon.className = original; }, 1500);
+    }).catch(function() {
+        alert('Gagal menyalin API Key. Salin manual: ' + key);
+    });
+}
+
+// Init bank accounts
+document.addEventListener('DOMContentLoaded', function() {
+    renderBankAccounts();
+    // Init bank list visibility
+    const bankList = document.getElementById('bankAccountsList');
+    if (bankList) bankList.style.display = 'block';
+
+    // ================================================================
+    // DATE/TIME FORMAT PREVIEW
+    // ================================================================
+    function updateDateTimePreview() {
+        const dateFormat = document.querySelector('select[name="date_format"]')?.value || 'dd/MM/yyyy';
+        const timeFormat = document.querySelector('select[name="time_format"]')?.value || 'HH:mm';
+        const displayStyle = document.querySelector('input[name="date_display_style"]:checked')?.value || 'medium';
+        const timezone = document.querySelector('select[name="timezone"]')?.value || 'Asia/Jakarta';
+
+        const sampleDate = new Date('2026-06-06T15:30:45Z');
+
+        const dateParts = new Intl.DateTimeFormat('id-ID', {
+            timeZone: timezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(sampleDate);
+
+        const timeParts = new Intl.DateTimeFormat('id-ID', {
+            timeZone: timezone,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).formatToParts(sampleDate);
+
+        const partsMap = (parts) => parts.reduce((acc, part) => {
+            if (part.type !== 'literal') acc[part.type] = part.value;
+            return acc;
+        }, {});
+
+        const dateValues = partsMap(dateParts);
+        const timeValues = partsMap(timeParts);
+
+        const d = dateValues.day || '06';
+        const m = dateValues.month || '06';
+        const y = dateValues.year || '2026';
+        const h = timeValues.hour || '15';
+        const min = timeValues.minute || '30';
+        const sec = timeValues.second || '45';
+
+        let formattedDate = '';
+        if (dateFormat === 'dd/MM/yyyy') {
+            formattedDate = `${d}/${m}/${y}`;
+        } else if (dateFormat === 'dd-MM-yyyy') {
+            formattedDate = `${d}-${m}-${y}`;
+        } else if (dateFormat === 'dd.MM.yyyy') {
+            formattedDate = `${d}.${m}.${y}`;
+        } else if (dateFormat === 'yyyy/MM/dd') {
+            formattedDate = `${y}/${m}/${d}`;
+        } else if (dateFormat === 'MM/dd/yyyy') {
+            formattedDate = `${m}/${d}/${y}`;
+        }
+
+        let formattedTime = '';
+        if (timeFormat === 'HH:mm:ss') {
+            formattedTime = `${h}:${min}:${sec}`;
+        } else {
+            formattedTime = `${h}:${min}`;
+        }
+
+        let styledDate = formattedDate;
+        if (displayStyle === 'medium') {
+            const monthShort = new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                month: 'short'
+            }).format(sampleDate);
+            styledDate = `${monthShort} ${d}, ${y}`;
+        } else if (displayStyle === 'long') {
+            const monthLong = new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                month: 'long'
+            }).format(sampleDate);
+            styledDate = `${monthLong} ${d}, ${y}`;
+        }
+
+        const previewDate = document.getElementById('previewDate');
+        const previewTime = document.getElementById('previewTime');
+        const previewDatetime = document.getElementById('previewDatetime');
+
+        if (previewDate) previewDate.textContent = formattedDate;
+        if (previewTime) previewTime.textContent = formattedTime;
+        if (previewDatetime) previewDatetime.textContent = formattedDate + ' ' + formattedTime;
+    }
+
+    // Listen to date/time format changes
+    document.querySelectorAll('select[name="date_format"], select[name="time_format"], input[name="date_display_style"]').forEach(el => {
+        el.addEventListener('change', updateDateTimePreview);
+    });
+
+    // Initial preview
+    updateDateTimePreview();
+});
+
+// ── NotivGo Admin Functions ──────────────────────────────────────────
+function toggleSecretVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    const icon = btn.querySelector('i');
+    if (icon) {
+        icon.className = isPass ? 'fas fa-eye-slash text-xs' : 'fas fa-eye text-xs';
+    }
+}
+
+function copyWebhookUrl() {
+    const display = document.getElementById('webhookUrlDisplay');
+    if (!display) return;
+    const url = display.textContent.trim();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('URL Webhook berhasil disalin:\n' + url);
+        }).catch(() => {
+            prompt('Salin URL Webhook berikut:', url);
+        });
+    } else {
+        prompt('Salin URL Webhook berikut:', url);
+    }
+}
+
+async function testNotivgoConnection() {
+    const btn = document.getElementById('btnTestNotivgo');
+    const resultEl = document.getElementById('notivgoTestResult');
+    if (!btn || !resultEl) return;
+
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menguji...';
+    resultEl.innerHTML = '<span class="text-amber-500"><i class="fas fa-spinner fa-spin mr-1"></i> Menghubungi server NotivGo...</span>';
+
+    try {
+        const csrf = document.querySelector('input[name="csrf_token"]') ? document.querySelector('input[name="csrf_token"]').value : '';
+        const res = await fetch('/admin/api/payment/notivgo/test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf
+            }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            resultEl.innerHTML = '<span class="text-emerald-500 font-semibold"><i class="fas fa-check-circle mr-1"></i> ' + data.message + '</span>';
+        } else if (data.is_subscription_issue) {
+            resultEl.innerHTML = '<span class="text-amber-600 font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i> ' + data.message + '</span>';
+        } else {
+            resultEl.innerHTML = '<span class="text-rose-500 font-semibold"><i class="fas fa-times-circle mr-1"></i> ' + (data.message || 'Gagal terhubung') + '</span>';
+        }
+    } catch (e) {
+        resultEl.innerHTML = '<span class="text-rose-500 font-semibold"><i class="fas fa-times-circle mr-1"></i> Terjadi kesalahan koneksi ke server internal.</span>';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+    }
+}
+</script>
+{% endblock %}

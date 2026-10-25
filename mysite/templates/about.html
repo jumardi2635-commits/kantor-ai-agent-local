@@ -1,0 +1,1358 @@
+{% extends "base.html" %}
+
+{% block title %}Tentang Kami — {{ global_settings.site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════
+   ABOUT PAGE — PREMIUM RESPONSIVE EDITION
+   + Light mode overrides + bug fixes
+   ═══════════════════════════════════════════════ */
+
+.container-max {
+    max-width: var(--container-max);
+}
+
+/* ═══════════════════════════════════════════════
+   HERO
+   ═══════════════════════════════════════════════ */
+.about-hero-r {
+    position: relative;
+    min-height: 70vh;
+    background:
+        linear-gradient(180deg, rgba(2,6,23,0.75) 0%, rgba(15,23,42,0.8) 100%),
+        url('https://blogger.googleusercontent.com/')
+        center / cover no-repeat;
+    background-color: var(--bg-base);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5rem 0;
+}
+
+.about-hero-r::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgdwOc7CqamylGDRtG6MoeK') center/cover;
+    opacity: 0.035;
+    mix-blend-mode: luminosity;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.about-hero-r__particles {
+    position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    background-image:
+        radial-gradient(circle at 20% 80%, rgba(99,102,241,0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(168,85,247,0.08) 0%, transparent 40%);
+}
+
+.about-hero-r__content {
+    position: relative; z-index: 2;
+    text-align: center; max-width: 800px;
+    padding: 0 1rem;
+}
+
+.about-hero-r__eyebrow {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.18em;
+    color: var(--primary-400);
+    background: var(--primary-glow-soft);
+    border: 1px solid rgba(99,102,241,0.25);
+    padding: 0.5rem 1.1rem; border-radius: var(--r-full);
+    margin-bottom: 1.75rem; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+
+.about-hero-r__title {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 800;
+    font-size: clamp(2rem, 5.5vw, 4rem); line-height: 1.05; letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #ffffff 20%, #c4b5fd 50%, #93c5fd 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 1.25rem;
+    filter: drop-shadow(0 2px 12px rgba(0,0,0,0.35));
+}
+
+.about-hero-r__subtitle {
+    font-size: clamp(0.95rem, 1.6vw, 1.2rem);
+    color: rgba(226, 232, 240, 0.88);
+    line-height: 1.75; max-width: 560px;
+    margin: 0 auto 2rem;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.about-hero-r__actions {
+    display: flex; gap: 0.75rem;
+    justify-content: center; flex-wrap: wrap;
+}
+
+.about-hero-r__scroll {
+    position: absolute; bottom: 2rem; left: 50%;
+    transform: translateX(-50%);
+    width: 26px; height: 42px;
+    border: 2px solid rgba(255,255,255,0.25);
+    border-radius: 13px;
+    display: grid; place-items: start center;
+    padding-top: 8px;
+    z-index: 2;
+}
+.about-hero-r__scroll::after {
+    content: ''; width: 4px; height: 8px;
+    background: var(--primary-400); border-radius: 2px;
+    animation: scrollDrop 2.2s ease-in-out infinite;
+}
+@keyframes scrollDrop {
+    0%, 100% { transform: translateY(0); opacity: 1; }
+    80% { transform: translateY(14px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════
+   STATS
+   ═══════════════════════════════════════════════ */
+.stats-r {
+    position: relative;
+    padding: 3rem 0 5rem;
+    margin-top: -3.5rem;
+    z-index: 3;
+}
+.stats-r__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+.stat-r {
+    background: linear-gradient(180deg, rgba(15,23,42,0.95), rgba(11,17,32,0.9));
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    padding: 2rem 1.25rem;
+    text-align: center;
+    position: relative; overflow: hidden;
+    transition: all 0.4s var(--ease-out-expo);
+}
+.stat-r::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
+    transform: scaleX(0);
+    transition: transform 0.4s var(--ease-out-expo);
+}
+.stat-r:hover { transform: translateY(-6px); border-color: var(--border-strong); box-shadow: var(--shadow-lg); }
+.stat-r:hover::before { transform: scaleX(1); }
+.stat-r__icon {
+    width: 48px; height: 48px; border-radius: var(--r-md);
+    background: linear-gradient(135deg, var(--primary-glow-soft), rgba(168,85,247,0.10));
+    display: grid; place-items: center;
+    margin: 0 auto 1rem;
+    color: var(--primary-400); font-size: 1.25rem;
+}
+.stat-r__num {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 800;
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    background: linear-gradient(135deg, var(--primary-400), var(--secondary-500));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1; margin-bottom: 0.5rem;
+}
+.stat-r__label {
+    font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+    font-weight: 700; color: var(--text-secondary);
+}
+.stat-r__desc {
+    font-size: 0.75rem; color: var(--text-tertiary);
+    margin-top: 0.35rem; line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════════
+   SECTION HEADER
+   ═══════════════════════════════════════════════ */
+.sec-header-r {
+    text-align: center; max-width: 640px;
+    margin: 0 auto 3.5rem; padding: 0 1rem;
+}
+.sec-header-r__eyebrow {
+    display: inline-block;
+    font-size: 0.7rem; font-weight: 800; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--primary-400);
+    background: var(--primary-glow-soft);
+    border: 1px solid rgba(99,102,241,0.2);
+    padding: 0.4rem 1rem; border-radius: var(--r-full);
+    margin-bottom: 1rem;
+}
+.sec-header-r__title {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+    font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+    color: var(--text-primary); line-height: 1.15;
+    margin-bottom: 0.75rem;
+}
+.sec-header-r__desc {
+    color: var(--text-tertiary);
+    font-size: clamp(0.9rem, 1.4vw, 1.05rem);
+    line-height: 1.7;
+}
+
+/* ═══════════════════════════════════════════════
+   STORY / TIMELINE
+   ═══════════════════════════════════════════════ */
+.story-r { padding: 5rem 0; position: relative; }
+.timeline-r {
+    position: relative; max-width: 850px;
+    margin: 0 auto; padding-left: 1.5rem;
+}
+.timeline-r::before {
+    content: ''; position: absolute;
+    left: 0; top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(180deg, var(--primary-500), var(--secondary-500), transparent);
+    border-radius: var(--r-full);
+}
+.timeline-r__item {
+    position: relative;
+    padding-left: 2.5rem;
+    padding-bottom: 3rem;
+}
+.timeline-r__item:last-child { padding-bottom: 0; }
+.timeline-r__dot {
+    position: absolute;
+    left: -1.5rem; top: 0.35rem;
+    width: 14px; height: 14px;
+    background: var(--bg-base);
+    border: 3px solid var(--primary-500);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px var(--primary-glow-soft), 0 0 16px var(--primary-glow);
+}
+.timeline-r__card {
+    background: linear-gradient(180deg, rgba(15,23,42,0.85), rgba(11,17,32,0.75));
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    padding: 1.5rem 1.75rem;
+    transition: all 0.35s var(--ease-out-expo);
+}
+.timeline-r__card:hover {
+    border-color: var(--border-strong);
+    transform: translateX(5px);
+    box-shadow: var(--shadow-md);
+}
+.timeline-r__year {
+    display: inline-block;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+    font-size: 0.75rem; color: var(--primary-400);
+    background: var(--primary-glow-soft);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--r-xs);
+    margin-bottom: 0.6rem;
+}
+.timeline-r__title {
+    font-size: 1.1rem; font-weight: 700;
+    color: var(--text-primary); margin-bottom: 0.4rem;
+}
+.timeline-r__text {
+    color: var(--text-tertiary);
+    font-size: 0.9rem; line-height: 1.7;
+}
+
+/* ═══════════════════════════════════════════════
+   DISCLOSURE — DASAR HUKUM & MODEL BISNIS
+   ═══════════════════════════════════════════════ */
+.disclosure-r {
+    padding: 3rem 0 5rem;
+    position: relative;
+}
+.disclosure-r__card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(217,119,6,0.10), rgba(245,158,11,0.05));
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(245,158,11,0.28);
+    border-radius: var(--r-xl);
+    padding: 2.5rem;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: all 0.4s var(--ease-out-expo);
+}
+.disclosure-r__card::before {
+    content: ''; position: absolute;
+    top: -50%; right: -15%; width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(245,158,11,0.15), transparent 70%);
+    pointer-events: none;
+}
+.disclosure-r__card::after {
+    content: ''; position: absolute;
+    top: 0; left: 6%; right: 6%; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(245,158,11,0.4), transparent);
+    border-radius: inherit;
+}
+.disclosure-r__card:hover {
+    border-color: rgba(245,158,11,0.45);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 60px rgba(245,158,11,0.10), inset 0 1px 0 rgba(255,255,255,0.08);
+    transform: translateY(-4px);
+}
+.disclosure-r__header {
+    position: relative; z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+.disclosure-r__icon-wrap {
+    width: 60px; height: 60px;
+    border-radius: var(--r-lg);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    display: grid; place-items: center;
+    color: #fff; font-size: 1.75rem;
+    flex-shrink: 0;
+    box-shadow: 0 8px 24px rgba(245,158,11,0.30), inset 0 1.5px 0 rgba(255,255,255,0.4);
+}
+.disclosure-r__title-wrap { flex: 1; }
+.disclosure-r__eyebrow {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.68rem; font-weight: 800; letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #fbbf24;
+    background: rgba(245,158,11,0.15);
+    border: 1px solid rgba(245,158,11,0.30);
+    padding: 0.3rem 0.85rem; border-radius: var(--r-full);
+    margin-bottom: 0.65rem;
+}
+.disclosure-r__title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.3rem, 2.6vw, 1.85rem);
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.02em;
+}
+.disclosure-r__lead {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0;
+}
+.disclosure-r__body {
+    position: relative; z-index: 1;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.8;
+    margin-bottom: 2rem;
+}
+.disclosure-r__body p { margin: 0 0 0.85rem; }
+.disclosure-r__body p:last-child { margin-bottom: 0; }
+.disclosure-r__body strong {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+.disclosure-r__body em {
+    color: #fbbf24;
+    font-style: normal;
+    font-weight: 700;
+}
+.disclosure-r__body mark {
+    background: rgba(245,158,11,0.18);
+    color: #fbbf24;
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--r-xs);
+    font-weight: 600;
+}
+
+/* 4 pilar mini-info */
+.disclosure-r__pillars {
+    position: relative; z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+.disclosure-pillar {
+    background: rgba(15,23,42,0.55);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(245,158,11,0.15);
+    border-radius: var(--r-lg);
+    padding: 1.25rem 1.1rem;
+    position: relative;
+    transition: all 0.35s var(--ease-out-expo);
+}
+.disclosure-pillar:hover {
+    border-color: rgba(245,158,11,0.35);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.20);
+}
+.disclosure-pillar__num {
+    position: absolute;
+    top: 0.7rem; right: 0.85rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 800;
+    font-size: 0.62rem;
+    letter-spacing: 0.05em;
+    color: #fbbf24;
+    opacity: 0.55;
+    pointer-events: none;
+}
+.disclosure-pillar__icon {
+    width: 40px; height: 40px;
+    border-radius: var(--r-md);
+    background: linear-gradient(135deg, rgba(245,158,11,0.20), rgba(217,119,6,0.10));
+    display: grid; place-items: center;
+    color: #fbbf24; font-size: 1.1rem;
+    margin-bottom: 0.85rem;
+    border: 1px solid rgba(245,158,11,0.15);
+}
+.disclosure-pillar__title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 0.88rem;
+    color: var(--text-primary);
+    margin-bottom: 0.35rem;
+    line-height: 1.3;
+    padding-right: 1.5rem;
+}
+.disclosure-pillar__text {
+    font-size: 0.76rem;
+    color: var(--text-tertiary);
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* Komitmen Kami */
+.disclosure-r__commitment {
+    position: relative;
+    z-index: 1;
+    margin-top: 1.5rem;
+    padding: 1.5rem 1.25rem;
+    background: rgba(15,23,42,0.5);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(245,158,11,0.18);
+    border-radius: var(--r-lg);
+    text-align: center;
+}
+.disclosure-r__commitment-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+}
+.disclosure-r__commitment-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.disclosure-r__commitment-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fbbf24;
+    background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.25);
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--r-full);
+    letter-spacing: 0.02em;
+}
+.disclosure-r__commitment-text {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    margin: 0 auto 1rem;
+    max-width: 720px;
+}
+.disclosure-r__note {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    text-align: left;
+    color: var(--text-tertiary);
+    font-size: 0.76rem;
+    line-height: 1.55;
+    padding: 0.7rem 0.95rem;
+    background: rgba(15,23,42,0.4);
+    border: 1px dashed rgba(245,158,11,0.22);
+    border-radius: var(--r-md);
+    max-width: 720px;
+    margin: 0 auto;
+}
+.disclosure-r__note i {
+    color: #fbbf24;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    font-size: 0.9rem;
+}
+
+/* ═══════════════════════════════════════════════
+   VALUES
+   ═══════════════════════════════════════════════ */
+.values-r { padding: 5rem 0; position: relative; }
+.values-r::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(99,102,241,0.06), transparent);
+    pointer-events: none;
+}
+.values-r__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+}
+.value-r {
+    background: linear-gradient(180deg, rgba(15,23,42,0.75), rgba(11,17,32,0.65));
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    padding: 2rem 1.75rem;
+    position: relative; overflow: hidden;
+    transition: all 0.4s var(--ease-out-expo);
+}
+.value-r::after {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
+    opacity: 0; transition: opacity 0.3s;
+}
+.value-r:hover {
+    transform: translateY(-8px);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+.value-r:hover::after { opacity: 1; }
+.value-r__icon {
+    width: 52px; height: 52px; border-radius: var(--r-lg);
+    background: linear-gradient(135deg, var(--primary-glow-soft), rgba(168,85,247,0.10));
+    display: grid; place-items: center;
+    font-size: 1.4rem; color: var(--primary-400);
+    margin-bottom: 1.25rem;
+    box-shadow: 0 8px 24px var(--primary-glow-soft);
+}
+.value-r__title {
+    font-size: 1.05rem; font-weight: 700;
+    color: var(--text-primary); margin-bottom: 0.6rem;
+}
+.value-r__desc {
+    color: var(--text-tertiary);
+    font-size: 0.88rem; line-height: 1.7;
+}
+
+/* ═══════════════════════════════════════════════
+   PROCESS
+   ═══════════════════════════════════════════════ */
+.process-r { padding: 5rem 0; position: relative; overflow: hidden; }
+.process-r__grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+    position: relative;
+    max-width: 1100px; margin: 0 auto;
+}
+.process-r__connector {
+    position: absolute;
+    top: 2.25rem; left: 10%; right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
+    opacity: 0.25; z-index: 0;
+}
+.process-r__step {
+    position: relative; z-index: 1;
+    text-align: center; padding: 0 0.25rem;
+}
+.process-r__num {
+    width: 48px; height: 48px;
+    border-radius: var(--r-full);
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    color: white;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 800; font-size: 1rem;
+    display: grid; place-items: center;
+    margin: 0 auto 1rem;
+    box-shadow: 0 8px 24px var(--primary-glow-soft);
+    position: relative;
+}
+.process-r__num::after {
+    content: ''; position: absolute; inset: -5px;
+    border-radius: inherit;
+    border: 2px solid var(--primary-500);
+    opacity: 0.25;
+    animation: processPulse 3s ease-in-out infinite;
+}
+@keyframes processPulse {
+    0%, 100% { transform: scale(1); opacity: 0.25; }
+    50% { transform: scale(1.12); opacity: 0; }
+}
+.process-r__title {
+    font-size: 0.95rem; font-weight: 700;
+    color: var(--text-primary); margin-bottom: 0.4rem;
+}
+.process-r__desc {
+    color: var(--text-tertiary);
+    font-size: 0.82rem; line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════════
+   CTA
+   ═══════════════════════════════════════════════ */
+.cta-r { padding: 2rem 0 5rem; }
+.cta-r__card {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.07));
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: var(--r-xl);
+    padding: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2.5rem;
+}
+.cta-r__card::before {
+    content: ''; position: absolute;
+    top: -40%; right: -15%; width: 450px; height: 450px;
+    background: radial-gradient(circle, var(--primary-glow), transparent 70%);
+    pointer-events: none;
+}
+.cta-r__content { position: relative; z-index: 2; max-width: 480px; }
+.cta-r__title {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+    font-size: clamp(1.4rem, 2.8vw, 2rem);
+    color: var(--text-primary); line-height: 1.2;
+    margin-bottom: 0.75rem;
+}
+.cta-r__desc {
+    color: var(--text-tertiary);
+    font-size: clamp(0.9rem, 1.3vw, 1.05rem);
+    line-height: 1.7; margin-bottom: 1.75rem;
+}
+.cta-r__visual {
+    position: relative;
+    width: 160px; height: 160px;
+    flex-shrink: 0;
+    display: grid; place-items: center;
+}
+.cta-r__orbit {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(99,102,241,0.18);
+    animation: orbitSpin 22s linear infinite;
+}
+.cta-r__orbit::after {
+    content: ''; position: absolute;
+    top: -5px; left: 50%; transform: translateX(-50%);
+    width: 10px; height: 10px;
+    background: var(--primary-500);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--primary-glow);
+}
+.cta-r__orbit--2 {
+    inset: 18px;
+    border-color: rgba(168,85,247,0.15);
+    animation-duration: 16s;
+    animation-direction: reverse;
+}
+.cta-r__orbit--2::after {
+    background: var(--secondary-500);
+    box-shadow: 0 0 10px var(--primary-glow-soft);
+}
+.cta-r__center {
+    width: 72px; height: 72px;
+    border-radius: var(--r-full);
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    display: grid; place-items: center;
+    color: white; font-size: 1.75rem;
+    box-shadow: 0 12px 40px var(--primary-glow);
+}
+@keyframes orbitSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ═══════════════════════════════════════════════ */
+@media (max-width: 1199px) {
+    .stats-r__grid { grid-template-columns: repeat(2, 1fr); }
+    .values-r__grid { grid-template-columns: repeat(2, 1fr); }
+    .process-r__grid { grid-template-columns: repeat(3, 1fr); gap: 1.5rem 0.75rem; }
+    .process-r__connector { display: none; }
+    .cta-r__card { padding: 2.5rem; gap: 2rem; }
+    .disclosure-r__pillars { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 991px) {
+    .about-hero-r { min-height: 70vh; padding: 7rem 1rem 4rem; }
+    .about-hero-r__title { font-size: clamp(1.8rem, 6vw, 2.8rem); }
+    .stats-r { margin-top: -2rem; padding-bottom: 4rem; }
+    .stats-r__grid { gap: 0.875rem; }
+    .stat-r { padding: 1.75rem 1rem; }
+    .story-r { padding: 4rem 0; }
+    .timeline-r { padding-left: 1.25rem; }
+    .timeline-r__item { padding-left: 2rem; padding-bottom: 2.5rem; }
+    .timeline-r__dot { left: -1.35rem; width: 12px; height: 12px; border-width: 2.5px; }
+    .timeline-r__card { padding: 1.25rem 1.5rem; }
+
+    .disclosure-r { padding: 2rem 0 4rem; }
+    .disclosure-r__card { padding: 2rem; }
+    .disclosure-r__header { flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+    .disclosure-r__icon-wrap { width: 52px; height: 52px; font-size: 1.5rem; }
+    .disclosure-r__pillars { grid-template-columns: repeat(2, 1fr); gap: 0.85rem; }
+    .disclosure-pillar { padding: 1.1rem 1rem; }
+
+    .values-r { padding: 4rem 0; }
+    .value-r { padding: 1.75rem 1.5rem; }
+    .process-r { padding: 4rem 0; }
+    .process-r__grid { grid-template-columns: repeat(3, 1fr); }
+    .cta-r__card { flex-direction: column; text-align: center; padding: 2.5rem 2rem; }
+    .cta-r__visual { margin-top: 1rem; width: 140px; height: 140px; }
+    .cta-r__orbit { animation-duration: 18s; }
+    .cta-r__center { width: 64px; height: 64px; font-size: 1.5rem; }
+}
+
+@media (max-width: 767px) {
+    .stats-r__grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-r__num { font-size: 1.6rem; }
+    .disclosure-r__card { padding: 1.5rem; }
+    .disclosure-r__title { font-size: 1.3rem; }
+    .disclosure-r__body { font-size: 0.88rem; line-height: 1.7; }
+    .disclosure-r__pillars { grid-template-columns: 1fr; gap: 0.75rem; }
+    .disclosure-pillar {
+        display: flex; align-items: flex-start; gap: 0.85rem;
+        padding: 1rem;
+    }
+    .disclosure-pillar__num { display: none; }
+    .disclosure-pillar__icon {
+        width: 36px; height: 36px; font-size: 1rem;
+        margin-bottom: 0; flex-shrink: 0;
+    }
+    .disclosure-pillar__content { flex: 1; }
+    .disclosure-pillar__title { font-size: 0.85rem; margin-bottom: 0.25rem; padding-right: 0; }
+    .disclosure-pillar__text { font-size: 0.75rem; }
+
+    .disclosure-r__commitment { padding: 1.25rem 1rem; }
+    .disclosure-r__commitment-title { font-size: 0.92rem; }
+    .disclosure-r__commitment-tag { font-size: 0.68rem; padding: 0.3rem 0.7rem; }
+    .disclosure-r__commitment-text { font-size: 0.8rem; }
+    .disclosure-r__note { font-size: 0.72rem; padding: 0.6rem 0.8rem; }
+
+    .values-r__grid { grid-template-columns: 1fr; gap: 1rem; }
+    .value-r { padding: 1.5rem; }
+    .value-r__icon { width: 48px; height: 48px; font-size: 1.25rem; margin-bottom: 1rem; }
+    .process-r__grid { grid-template-columns: repeat(2, 1fr); gap: 2rem 1rem; }
+    .process-r__num { width: 44px; height: 44px; font-size: 0.9rem; margin-bottom: 0.75rem; }
+    .process-r__num::after { inset: -4px; }
+    .process-r__title { font-size: 0.9rem; }
+    .process-r__desc { font-size: 0.8rem; }
+    .timeline-r__card:hover { transform: translateX(3px); }
+    .sec-header-r { margin-bottom: 2.5rem; }
+}
+
+@media (max-width: 575px) {
+    .about-hero-r { padding: 6rem 0.75rem 3rem; }
+    .about-hero-r__eyebrow { font-size: 0.65rem; padding: 0.4rem 0.9rem; margin-bottom: 1.25rem; }
+    .about-hero-r__title { font-size: 1.7rem; letter-spacing: -0.02em; }
+    .about-hero-r__subtitle { font-size: 0.9rem; line-height: 1.65; }
+    .about-hero-r__actions { flex-direction: column; gap: 0.6rem; }
+    .about-hero-r__actions .btn { width: 100%; justify-content: center; }
+    .about-hero-r__scroll { display: none; }
+
+    .stats-r { margin-top: -1.5rem; padding: 2rem 0 3rem; }
+    .stats-r__grid { grid-template-columns: 1fr; gap: 0.75rem; }
+    .stat-r { padding: 1.5rem 1.25rem; display: flex; align-items: center; gap: 1rem; text-align: left; }
+    .stat-r__icon { margin: 0; width: 44px; height: 44px; font-size: 1.1rem; flex-shrink: 0; }
+    .stat-r__meta { flex: 1; }
+    .stat-r__num { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .stat-r__label { font-size: 0.8rem; }
+    .stat-r__desc { font-size: 0.7rem; margin-top: 0.15rem; }
+
+    .story-r { padding: 3rem 0; }
+    .timeline-r { padding-left: 0.75rem; }
+    .timeline-r__item { padding-left: 1.5rem; padding-bottom: 2rem; }
+    .timeline-r__dot { left: -0.6rem; top: 0.4rem; width: 11px; height: 11px; border-width: 2.5px; box-shadow: 0 0 0 3px var(--primary-glow-soft); }
+    .timeline-r::before { left: -0.05rem; }
+    .timeline-r__card { padding: 1.25rem; border-radius: var(--r-md); }
+    .timeline-r__card:hover { transform: none; }
+    .timeline-r__year { font-size: 0.7rem; padding: 0.2rem 0.6rem; }
+    .timeline-r__title { font-size: 1rem; }
+    .timeline-r__text { font-size: 0.85rem; line-height: 1.65; }
+
+    .disclosure-r { padding: 1.5rem 0 3rem; }
+    .disclosure-r__card { padding: 1.25rem; border-radius: var(--r-lg); }
+    .disclosure-r__card:hover { transform: none; }
+    .disclosure-r__icon-wrap { width: 44px; height: 44px; font-size: 1.25rem; }
+    .disclosure-r__eyebrow { font-size: 0.6rem; padding: 0.25rem 0.7rem; letter-spacing: 0.12em; }
+    .disclosure-r__title { font-size: 1.15rem; line-height: 1.25; }
+    .disclosure-r__lead { font-size: 0.83rem; }
+    .disclosure-r__body { font-size: 0.85rem; line-height: 1.65; margin-bottom: 1.5rem; }
+    .disclosure-pillar { padding: 0.85rem; }
+    .disclosure-pillar__icon { width: 32px; height: 32px; font-size: 0.9rem; }
+    .disclosure-pillar__title { font-size: 0.8rem; }
+    .disclosure-pillar__text { font-size: 0.72rem; }
+
+    .disclosure-r__commitment { padding: 1rem 0.85rem; margin-top: 1.1rem; }
+    .disclosure-r__commitment-title { font-size: 0.85rem; margin-bottom: 0.6rem; }
+    .disclosure-r__commitment-tag { font-size: 0.65rem; padding: 0.28rem 0.65rem; }
+    .disclosure-r__commitment-text { font-size: 0.75rem; line-height: 1.6; margin-bottom: 0.75rem; }
+    .disclosure-r__note { font-size: 0.7rem; padding: 0.55rem 0.7rem; }
+
+    .values-r { padding: 3rem 0; }
+    .values-r__grid { gap: 0.875rem; }
+    .value-r { padding: 1.5rem; border-radius: var(--r-lg); }
+    .value-r:hover { transform: translateY(-4px); }
+    .value-r__icon { width: 44px; height: 44px; font-size: 1.2rem; border-radius: var(--r-md); }
+    .value-r__title { font-size: 1rem; }
+    .value-r__desc { font-size: 0.85rem; }
+
+    .process-r { padding: 3rem 0; }
+    .process-r__grid { grid-template-columns: 1fr; gap: 1.75rem; max-width: 400px; }
+    .process-r__step { display: flex; align-items: flex-start; gap: 1rem; text-align: left; padding: 0; }
+    .process-r__num { margin: 0; width: 40px; height: 40px; font-size: 0.85rem; flex-shrink: 0; }
+    .process-r__num::after { inset: -4px; animation: none; }
+    .process-r__body { flex: 1; padding-top: 0.25rem; }
+    .process-r__title { font-size: 1rem; margin-bottom: 0.3rem; }
+    .process-r__desc { font-size: 0.85rem; }
+
+    .cta-r { padding: 1rem 0 4rem; }
+    .cta-r__card { padding: 2rem 1.25rem; border-radius: var(--r-lg); gap: 1.5rem; }
+    .cta-r__title { font-size: 1.3rem; }
+    .cta-r__desc { font-size: 0.9rem; margin-bottom: 1.25rem; }
+    .cta-r__actions { flex-direction: column; gap: 0.6rem; }
+    .cta-r__actions .btn { width: 100%; justify-content: center; }
+    .cta-r__visual { width: 120px; height: 120px; }
+    .cta-r__orbit { border-width: 1.5px; }
+    .cta-r__orbit--2 { inset: 14px; }
+    .cta-r__center { width: 56px; height: 56px; font-size: 1.35rem; }
+
+    .sec-header-r { margin-bottom: 2rem; }
+    .sec-header-r__eyebrow { font-size: 0.65rem; padding: 0.35rem 0.85rem; }
+    .sec-header-r__title { font-size: 1.4rem; }
+    .sec-header-r__desc { font-size: 0.9rem; }
+}
+
+@media (max-width: 360px) {
+    .about-hero-r__title { font-size: 1.5rem; }
+    .stat-r { padding: 1.25rem 1rem; }
+    .stat-r__icon { width: 40px; height: 40px; font-size: 1rem; }
+    .stat-r__num { font-size: 1.35rem; }
+    .timeline-r__card { padding: 1rem; }
+    .value-r { padding: 1.25rem; }
+    .process-r__step { gap: 0.75rem; }
+    .cta-r__card { padding: 1.5rem 1rem; }
+    .disclosure-r__card { padding: 1rem; }
+    .disclosure-r__icon-wrap { width: 40px; height: 40px; font-size: 1.1rem; }
+    .disclosure-r__title { font-size: 1.05rem; }
+    .disclosure-r__commitment { padding: 0.9rem 0.7rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHT MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── HERO ── */
+html[data-theme="light"] .about-hero-r {
+    background:
+        linear-gradient(180deg, rgba(15,23,42,0.60) 0%, rgba(30,41,59,0.72) 100%),
+        url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgdwOc7CqamylGDRtG6MoeK_2YVOLA2rrescRge-wSGmyQXPpk4J8RyZ5McmYM4Oisk8Tu1bPpsd9xBhyphenhyphensN4HR2iI2OTZKufaYJ-iQhbLsVG19ZcWP-eN68UUeADwBUzT7PhX3Uh-QhQ9-N08AwvV85bpxnV-VlkX6so6MiTAsA0t3xEPr1ntJRlMBYOB4/s320/Pusat-Gadai.jpg')
+        center / cover no-repeat;
+    background-color: #cbd5e1;
+}
+
+/* ── STATS CARD ── */
+html[data-theme="light"] .stat-r {
+    background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(241,245,249,0.82));
+    border: 1px solid rgba(255,255,255,0.85);
+    box-shadow: 0 8px 24px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,1);
+}
+html[data-theme="light"] .stat-r:hover {
+    border-color: rgba(10,132,255,0.25);
+    box-shadow: 0 16px 40px rgba(15,23,42,0.12), 0 0 40px rgba(10,132,255,0.06), inset 0 1px 0 rgba(255,255,255,1);
+}
+html[data-theme="light"] .stat-r__icon {
+    background: linear-gradient(135deg, rgba(10,132,255,0.10), rgba(168,85,247,0.06));
+}
+html[data-theme="light"] .stat-r__num {
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+html[data-theme="light"] .stat-r__label { color: var(--text-primary); }
+html[data-theme="light"] .stat-r__desc { color: var(--text-tertiary); }
+
+/* ── TIMELINE CARD ── */
+html[data-theme="light"] .timeline-r__card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(241,245,249,0.78));
+    border: 1px solid rgba(255,255,255,0.9);
+    box-shadow: 0 4px 14px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,1);
+}
+html[data-theme="light"] .timeline-r__card:hover {
+    border-color: rgba(10,132,255,0.20);
+    box-shadow: 0 12px 32px rgba(15,23,42,0.10), 0 0 32px rgba(10,132,255,0.05), inset 0 1px 0 rgba(255,255,255,1);
+}
+html[data-theme="light"] .timeline-r__dot {
+    background: #ffffff;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px rgba(10,132,255,0.10), 0 0 16px rgba(10,132,255,0.20);
+}
+html[data-theme="light"] .timeline-r__year {
+    background: rgba(10,132,255,0.08);
+    color: var(--primary-500);
+}
+
+/* ── DISCLOSURE ── */
+html[data-theme="light"] .disclosure-r__card {
+    background: linear-gradient(135deg, rgba(217,119,6,0.08), rgba(245,158,11,0.04));
+    border: 1px solid rgba(217,119,6,0.22);
+    box-shadow: 0 12px 40px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+html[data-theme="light"] .disclosure-r__card::before {
+    background: radial-gradient(circle, rgba(245,158,11,0.10), transparent 70%);
+}
+html[data-theme="light"] .disclosure-r__card::after {
+    background: linear-gradient(90deg, transparent, rgba(217,119,6,0.30), transparent);
+}
+html[data-theme="light"] .disclosure-r__card:hover {
+    border-color: rgba(217,119,6,0.35);
+    box-shadow: 0 20px 60px rgba(15,23,42,0.12), 0 0 60px rgba(245,158,11,0.08), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+html[data-theme="light"] .disclosure-r__icon-wrap {
+    box-shadow: 0 8px 24px rgba(217,119,6,0.25), inset 0 1.5px 0 rgba(255,255,255,0.5);
+}
+html[data-theme="light"] .disclosure-r__eyebrow {
+    color: #b45309;
+    background: rgba(217,119,6,0.12);
+    border-color: rgba(217,119,6,0.25);
+}
+html[data-theme="light"] .disclosure-r__body em { color: #b45309; }
+html[data-theme="light"] .disclosure-r__body mark {
+    background: rgba(217,119,6,0.15);
+    color: #92400e;
+}
+
+/* Pillars light */
+html[data-theme="light"] .disclosure-pillar {
+    background: rgba(255,255,255,0.75);
+    border: 1px solid rgba(217,119,6,0.12);
+    box-shadow: 0 2px 8px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,1);
+}
+html[data-theme="light"] .disclosure-pillar:hover {
+    border-color: rgba(217,119,6,0.30);
+    box-shadow: 0 8px 24px rgba(15,23,42,0.08), 0 0 20px rgba(245,158,11,0.05), inset 0 1px 0 rgba(255,255,255,1);
+}
+html[data-theme="light"] .disclosure-pillar__icon {
+    background: linear-gradient(135deg, rgba(217,119,6,0.15), rgba(245,158,11,0.08));
+    color: #b45309;
+    border-color: rgba(217,119,6,0.15);
+}
+html[data-theme="light"] .disclosure-pillar__num { color: #b45309; opacity: 0.6; }
+html[data-theme="light"] .disclosure-pillar__text { color: var(--text-tertiary); }
+
+/* Commitment light */
+html[data-theme="light"] .disclosure-r__commitment {
+    background: rgba(255,255,255,0.75);
+    border-color: rgba(217,119,6,0.18);
+    box-shadow: 0 2px 8px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,1);
+}
+html[data-theme="light"] .disclosure-r__commitment-tag {
+    color: #b45309;
+    background: rgba(217,119,6,0.10);
+    border-color: rgba(217,119,6,0.22);
+}
+html[data-theme="light"] .disclosure-r__note {
+    background: rgba(255,255,255,0.65);
+    border-color: rgba(217,119,6,0.22);
+    color: var(--text-tertiary);
+}
+html[data-theme="light"] .disclosure-r__note i { color: #b45309; }
+
+/* ── VALUE CARD ── */
+html[data-theme="light"] .value-r {
+    background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(241,245,249,0.75));
+    border: 1px solid rgba(255,255,255,0.9);
+    box-shadow: 0 4px 14px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,1);
+}
+html[data-theme="light"] .value-r:hover {
+    border-color: rgba(10,132,255,0.22);
+    box-shadow: 0 16px 40px rgba(15,23,42,0.12), 0 0 40px rgba(10,132,255,0.06), inset 0 1px 0 rgba(255,255,255,1);
+}
+html[data-theme="light"] .value-r__icon {
+    background: linear-gradient(135deg, rgba(10,132,255,0.10), rgba(168,85,247,0.06));
+    box-shadow: 0 8px 24px rgba(10,132,255,0.08);
+}
+
+/* ── PROCESS CARD ── */
+html[data-theme="light"] .process-r__connector {
+    background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
+    opacity: 0.20;
+}
+html[data-theme="light"] .process-r__num {
+    box-shadow: 0 8px 24px rgba(10,132,255,0.20);
+}
+html[data-theme="light"] .process-r__num::after {
+    border-color: var(--primary-500);
+    opacity: 0.20;
+}
+html[data-theme="light"] .process-r__title { color: var(--text-primary); }
+html[data-theme="light"] .process-r__desc { color: var(--text-tertiary); }
+
+/* ── CTA CARD ── */
+html[data-theme="light"] .cta-r__card {
+    background: linear-gradient(135deg, rgba(10,132,255,0.06), rgba(168,85,247,0.04));
+    border: 1px solid rgba(10,132,255,0.15);
+    box-shadow: 0 12px 40px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+html[data-theme="light"] .cta-r__card::before {
+    background: radial-gradient(circle, rgba(10,132,255,0.10), transparent 70%);
+}
+html[data-theme="light"] .cta-r__orbit {
+    border-color: rgba(10,132,255,0.22);
+}
+html[data-theme="light"] .cta-r__orbit--2 {
+    border-color: rgba(168,85,247,0.18);
+}
+
+/* ── SECTION HEADER EYEBROW ── */
+html[data-theme="light"] .sec-header-r__eyebrow {
+    background: rgba(10,132,255,0.08);
+    color: var(--primary-500);
+    border-color: rgba(10,132,255,0.18);
+}
+
+/* ── VALUES SECTION BACKGROUND GLOW ── */
+html[data-theme="light"] .values-r::before {
+    background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(10,132,255,0.05), transparent);
+}
+
+/* ── HERO EYEBROW ── */
+html[data-theme="light"] .about-hero-r__eyebrow {
+    color: #93c5fd;
+    background: rgba(10,132,255,0.18);
+    border-color: rgba(147,197,253,0.35);
+    backdrop-filter: blur(8px);
+}
+
+/* ── SCROLL INDICATOR ── */
+html[data-theme="light"] .about-hero-r__scroll {
+    border-color: rgba(255,255,255,0.35);
+}
+
+/* ── REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+    .stat-r,
+    .timeline-r__card,
+    .value-r,
+    .disclosure-r__card,
+    .disclosure-pillar,
+    .cta-r__orbit,
+    .process-r__num::after,
+    .about-hero-r__scroll::after {
+        animation: none !important;
+        transition: none !important;
+    }
+    .stat-r:hover,
+    .value-r:hover,
+    .timeline-r__card:hover,
+    .disclosure-r__card:hover,
+    .disclosure-pillar:hover {
+        transform: none;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% set whatsapp_number = get_setting('whatsapp_recipient_number', get_setting('store_whatsapp', '6289530052136')) if get_setting else '6289530052136' %}
+
+<!-- ===== HERO ===== -->
+<section class="about-hero-r">
+    <div class="about-hero-r__particles"></div>
+    <div class="about-hero-r__content reveal">
+        <span class="about-hero-r__eyebrow"><i class="bi bi-stars"></i> Our Story</span>
+        <h1 class="about-hero-r__title">Membangun Kepercayaan,<br>Satu Perangkat pada Satu Waktu</h1>
+        <p class="about-hero-r__subtitle">
+            {{ global_settings.site_name }} — Platform terpercaya untuk penebusan barang jatuh tempo dengan kualitas terjamin, bisa kredit/cicilan, harga transparan, dan pengiriman ke seluruh Indonesia sejak {{ stats.founded_year }}.
+        </p>
+        <div class="about-hero-r__actions">
+            <a href="{{ url_for('catalog') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-grid-3x3-gap me-2"></i>Jelajahi Katalog
+            </a>
+            <a href="#legal-disclosure" class="btn btn-secondary btn-lg">
+                <i class="bi bi-info-circle me-2"></i>Dasar Hukum
+            </a>
+        </div>
+    </div>
+    <div class="about-hero-r__scroll"></div>
+</section>
+
+<!-- ===== STATS ===== -->
+<section class="stats-r">
+    <div class="container container-max">
+        <div class="stats-r__grid">
+            <div class="stat-r reveal reveal-delay-1">
+                <div class="stat-r__icon"><i class="bi bi-phone-fill"></i></div>
+                <div class="stat-r__meta">
+                    <div class="stat-r__num" data-count="{{ stats.units_sold }}">0</div>
+                    <div class="stat-r__desc">Sejak berdiri pada {{ stats.founded_year }}</div>
+                </div>
+            </div>
+            <div class="stat-r reveal reveal-delay-2">
+                <div class="stat-r__icon"><i class="bi bi-emoji-smile-fill"></i></div>
+                <div class="stat-r__meta">
+                    <div class="stat-r__num" data-count="{{ stats.satisfaction_pct }}">0</div>
+                    <div class="stat-r__label">% Kepuasan Pelanggan</div>
+                    <div class="stat-r__desc">Berdasarkan {{ '{:,}'.format(stats.review_count).replace(',', '.') }}+ review</div>
+                </div>
+            </div>
+            <div class="stat-r reveal reveal-delay-3">
+                <div class="stat-r__icon"><i class="bi bi-award-fill"></i></div>
+                <div class="stat-r__meta">
+                    <div class="stat-r__num" data-count="{{ stats.years_experience }}">0</div>
+                    <div class="stat-r__label">Tahun Pengalaman</div>
+                    <div class="stat-r__desc">Dalam industri handphone bekas & baru</div>
+                </div>
+            </div>
+            <div class="stat-r reveal">
+                <div class="stat-r__icon"><i class="bi bi-shield-check"></i></div>
+                <div class="stat-r__meta">
+                    <div class="stat-r__num" data-count="{{ stats.warranty_days }}">0</div>
+                    <div class="stat-r__label">Hari Garansi</div>
+                    <div class="stat-r__desc">Uang kembali jika tidak puas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== LEGAL DISCLOSURE / DASAR HUKUM & MODEL BISNIS ===== -->
+<section id="legal-disclosure" class="disclosure-r">
+    <div class="container container-max">
+        <div class="disclosure-r__card reveal">
+
+            <div class="disclosure-r__header">
+                <div class="disclosure-r__icon-wrap">
+                    <i class="bi bi-patch-check-fill"></i>
+                </div>
+                <div class="disclosure-r__title-wrap">
+                    <span class="disclosure-r__eyebrow">
+                        <i class="bi bi-shield-fill-check"></i> Dasar Hukum & Model Bisnis
+                    </span>
+                    <h2 class="disclosure-r__title">Aset Gadai Jatuh Tempo & Nilai Taksiran Resmi</h2>
+                    <p class="disclosure-r__lead">
+                        Kami mengutamakan <strong>transparansi</strong>, <strong>legalitas</strong>, dan <strong>kejelasan informasi</strong> dalam setiap transaksi.
+                    </p>
+                </div>
+            </div>
+
+            <div class="disclosure-r__body">
+                <p>
+                    Perangkat yang ditawarkan berasal dari <mark>aset gadai yang telah melewati tanggal jatuh tempo</mark> dan tidak ditebus oleh pemilik awal sesuai ketentuan perjanjian. Setiap aset telah melalui proses <strong>administrasi, verifikasi, dan dokumentasi</strong> sebelum ditawarkan.
+                </p>
+                <p>
+                    Nilai transaksi mengacu pada <em>nilai taksiran gadai</em> dan mekanisme penyelesaian barang jaminan, <strong>bukan semata-mata harga pasar</strong>. Karena itu, harga dan kondisi setiap unit dapat berbeda.
+                </p>
+            </div>
+
+            <div class="disclosure-r__pillars">
+                <div class="disclosure-pillar">
+                    <span class="disclosure-pillar__num">01</span>
+                    <div class="disclosure-pillar__icon"><i class="bi bi-hourglass-split"></i></div>
+                    <div class="disclosure-pillar__content">
+                        <div class="disclosure-pillar__title">Telah Melewati Batas Penebusan</div>
+                        <p class="disclosure-pillar__text">Setiap unit telah melewati tanggal jatuh tempo dan tidak ditebus dalam periode yang ditentukan sesuai ketentuan yang berlaku.</p>
+                    </div>
+                </div>
+                <div class="disclosure-pillar">
+                    <span class="disclosure-pillar__num">02</span>
+                    <div class="disclosure-pillar__icon"><i class="bi bi-calculator"></i></div>
+                    <div class="disclosure-pillar__content">
+                        <div class="disclosure-pillar__title">Berdasarkan Nilai Taksiran</div>
+                        <p class="disclosure-pillar__text">Nilai transaksi mengacu pada nilai taksiran dan mekanisme penyelesaian aset gadai, sehingga dapat berbeda dari harga pasar perangkat.</p>
+                    </div>
+                </div>
+                <div class="disclosure-pillar">
+                    <span class="disclosure-pillar__num">03</span>
+                    <div class="disclosure-pillar__icon"><i class="bi bi-file-earmark-check"></i></div>
+                    <div class="disclosure-pillar__content">
+                        <div class="disclosure-pillar__title">Dokumentasi Transparan</div>
+                        <p class="disclosure-pillar__text">Setiap aset melalui proses administrasi dan verifikasi terdokumentasi. Informasi status, asal-usul, kondisi, identitas produk, nilai taksiran, dan kelengkapan disampaikan berdasarkan data yang tersedia.</p>
+                    </div>
+                </div>
+                <div class="disclosure-pillar">
+                    <span class="disclosure-pillar__num">04</span>
+                    <div class="disclosure-pillar__icon"><i class="bi bi-file-earmark-text"></i></div>
+                    <div class="disclosure-pillar__content">
+                        <div class="disclosure-pillar__title">Prosedur yang Jelas</div>
+                        <p class="disclosure-pillar__text">Transaksi dilakukan melalui prosedur yang jelas, tertib, dan dapat dipertanggungjawabkan, dengan memperhatikan ketentuan hukum dan regulasi yang berlaku.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="disclosure-r__commitment">
+                <div class="disclosure-r__commitment-title">Komitmen Kami</div>
+                <div class="disclosure-r__commitment-tags">
+                    <span class="disclosure-r__commitment-tag"><i class="bi bi-eye-fill"></i> Transparan</span>
+                    <span class="disclosure-r__commitment-tag"><i class="bi bi-patch-check-fill"></i> Terverifikasi</span>
+                    <span class="disclosure-r__commitment-tag"><i class="bi bi-file-earmark-check-fill"></i> Terdokumentasi</span>
+                    <span class="disclosure-r__commitment-tag"><i class="bi bi-person-badge-fill"></i> Profesional</span>
+                </div>
+                <p class="disclosure-r__commitment-text">
+                    Setiap unit memiliki kondisi, kelengkapan, dan nilai masing-masing yang dapat diperiksa sebelum transaksi. Informasi yang diberikan mengacu pada dokumentasi dan data yang tersedia untuk unit tersebut.
+                </p>
+                <div class="disclosure-r__note">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <span><strong>Catatan:</strong> Status, asal-usul, kondisi, nilai taksiran, dan kelengkapan setiap perangkat dapat berbeda.</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ===== VALUES ===== -->
+<section class="values-r">
+    <div class="container container-max">
+        <div class="sec-header-r reveal">
+            <span class="sec-header-r__eyebrow">Nilai-Nilai Kami</span>
+            <h2 class="sec-header-r__title">Mengapa Memilih Kami?</h2>
+        </div>
+        <div class="values-r__grid">
+            <div class="value-r reveal reveal-delay-1">
+                <div class="value-r__icon"><i class="bi bi-shield-check"></i></div>
+                <h3 class="value-r__title">Jaminan Keaslian</h3>
+                <p class="value-r__desc">Setiap perangkat diverifikasi IMEI-nya dan dilengkapi sertifikat keaslian. Garansi uang kembali 100% jika terbukti palsu.</p>
+            </div>
+            <div class="value-r reveal reveal-delay-2">
+                <div class="value-r__icon"><i class="bi bi-tools"></i></div>
+                <h3 class="value-r__title">Inspeksi Profesional</h3>
+                <p class="value-r__desc">Tim teknisi bersertifikat memeriksa 50+ poin fungsionalitas mulai dari layar, baterai, kamera, hingga sensor.</p>
+            </div>
+            <div class="value-r reveal reveal-delay-3">
+                <div class="value-r__icon"><i class="bi bi-tag"></i></div>
+                <h3 class="value-r__title">Harga Transparan</h3>
+                <p class="value-r__desc">Harga berdasarkan Nilai Taksiran Gadai yang riil. Tidak ada biaya tersembunyi. Diskon otomatis untuk kondisi minor defect.</p>
+            </div>
+            <div class="value-r reveal">
+                <div class="value-r__icon"><i class="bi bi-headset"></i></div>
+                <h3 class="value-r__title">Dukungan 24/7</h3>
+                <p class="value-r__desc">Tim support kami siap membantu via WhatsApp, Telegram, dan email. Respons rata-rata di bawah 5 menit.</p>
+            </div>
+            <div class="value-r reveal reveal-delay-1">
+                <div class="value-r__icon"><i class="bi bi-arrow-repeat"></i></div>
+                <h3 class="value-r__title">Trade-In Program</h3>
+                <p class="value-r__desc">Tukar tambah perangkat lama Anda dengan nilai appraisal yang fair. Proses cepat, pembayaran instan.</p>
+            </div>
+            <div class="value-r reveal reveal-delay-2">
+                <div class="value-r__icon"><i class="bi bi-truck"></i></div>
+                <h3 class="value-r__title">Pengiriman Aman</h3>
+                <p class="value-r__desc">Packing dengan bubble wrap triple layer dan asuransi pengiriman. Tracking real-time via WhatsApp.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== PROCESS ===== -->
+<section class="process-r">
+    <div class="container container-max">
+        <div class="sec-header-r reveal">
+            <span class="sec-header-r__eyebrow">Proses Kami</span>
+            <h2 class="sec-header-r__title">Dari Pemilihan ke Tangan Anda, Bisa Kredit</h2>
+        </div>
+        <div class="process-r__grid">
+            <div class="process-r__connector"></div>
+            <div class="process-r__step reveal reveal-delay-1">
+                <div class="process-r__num">01</div>
+                <div class="process-r__body">
+                    <h3 class="process-r__title">Sourcing</h3>
+                    <p class="process-r__desc">Handphone bekas berasal dari aset gadai jatuh tempo terpercaya, sedangkan unit baru dipasok langsung dari distributor resmi.</p>
+                </div>
+            </div>
+            <div class="process-r__step reveal reveal-delay-2">
+                <div class="process-r__num">02</div>
+                <div class="process-r__body">
+                    <h3 class="process-r__title">Inspeksi</h3>
+                    <p class="process-r__desc">Pemeriksaan fisik dan fungsional oleh teknisi bersertifikat dengan checklist 50+ poin kelayakan.</p>
+                </div>
+            </div>
+            <div class="process-r__step reveal reveal-delay-3">
+                <div class="process-r__num">03</div>
+                <div class="process-r__body">
+                    <h3 class="process-r__title">Grading</h3>
+                    <p class="process-r__desc">Penentuan kondisi berdasarkan standar 5-level: Like New, Excellent, Very Good, Good, dan Fair.</p>
+                </div>
+            </div>
+            <div class="process-r__step reveal">
+                <div class="process-r__num">04</div>
+                <div class="process-r__body">
+                    <h3 class="process-r__title">Listing</h3>
+                    <p class="process-r__desc">Foto profesional, deskripsi detail, dan harga transparan berdasarkan Nilai Taksiran Gadai yang riil.</p>
+                </div>
+            </div>
+            <div class="process-r__step reveal reveal-delay-1">
+                <div class="process-r__num">05</div>
+                <div class="process-r__body">
+                    <h3 class="process-r__title">Delivery</h3>
+                    <p class="process-r__desc">Packing aman dengan asuransi, tracking real-time, pengiriman ke seluruh Indonesia, dan dukungan purna jual {{ stats.warranty_days }} hari garansi.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="cta-r">
+    <div class="container container-max">
+        <div class="cta-r__card reveal">
+            <div class="cta-r__content">
+                <h2 class="cta-r__title">Siap Menemukan Perangkat Impian Anda?</h2>
+                <p class="cta-r__desc">dapatkan handphone bekas dengan harga terbaik, bisa kredit/cicilan, dan pengiriman ke seluruh Indonesia.</p>
+                <div class="cta-r__actions d-flex gap-3 flex-wrap">
+                    <a href="{{ url_for('catalog') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-grid-3x3-gap me-2"></i>Lihat Katalog
+                    </a>
+                    <a href="https://wa.me/{{ whatsapp_number }}?text=Halo%20{{ global_settings.site_name|urlencode }}"
+                       target="_blank" rel="noopener" class="btn btn-secondary btn-lg">
+                        <i class="bi bi-whatsapp me-2"></i>Chat WhatsApp
+                    </a>
+                </div>
+            </div>
+            <div class="cta-r__visual">
+                <div class="cta-r__orbit"></div>
+                <div class="cta-r__orbit cta-r__orbit--2"></div>
+                <div class="cta-r__center"><i class="bi bi-phone-fill"></i></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Counter Animation with IntersectionObserver
+const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const el = entry.target;
+            const target = parseInt(el.dataset.count);
+            const duration = 2200;
+            const startTime = performance.now();
+
+            const update = (now) => {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const current = Math.floor(easeOut * target);
+                el.textContent = current.toLocaleString('id-ID');
+                if (progress < 1) requestAnimationFrame(update);
+                else el.textContent = target.toLocaleString('id-ID');
+            };
+            requestAnimationFrame(update);
+            counterObserver.unobserve(el);
+        }
+    });
+}, { threshold: 0.3 });
+
+document.querySelectorAll('.stat-r__num').forEach(c => counterObserver.observe(c));
+</script>
+{% endblock %}

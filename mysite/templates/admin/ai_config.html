@@ -1,0 +1,453 @@
+{% extends "admin/base_admin.html" %}
+{% block page_title %}Konfigurasi AI{% endblock %}
+{% block extra_css %}
+<style>
+    [x-cloak] { display: none !important; }
+
+    .premium-toggle {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 26px;
+        flex-shrink: 0;
+    }
+    .premium-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .premium-toggle .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background-color: #cbd5e1;
+        transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 26px;
+    }
+    .premium-toggle .slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .premium-toggle input:checked + .slider {
+        background: linear-gradient(135deg, #1E3A8A 0%, #2563eb 100%);
+    }
+    .premium-toggle input:checked + .slider:before {
+        transform: translateX(22px);
+    }
+
+    .premium-input {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(203, 213, 225, 0.6);
+        border-radius: 0.75rem;
+        font-size: 0.875rem;
+        color: #1f2937;
+        transition: all 0.2s ease;
+        outline: none;
+    }
+    .premium-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        background: rgba(255, 255, 255, 0.9);
+    }
+    .premium-input::placeholder { color: #94a3b8; }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+    .status-dot.active { background: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); }
+    .status-dot.inactive { background: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2); }
+    .status-dot.unknown { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2); }
+
+    .test-result {
+        animation: slideDown 0.3s ease;
+    }
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .skeleton {
+        background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 0.5rem;
+    }
+    @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    .env-badge {
+        font-size: 0.65rem;
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.25rem;
+        background: #e0e7ff;
+        color: #3730a3;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="aiConfig()" x-init="init()" x-cloak>
+
+    <!-- Header -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-1 flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-800 to-blue-600 flex items-center justify-center text-white text-lg shadow-lg">
+                <i class="fas fa-robot"></i>
+            </span>
+            Konfigurasi AI
+        </h2>
+        <p class="text-sm text-gray-400">Atur integrasi OpenRouter / OpenAI untuk chatbot dan asisten toko</p>
+    </div>
+
+    <!-- Alert Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="mb-4 p-4 rounded-xl border backdrop-blur-sm flex items-center gap-3 {{ 'bg-red-50/80 border-red-200 text-red-700' if category == 'error' else ('bg-yellow-50/80 border-yellow-200 text-yellow-700' if category == 'warning' else ('bg-blue-50/80 border-blue-200 text-blue-700' if category == 'info' else 'bg-green-50/80 border-green-200 text-green-700')) }}">
+                <i class="fas {{ 'fa-exclamation-circle' if category == 'error' else ('fa-exclamation-triangle' if category == 'warning' else ('fa-info-circle' if category == 'info' else 'fa-check-circle')) }}"></i>
+                <span class="font-medium">{{ message }}</span>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Connection Status Banner -->
+    <div class="admin-card p-5 mb-6 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-400 text-xl"
+                 :class="testStatus === 'success' ? 'from-emerald-100 to-emerald-200 text-emerald-600' : (testStatus === 'error' ? 'from-red-100 to-red-200 text-red-600' : '')">
+                <i class="fas" :class="testStatus === 'success' ? 'fa-check' : (testStatus === 'error' ? 'fa-times' : 'fa-robot')"></i>
+            </div>
+            <div>
+                <div class="font-bold text-gray-800">Status Koneksi AI</div>
+                <div class="text-sm text-gray-400 flex items-center gap-2">
+                    <span class="status-dot" :class="testStatus === 'success' ? 'active' : (testStatus === 'error' ? 'inactive' : 'unknown')"></span>
+                    <span x-text="testStatus === 'success' ? 'Terkoneksi & Aktif' : (testStatus === 'error' ? 'Gagal Terhubung' : 'Belum Diuji')"></span>
+                </div>
+            </div>
+        </div>
+        <div class="text-right hidden sm:block">
+            <div class="text-xs text-gray-400">Model Default</div>
+            <div class="font-semibold text-sm text-gray-700" x-text="form.model || 'openrouter/free'"></div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left: Configuration Form -->
+        <div class="lg:col-span-2 space-y-6">
+            <form method="POST" action="{{ url_for('admin_settings') }}" id="aiConfigForm">
+                <input type="hidden" name="tab" value="ai">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- API Configuration -->
+                <div class="admin-card p-6">
+                    <div class="flex items-center gap-2 mb-5 text-gray-800 font-bold">
+                        <i class="fas fa-key text-primary-600"></i> Konfigurasi API
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                Base URL <span class="text-red-500">*</span>
+                                <span class="env-badge ml-1">ENV: OPENROUTER_BASE_URL</span>
+                            </label>
+                            <input type="url" name="openrouter_base_url" class="premium-input" x-model="form.baseUrl" placeholder="https://openrouter.ai/api/v1" required>
+                            <p class="text-xs text-gray-400 mt-1">Endpoint API OpenRouter atau proxy lokal. Default: <code class="bg-gray-100 px-1 rounded">https://openrouter.ai/api/v1</code></p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                API Key <span class="text-red-500">*</span>
+                                <span class="env-badge ml-1">ENV: OPENROUTER_API_KEY</span>
+                            </label>
+                            <div class="relative">
+                                <input :type="showKey ? 'text' : 'password'" name="openrouter_api_key" class="premium-input pr-10" x-model="form.apiKey" placeholder="sk-or-v1-..." required>
+                                <button type="button" @click="showKey = !showKey" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                    <i class="fas" :class="showKey ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">API key dari <a href="https://openrouter.ai/keys" target="_blank" class="text-primary-600 hover:underline">OpenRouter Dashboard</a>. Jika kosong, sistem akan mencoba membaca dari environment variable.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                Model <span class="text-red-500">*</span>
+                                <span class="env-badge ml-1">ENV: OPENROUTER_MODEL</span>
+                            </label>
+                            <input type="text" name="openrouter_model" class="premium-input" x-model="form.model" placeholder="openrouter/free" required>
+                            <p class="text-xs text-gray-400 mt-1">Contoh: <code class="bg-gray-100 px-1 rounded">openrouter/free</code>, <code class="bg-gray-100 px-1 rounded">anthropic/claude-3.5-sonnet</code>, <code class="bg-gray-100 px-1 rounded">openai/gpt-4o</code></p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                    Site URL (HTTP-Referer)
+                                    <span class="env-badge ml-1">ENV: OPENROUTER_SITE_URL</span>
+                                </label>
+                                <input type="url" name="openrouter_site_url" class="premium-input" x-model="form.siteUrl" placeholder="https://tokoanda.com">
+                                <p class="text-xs text-gray-400 mt-1">Digunakan untuk header HTTP-Referer saat memanggil API.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                    App Name (X-Title)
+                                    <span class="env-badge ml-1">ENV: OPENROUTER_APP_NAME</span>
+                                </label>
+                                <input type="text" name="openrouter_app_name" class="premium-input" x-model="form.appName" placeholder="Nama Aplikasi">
+                                <p class="text-xs text-gray-400 mt-1">Digunakan untuk header X-Title saat memanggil API.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Prompt -->
+                <div class="admin-card p-6">
+                    <div class="flex items-center justify-between mb-5">
+                        <div class="flex items-center gap-2 text-gray-800 font-bold">
+                            <i class="fas fa-comment-dots text-primary-600"></i> System Prompt
+                        </div>
+                        <span class="env-badge">DB: ai_system_prompt</span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Instruksi Sistem untuk AI</label>
+                        <textarea name="ai_system_prompt" class="premium-input" rows="8" x-model="form.systemPrompt" placeholder="Anda adalah asisten AI untuk toko kami..."></textarea>
+                        <div class="flex justify-between mt-2">
+                            <p class="text-xs text-gray-400">Prompt ini mengatur perilaku dan kepribadian AI saat menjawab pelanggan. Jika kosong, sistem akan menggunakan system prompt default dari kode aplikasi.</p>
+                            <span class="text-xs text-gray-400" x-text="form.systemPrompt ? form.systemPrompt.length + ' karakter' : '0 karakter'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="button" @click="testConnection()" :disabled="testing" 
+                            class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
+                        <i class="fas" :class="testing ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                        <span x-text="testing ? 'Menguji...' : 'Test Koneksi'"></span>
+                    </button>
+                    <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2">
+                        <i class="fas fa-save"></i> Simpan Konfigurasi
+                    </button>
+                    <button type="button" @click="resetForm()" class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-white border border-gray-700/50 hover:bg-dark-800/50 transition ml-auto">
+                        <i class="fas fa-undo mr-1"></i> Reset ke Default
+                    </button>
+                </div>
+            </form>
+
+            <!-- Test Result -->
+            <div x-show="testResult" x-transition class="test-result admin-card p-5 border-l-4"
+                 :class="testStatus === 'success' ? 'border-l-emerald-500 bg-emerald-50/30' : 'border-l-red-500 bg-red-50/30'">
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
+                         :class="testStatus === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'">
+                        <i class="fas" :class="testStatus === 'success' ? 'fa-check' : 'fa-exclamation-triangle'"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-semibold text-sm" :class="testStatus === 'success' ? 'text-emerald-800' : 'text-red-800'" x-text="testStatus === 'success' ? 'Koneksi Berhasil' : 'Koneksi Gagal'"></div>
+                        <div class="text-sm mt-1" :class="testStatus === 'success' ? 'text-emerald-700' : 'text-red-700'" x-html="testResult"></div>
+                    </div>
+                    <button @click="testResult = null; testStatus = null" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Info & Tips -->
+        <div class="space-y-6">
+            <!-- Quick Info -->
+            <div class="admin-card p-5">
+                <div class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-primary-500"></i> Informasi Sistem
+                </div>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-gray-400">Provider</span>
+                        <span class="font-medium text-gray-800">OpenRouter</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-gray-400">Protocol</span>
+                        <span class="font-medium text-gray-800">OpenAI Compatible</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-gray-400">Timeout</span>
+                        <span class="font-medium text-gray-800">120 detik</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-gray-400">Fallback Env</span>
+                        <span class="font-medium text-emerald-600">Aktif</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-gray-400">Storage</span>
+                        <span class="font-medium text-gray-800">Database Setting</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Environment Notice -->
+            <div class="admin-card p-5 bg-gradient-to-br from-amber-50/50 to-yellow-50/30 border-amber-100">
+                <div class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-shield-alt text-amber-500"></i> Keamanan
+                </div>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                    API Key disimpan di database <strong>Setting</strong>. Jika field dikosongkan, aplikasi akan otomatis membaca nilai dari <strong>Environment Variable</strong> sebagai fallback. Pastikan file <code>.env</code> tidak ter-commit ke repository publik.
+                </p>
+            </div>
+
+            <!-- Tips Card -->
+            <div class="admin-card p-5 bg-gradient-to-br from-blue-50/50 to-blue-50/30">
+                <div class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-lightbulb text-yellow-500"></i> Tips Konfigurasi
+                </div>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li class="flex items-start gap-2">
+                        <i class="fas fa-check text-primary-500 mt-1 text-xs"></i>
+                        <span>Gunakan <strong>openrouter/free</strong> untuk testing tanpa biaya.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fas fa-check text-primary-500 mt-1 text-xs"></i>
+                        <span>Site URL & App Name membantu OpenRouter melacak penggunaan.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fas fa-check text-primary-500 mt-1 text-xs"></i>
+                        <span>System prompt yang jelas menghasilkan jawaban lebih akurat.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fas fa-check text-primary-500 mt-1 text-xs"></i>
+                        <span>Simpan API key dengan aman — jangan bagikan ke publik.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Popular Models -->
+            <div class="admin-card p-5">
+                <div class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-star text-yellow-500"></i> Model Populer
+                </div>
+                <div class="space-y-2">
+                    <button type="button" @click="form.model = 'openrouter/free'" class="w-full text-left px-3 py-2 rounded-lg hover:bg-primary-50 transition text-sm flex items-center justify-between group">
+                        <span class="text-gray-700 group-hover:text-primary-700 font-medium">openrouter/free</span>
+                        <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Gratis</span>
+                    </button>
+                    <button type="button" @click="form.model = 'anthropic/claude-3.5-sonnet'" class="w-full text-left px-3 py-2 rounded-lg hover:bg-primary-50 transition text-sm flex items-center justify-between group">
+                        <span class="text-gray-700 group-hover:text-primary-700 font-medium">claude-3.5-sonnet</span>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Premium</span>
+                    </button>
+                    <button type="button" @click="form.model = 'openai/gpt-4o'" class="w-full text-left px-3 py-2 rounded-lg hover:bg-primary-50 transition text-sm flex items-center justify-between group">
+                        <span class="text-gray-700 group-hover:text-primary-700 font-medium">gpt-4o</span>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Premium</span>
+                    </button>
+                    <button type="button" @click="form.model = 'google/gemini-2.0-flash-exp:free'" class="w-full text-left px-3 py-2 rounded-lg hover:bg-primary-50 transition text-sm flex items-center justify-between group">
+                        <span class="text-gray-700 group-hover:text-primary-700 font-medium">gemini-2.0-flash</span>
+                        <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Gratis</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Safe JSON injection — avoids JS injection via backtick/quote in user-controlled values
+window.__AI_CFG__ = {{ {
+    "baseUrl": settings.get("openrouter_base_url", "https://openrouter.ai/api/v1"),
+    "apiKey": settings.get("openrouter_api_key", ""),
+    "model": settings.get("openrouter_model", "openrouter/free"),
+    "siteUrl": settings.get("openrouter_site_url", ""),
+    "appName": settings.get("openrouter_app_name", ""),
+    "systemPrompt": settings.get("ai_system_prompt", "")
+} | tojson }};
+</script>
+<script>
+function aiConfig() {
+    return {
+        showKey: false,
+        testing: false,
+        testResult: null,
+        testStatus: null,
+        // Default values disesuaikan dengan admin_ai_config di app.py
+        defaults: {
+            baseUrl: 'https://openrouter.ai/api/v1',
+            apiKey: '',
+            model: 'openrouter/free',
+            siteUrl: '',
+            appName: '',
+            systemPrompt: ''
+        },
+        form: {
+            baseUrl: window.__AI_CFG__.baseUrl,
+            apiKey: window.__AI_CFG__.apiKey,
+            model: window.__AI_CFG__.model,
+            siteUrl: window.__AI_CFG__.siteUrl,
+            appName: window.__AI_CFG__.appName,
+            systemPrompt: window.__AI_CFG__.systemPrompt
+        },
+        init() {
+            // Jika semua field terisi, bisa auto-test (tapi di-disable untuk hindari rate limit)
+            // this.testConnection();
+        },
+        resetForm() {
+            this.form.baseUrl = this.defaults.baseUrl;
+            this.form.apiKey = this.defaults.apiKey;
+            this.form.model = this.defaults.model;
+            this.form.siteUrl = this.defaults.siteUrl;
+            this.form.appName = this.defaults.appName;
+            this.form.systemPrompt = this.defaults.systemPrompt;
+            this.testResult = null;
+            this.testStatus = null;
+        },
+        async testConnection() {
+            if (!this.form.baseUrl || !this.form.apiKey) {
+                this.testStatus = 'error';
+                this.testResult = 'Base URL dan API Key wajib diisi sebelum menguji koneksi.';
+                return;
+            }
+            this.testing = true;
+            this.testResult = null;
+            try {
+                const res = await fetch('{{ url_for("admin_test_ai_connection") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        base_url: this.form.baseUrl,
+                        api_key: this.form.apiKey,
+                        model: this.form.model,
+                        site_url: this.form.siteUrl,
+                        app_name: this.form.appName
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.testStatus = 'success';
+                    this.testResult = data.message || 'Koneksi ke AI API berhasil.';
+                } else {
+                    this.testStatus = 'error';
+                    this.testResult = data.message || 'Gagal terhubung ke AI API.';
+                }
+            } catch (err) {
+                this.testStatus = 'error';
+                this.testResult = 'Error jaringan: ' + err.message;
+            } finally {
+                this.testing = false;
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,451 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Pengajuan Cicilan — Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════════════════
+   ADMIN INSTALLMENT — DARK PREMIUM EDITION
+   Glassmorphism + Gold Accents + Dark Theme
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+    --inst-primary: #f59e0b;
+    --inst-primary-soft: rgba(245,158,11,0.15);
+    --inst-primary-glow: rgba(245,158,11,0.2);
+    --inst-success: #34d399;
+    --inst-success-soft: rgba(16,185,129,0.15);
+    --inst-warning: #fbbf24;
+    --inst-warning-soft: rgba(245,158,11,0.15);
+    --inst-danger: #f87171;
+    --inst-danger-soft: rgba(239,68,68,0.15);
+    --inst-info: #60a5fa;
+    --inst-info-soft: rgba(59,130,246,0.15);
+    --inst-glass: rgba(255,255,255,0.03);
+    --inst-glass-border: rgba(255,255,255,0.08);
+    --inst-radius-sm: 10px;
+    --inst-radius-md: 14px;
+    --inst-radius-lg: 20px;
+    --inst-radius-xl: 24px;
+    --inst-shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --inst-shadow-md: 0 4px 20px rgba(0,0,0,0.4);
+    --inst-shadow-lg: 0 8px 40px rgba(0,0,0,0.5);
+    --text-primary: #f3f4f6;
+    --text-secondary: #e5e7eb;
+    --text-tertiary: #9ca3af;
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-default: rgba(255,255,255,0.1);
+    --bg-base: #0f0f1a;
+    --bg-elevated: rgba(255,255,255,0.03);
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: fadeInUp 0.4s ease both; }
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--inst-glass);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid var(--inst-glass-border);
+    border-radius: var(--inst-radius-lg);
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.5rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 6px -1px rgba(0,0,0,0.3);
+}
+.page-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+}
+.page-header h2 i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--inst-radius-sm);
+    background: linear-gradient(135deg, #d97706, #f59e0b);
+    color: white;
+    box-shadow: 0 0 15px rgba(245,158,11,0.3);
+}
+.page-header p {
+    margin: 0.25rem 0 0 3.25rem;
+    color: var(--text-tertiary);
+    font-size: 0.875rem;
+}
+
+.inst-stats-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.inst-stat-card {
+    background: var(--inst-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--inst-glass-border);
+    border-radius: var(--inst-radius-md);
+    padding: 1.1rem 1.25rem;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.inst-stat-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(245,158,11,0.3);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 15px -3px rgba(0,0,0,0.4);
+}
+.inst-stat-card.is-active {
+    border-color: var(--inst-primary);
+    box-shadow: 0 0 0 1px var(--inst-primary), 0 0 20px rgba(245,158,11,0.15);
+}
+.inst-stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+.inst-stat-value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+.inst-stat-card.stat-pending .inst-stat-value { color: var(--inst-warning); }
+.inst-stat-card.stat-reviewing .inst-stat-value { color: var(--inst-info); }
+.inst-stat-card.stat-approved .inst-stat-value { color: var(--inst-success); }
+.inst-stat-card.stat-rejected .inst-stat-value { color: var(--inst-danger); }
+.inst-stat-card.stat-outstanding .inst-stat-value { color: var(--inst-primary); font-size: 1.15rem; }
+
+.credit-app-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: 1px solid;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+}
+.credit-app-status.pending {
+    background: var(--inst-warning-soft); color: var(--inst-warning); border-color: rgba(245,158,11,0.3);
+}
+.credit-app-status.reviewing {
+    background: var(--inst-info-soft); color: var(--inst-info); border-color: rgba(59,130,246,0.3);
+}
+.credit-app-status.approved {
+    background: var(--inst-success-soft); color: var(--inst-success); border-color: rgba(16,185,129,0.3);
+}
+.credit-app-status.rejected {
+    background: var(--inst-danger-soft); color: var(--inst-danger); border-color: rgba(239,68,68,0.3);
+}
+
+.inst-table-card {
+    background: var(--inst-glass);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid var(--inst-glass-border);
+    border-radius: var(--inst-radius-lg);
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 6px -1px rgba(0,0,0,0.3);
+}
+.inst-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.inst-table thead th {
+    background: rgba(245,158,11,0.05);
+    padding: 0.9rem 1.1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-default);
+    text-align: left;
+    white-space: nowrap;
+}
+.inst-table tbody td {
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--inst-glass-border);
+    font-size: 0.875rem;
+    vertical-align: middle;
+    color: var(--text-secondary);
+}
+.inst-table tbody tr:last-child td { border-bottom: none; }
+.inst-table tbody tr:hover { background: rgba(245,158,11,0.03); }
+.inst-app-code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-weight: 600;
+    color: var(--inst-primary);
+}
+.inst-applicant-name { font-weight: 600; color: var(--text-primary); }
+.inst-applicant-sub { font-size: 0.78rem; color: var(--text-tertiary); }
+.inst-amount { font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--inst-primary); }
+
+.inst-filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+.inst-filter-tab {
+    padding: 0.5rem 1.1rem;
+    border-radius: 100px;
+    border: 1px solid var(--inst-glass-border);
+    background: var(--inst-glass);
+    color: var(--text-tertiary);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    backdrop-filter: blur(8px);
+}
+.inst-filter-tab:hover { color: var(--text-primary); border-color: rgba(245,158,11,0.3); }
+.inst-filter-tab.active {
+    background: var(--inst-primary-soft);
+    color: var(--inst-primary);
+    border-color: var(--inst-primary);
+    box-shadow: 0 0 15px rgba(245,158,11,0.1);
+}
+
+.inst-empty-state {
+    text-align: center;
+    padding: 4rem 1.5rem;
+    color: var(--text-tertiary);
+}
+.inst-empty-state i { font-size: 2.5rem; opacity: 0.4; margin-bottom: 1rem; display: block; }
+
+.inst-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 1.25rem;
+}
+.inst-pagination a, .inst-pagination span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 0.5rem;
+    border-radius: var(--inst-radius-sm);
+    border: 1px solid var(--inst-glass-border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+.inst-pagination a:hover { border-color: var(--inst-primary); color: var(--inst-primary); }
+.inst-pagination .active {
+    background: linear-gradient(135deg, #d97706, #f59e0b);
+    color: #fff;
+    border-color: var(--inst-primary);
+    box-shadow: 0 0 15px rgba(245,158,11,0.2);
+}
+.inst-pagination .disabled { opacity: 0.35; pointer-events: none; }
+
+.btn-primary {
+    background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%) !important;
+    color: white !important;
+    border: 1px solid rgba(245,158,11,0.2) !important;
+    box-shadow: 0 4px 6px -1px rgba(245,158,11,0.3), 0 0 20px rgba(245,158,11,0.1) !important;
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(245,158,11,0.4), 0 0 30px rgba(245,158,11,0.15) !important;
+}
+.btn-secondary {
+    background: rgba(255,255,255,0.05) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+}
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.08) !important;
+    border-color: rgba(245,158,11,0.3) !important;
+    color: var(--inst-primary) !important;
+}
+
+@media (max-width: 1200px) {
+    .inst-stats-row { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+    .page-header { flex-direction: column; align-items: stretch; text-align: center; }
+    .page-header p { margin-left: 0; }
+    .inst-stats-row { grid-template-columns: repeat(2, 1fr); }
+    .inst-table-card { overflow-x: auto; }
+    .inst-table { min-width: 720px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="page-header animate-in">
+        <div>
+            <h2><i class="bi bi-credit-card-2-front"></i>Pengajuan Cicilan</h2>
+            <p>Tinjau, setujui, atau tolak pengajuan kredit/cicilan pelanggan</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('admin_kyc_applications') }}" class="btn btn-secondary">
+                <i class="bi bi-fingerprint me-2"></i>Verifikasi KYC
+            </a>
+            <a href="{{ url_for('admin_installment_settings') }}" class="btn btn-secondary">
+                <i class="bi bi-sliders me-2"></i>Kelola Plan Cicilan
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="inst-stats-row animate-in">
+        <a href="{{ url_for('admin_installments') }}" class="inst-stat-card {{ 'is-active' if not status }}">
+            <div class="inst-stat-label">Total</div>
+            <div class="inst-stat-value">{{ stats.total }}</div>
+        </a>
+        <a href="{{ url_for('admin_installments', status='pending') }}" class="inst-stat-card stat-pending {{ 'is-active' if status == 'pending' }}">
+            <div class="inst-stat-label">Menunggu</div>
+            <div class="inst-stat-value">{{ stats.pending }}</div>
+        </a>
+        <a href="{{ url_for('admin_installments', status='reviewing') }}" class="inst-stat-card stat-reviewing {{ 'is-active' if status == 'reviewing' }}">
+            <div class="inst-stat-label">Ditinjau</div>
+            <div class="inst-stat-value">{{ stats.reviewing }}</div>
+        </a>
+        <a href="{{ url_for('admin_installments', status='approved') }}" class="inst-stat-card stat-approved {{ 'is-active' if status == 'approved' }}">
+            <div class="inst-stat-label">Disetujui</div>
+            <div class="inst-stat-value">{{ stats.approved }}</div>
+        </a>
+        <a href="{{ url_for('admin_installments', status='rejected') }}" class="inst-stat-card stat-rejected {{ 'is-active' if status == 'rejected' }}">
+            <div class="inst-stat-label">Ditolak</div>
+            <div class="inst-stat-value">{{ stats.rejected }}</div>
+        </a>
+        <div class="inst-stat-card stat-outstanding">
+            <div class="inst-stat-label">Piutang Berjalan</div>
+            <div class="inst-stat-value">{{ format_price((stats.total_outstanding or 0) * 100) }}</div>
+        </div>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="inst-filter-tabs animate-in">
+        <a href="{{ url_for('admin_installments') }}" class="inst-filter-tab {{ 'active' if not status }}">Semua</a>
+        <a href="{{ url_for('admin_installments', status='pending') }}" class="inst-filter-tab {{ 'active' if status == 'pending' }}">Menunggu</a>
+        <a href="{{ url_for('admin_installments', status='reviewing') }}" class="inst-filter-tab {{ 'active' if status == 'reviewing' }}">Ditinjau</a>
+        <a href="{{ url_for('admin_installments', status='approved') }}" class="inst-filter-tab {{ 'active' if status == 'approved' }}">Disetujui</a>
+        <a href="{{ url_for('admin_installments', status='rejected') }}" class="inst-filter-tab {{ 'active' if status == 'rejected' }}">Ditolak</a>
+    </div>
+
+    <!-- Applications table -->
+    <div class="inst-table-card animate-in">
+        {% if applications and applications|length > 0 %}
+        <table class="inst-table">
+            <thead>
+                <tr>
+                    <th>Kode</th>
+                    <th>Pemohon</th>
+                    <th>Produk / Nominal</th>
+                    <th>DP</th>
+                    <th>Cicilan / Bulan</th>
+                    <th>Tenor</th>
+                    <th>Status</th>
+                    <th>Tanggal</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in applications %}
+                <tr>
+                    <td><span class="inst-app-code">{{ a.application_code }}</span></td>
+                    <td>
+                        <div class="inst-applicant-name">{{ a.full_name or (a.user.full_name if a.user else '-') }}</div>
+                        <div class="inst-applicant-sub">{{ a.phone or (a.user.phone if a.user else '-') }}</div>
+                    </td>
+                    <td>
+                        <div>{{ a.product.name if a.product else ('Plan: ' + a.plan.name if a.plan else '-') }}</div>
+                        {% if a.product_amount %}
+                            <div class="inst-applicant-sub">{{ format_price((a.product_amount) * 100) }}</div>
+                        {% elif a.product_price %}
+                            <div class="inst-applicant-sub">{{ format_price(a.product_price) }}</div>
+                        {% else %}
+                            <div class="inst-applicant-sub">-</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ format_price(((a.dp_amount or a.down_payment or 0)) * 100) }}</td>
+                    <td class="inst-amount">{{ format_price((a.monthly_installment or 0) * 100) }}</td>
+                    <td>{{ a.tenor_months or (a.plan.tenor_months if a.plan else '-') }} bln</td>
+                    <td>
+                        <span class="credit-app-status {{ a.status }}">
+                            {% if a.status == 'pending' %}<i class="bi bi-clock"></i>
+                            {% elif a.status == 'reviewing' %}<i class="bi bi-eye"></i>
+                            {% elif a.status == 'approved' %}<i class="bi bi-check-circle"></i>
+                            {% elif a.status == 'rejected' %}<i class="bi bi-x-circle"></i>
+                            {% endif %}
+                            {{ a.status|upper }}
+                        </span>
+                    </td>
+                    <td class="inst-applicant-sub">{{ a.created_at.strftime('%d %b %Y') if a.created_at else '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('admin_installment_detail', app_id=a.id) }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-arrow-right"></i> Detail
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if pagination and pagination.pages > 1 %}
+        <div class="inst-pagination">
+            <a href="{{ url_for('admin_installments', status=status or None, page=pagination.prev_num) if pagination.has_prev else '#' }}"
+               class="{{ 'disabled' if not pagination.has_prev }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            {% for p in pagination.iter_pages() %}
+                {% if p %}
+                    <a href="{{ url_for('admin_installments', status=status or None, page=p) }}" class="{{ 'active' if p == pagination.page }}">{{ p }}</a>
+                {% else %}
+                    <span>…</span>
+                {% endif %}
+            {% endfor %}
+            <a href="{{ url_for('admin_installments', status=status or None, page=pagination.next_num) if pagination.has_next else '#' }}"
+               class="{{ 'disabled' if not pagination.has_next }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="inst-empty-state">
+            <i class="bi bi-inbox"></i>
+            <p class="mb-0">
+                {% if status %}
+                    Tidak ada pengajuan dengan status "{{ status }}".
+                {% else %}
+                    Belum ada pengajuan cicilan.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

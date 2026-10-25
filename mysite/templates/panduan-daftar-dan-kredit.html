@@ -1,0 +1,1712 @@
+{% extends "base.html" %}
+
+{% block title %}Panduan Daftar Akun & Permohonan Kredit — {{ site_name }}{% endblock %}
+
+{% block meta_description %}Panduan lengkap cara membuat akun, menyelesaikan verifikasi KYC, dan mengajukan kredit/cicilan di {{ site_name }}.{% endblock %}
+
+{% block content %}
+<style>
+/* ═══════════════════════════════════════════════════════════
+   PANDUAN PENGAJUAN KREDIT — DESIGN SYSTEM v2.1
+   Glassmorphism • Light/Dark • Fully Responsive • 3D Glass Effect
+
+   CSS INI SEPENUHNYA MANDIRI (self-contained), TIDAK memakai
+   block extra_css dan TIDAK bergantung pada tag style milik
+   base.html sama sekali. Tag style ini sengaja diletakkan
+   langsung di dalam block content (area body), sehingga:
+     1. Tidak ada nested <style> / tidak bentrok dengan base.html.
+     2. base.html TIDAK perlu diubah/disentuh sama sekali, sehingga
+        tidak berisiko merusak template lain yang masih memakai
+        konvensi lama block extra_css.
+     3. Semua variabel CSS di bawah ini diberi prefiks "--g-" agar
+        tidak pernah bentrok dengan variabel CSS milik base.html
+        (mis. --primary-500, --bg-base, dsb).
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  /* === Brand palette === */
+  --g-brand-50: #eff6ff;
+  --g-brand-100: #dbeafe;
+  --g-brand-200: #bfdbfe;
+  --g-brand-300: #93c5fd;
+  --g-brand-400: #4da8ff;
+  --g-brand-500: #0a84ff;
+  --g-brand-600: #0071e3;
+  --g-brand-700: #005bb5;
+  --g-brand-800: #1e40af;
+  --g-brand-900: #1e3a8a;
+
+  /* === Light theme surfaces === */
+  --g-surface-primary: #f8fafc;
+  --g-surface-secondary: #f1f5f9;
+  --g-surface-tertiary: #e8f0fe;
+  --g-surface-glass: rgba(255, 255, 255, 0.24);
+  --g-surface-glass-hover: rgba(255, 255, 255, 0.40);
+  --g-surface-glass-border: rgba(255, 255, 255, 0.55);
+  --g-surface-glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.08),
+    0 2px 10px rgba(0, 0, 0, 0.05);
+  --g-glass-highlight: rgba(255, 255, 255, 0.5);
+  --g-glass-depth: rgba(0, 0, 0, 0.03);
+
+  /* === Light theme text === */
+  --g-text-primary: #0f172a;
+  --g-text-secondary: #334155;
+  --g-text-tertiary: #64748b;
+  --g-text-placeholder: #94a3b8;
+
+  /* === Semantic colors === */
+  --g-success: #10b981;
+  --g-success-soft: #d1fae5;
+  --g-warning: #f59e0b;
+  --g-warning-soft: #fef3c7;
+  --g-danger: #ef4444;
+  --g-danger-soft: #fee2e2;
+  --g-info: #0a84ff;
+  --g-info-soft: #dbeafe;
+
+  /* === Misc === */
+  --g-radius-sm: 12px;
+  --g-radius-md: 18px;
+  --g-radius-lg: 24px;
+  --g-radius-xl: 32px;
+  --g-radius-full: 9999px;
+  --g-transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --g-transition-smooth: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* === Fluid spacing tokens (dipakai lintas breakpoint) === */
+  --g-page-pad-x: clamp(14px, 4vw, 20px);
+  --g-page-pad-y-top: clamp(20px, 4vw, 32px);
+  --g-page-pad-y-bottom: clamp(56px, 9vw, 80px);
+  --g-card-pad: clamp(18px, 3.4vw, 30px);
+  --g-section-gap: clamp(28px, 5vw, 36px);
+}
+
+/* === Dark theme overrides === */
+.guide-page[data-theme="dark"] {
+  --g-surface-primary: #0b1120;
+  --g-surface-secondary: #111827;
+  --g-surface-tertiary: #1a2332;
+  --g-surface-glass: rgba(30, 41, 59, 0.26);
+  --g-surface-glass-hover: rgba(30, 41, 59, 0.42);
+  --g-surface-glass-border: rgba(255, 255, 255, 0.16);
+  --g-surface-glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.5),
+    0 2px 10px rgba(0, 0, 0, 0.3);
+  --g-glass-highlight: rgba(255, 255, 255, 0.08);
+  --g-glass-depth: rgba(255, 255, 255, 0.03);
+
+  --g-text-primary: #f1f5f9;
+  --g-text-secondary: #cbd5e1;
+  --g-text-tertiary: #94a3b8;
+  --g-text-placeholder: #64748b;
+
+  --g-success-soft: rgba(16, 185, 129, 0.15);
+  --g-warning-soft: rgba(245, 158, 11, 0.15);
+  --g-danger-soft: rgba(239, 68, 68, 0.15);
+  --g-info-soft: rgba(10, 132, 255, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BASE LAYOUT
+   ═══════════════════════════════════════════════════════════ */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+.guide-page {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--g-text-secondary);
+  background:
+    radial-gradient(1200px 700px at 90% -8%, var(--g-surface-tertiary), transparent 55%),
+    radial-gradient(900px 600px at -5% 20%, var(--g-brand-50), transparent 50%),
+    radial-gradient(700px 500px at 50% 80%, rgba(10, 132, 255, 0.04), transparent 50%),
+    var(--g-surface-primary);
+  padding: var(--g-page-pad-y-top) var(--g-page-pad-x) var(--g-page-pad-y-bottom);
+  border-radius: var(--g-radius-xl);
+  transition: background 0.5s ease, color 0.4s ease;
+  position: relative;
+  overflow-x: hidden;
+  max-width: 100%;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.guide-page[data-theme="dark"] {
+  background:
+    radial-gradient(1200px 700px at 90% -8%, var(--g-surface-tertiary), transparent 55%),
+    radial-gradient(900px 600px at -5% 20%, rgba(30, 64, 175, 0.15), transparent 50%),
+    radial-gradient(700px 500px at 50% 80%, rgba(10, 132, 255, 0.06), transparent 50%),
+    var(--g-surface-primary);
+}
+
+.guide-page *,
+.guide-page *::before,
+.guide-page *::after {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.guide-wrap {
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOP NAVIGATION BAR (STICKY) – also 3D glass
+   ═══════════════════════════════════════════════════════════ */
+.guide-navbar {
+  position: sticky;
+  top: clamp(8px, 2vw, 16px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px clamp(12px, 3vw, 18px);
+  margin-bottom: var(--g-section-gap);
+  background: var(--g-surface-glass);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  border: 1px solid var(--g-surface-glass-border);
+  border-radius: var(--g-radius-full);
+  box-shadow: var(--g-surface-glass-shadow),
+    inset 0 1px 0 var(--g-glass-highlight);
+  flex-wrap: nowrap;
+  transition: all var(--g-transition-smooth);
+  transform-style: preserve-3d;
+  perspective: 800px;
+  max-width: 100%;
+}
+
+.guide-navbar.scrolled {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 var(--g-glass-highlight);
+  background: var(--g-surface-glass-hover);
+}
+
+.guide-nav-logo {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--g-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+  flex: none;
+}
+
+.guide-nav-logo i {
+  color: var(--g-brand-500);
+  font-size: 20px;
+}
+
+.guide-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+}
+
+.guide-nav-links::-webkit-scrollbar {
+  display: none;
+}
+
+.guide-nav-link {
+  padding: 7px 14px;
+  border-radius: var(--g-radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--g-text-tertiary);
+  text-decoration: none;
+  transition: all var(--g-transition-fast);
+  white-space: nowrap;
+  cursor: pointer;
+  flex: none;
+  scroll-snap-align: start;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.guide-nav-link:hover,
+.guide-nav-link.active {
+  background: var(--g-brand-500);
+  color: #fff;
+}
+
+.guide-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--g-radius-full);
+  cursor: pointer;
+  background: var(--g-surface-glass);
+  border: 1px solid var(--g-surface-glass-border);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--g-text-secondary);
+  transition: all var(--g-transition-fast);
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 var(--g-glass-highlight);
+  flex: none;
+  min-height: 32px;
+}
+
+.guide-theme-toggle:hover {
+  background: var(--g-surface-glass-hover);
+}
+
+.guide-theme-toggle i {
+  font-size: 15px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--g-brand-500);
+}
+
+/* Progress bar */
+.guide-progress-bar {
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--g-brand-400), var(--g-brand-600));
+  border-radius: 0 0 var(--g-radius-full) var(--g-radius-full);
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HERO SECTION
+   ═══════════════════════════════════════════════════════════ */
+.guide-hero {
+  padding: clamp(12px, 3vw, 20px) 4px clamp(28px, 5vw, 40px);
+  text-align: center;
+  position: relative;
+}
+
+.guide-hero .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: var(--g-radius-full);
+  background: var(--g-surface-glass);
+  border: 1px solid var(--g-surface-glass-border);
+  box-shadow: var(--g-surface-glass-shadow),
+    inset 0 1px 0 var(--g-glass-highlight);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--g-brand-600);
+  margin-bottom: clamp(18px, 3.5vw, 28px);
+  animation: fadeInUp 0.6s ease;
+  max-width: 100%;
+  text-align: center;
+}
+
+.guide-hero h1 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(26px, 6.5vw, 46px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--g-text-primary);
+  margin: 0 0 16px;
+  animation: fadeInUp 0.6s ease 0.1s both;
+  word-break: break-word;
+}
+
+.guide-hero h1 span {
+  background: linear-gradient(135deg, var(--g-brand-600), var(--g-brand-400));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.guide-hero .hero-subtitle {
+  max-width: 580px;
+  margin: 0 auto clamp(24px, 4.5vw, 36px);
+  font-size: clamp(13.5px, 2.6vw, 16px);
+  color: var(--g-text-tertiary);
+  line-height: 1.7;
+  animation: fadeInUp 0.6s ease 0.2s both;
+  padding: 0 4px;
+}
+
+/* Flow stepper */
+.guide-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px clamp(4px, 2vw, 20px);
+  max-width: 780px;
+  margin: 0 auto;
+  animation: fadeInUp 0.6s ease 0.3s both;
+}
+
+.guide-flow .fstep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px 10px 10px;
+  border-radius: var(--g-radius-full);
+  background: var(--g-surface-glass);
+  border: 1px solid var(--g-surface-glass-border);
+  box-shadow: var(--g-surface-glass-shadow),
+    inset 0 1px 0 var(--g-glass-highlight);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--g-text-primary);
+  transition: all var(--g-transition-fast);
+  white-space: nowrap;
+}
+
+.guide-flow .fstep:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 var(--g-glass-highlight);
+}
+
+.guide-flow .fstep .num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--g-brand-500), var(--g-brand-700));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.4);
+  flex: none;
+}
+
+.guide-flow .arrow-icon {
+  color: var(--g-text-placeholder);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTIONS
+   ═══════════════════════════════════════════════════════════ */
+.guide-section {
+  padding: clamp(12px, 2.5vw, 18px) 4px var(--g-section-gap);
+  scroll-margin-top: 100px;
+  max-width: 100%;
+}
+
+.guide-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(10px, 2.5vw, 16px);
+  margin-bottom: clamp(16px, 3vw, 24px);
+}
+
+.guide-badge {
+  flex: none;
+  width: clamp(44px, 7vw, 54px);
+  height: clamp(44px, 7vw, 54px);
+  border-radius: var(--g-radius-md);
+  display: grid;
+  place-items: center;
+  font-size: clamp(18px, 3vw, 22px);
+  color: #fff;
+  background: linear-gradient(135deg, var(--g-brand-500), var(--g-brand-700));
+  box-shadow: 0 10px 28px rgba(0, 113, 227, 0.3),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.guide-section-head h2 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(19px, 3.4vw, 24px);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--g-text-primary);
+  margin: 0 0 4px;
+  word-break: break-word;
+}
+
+.guide-section-head p {
+  margin: 0;
+  color: var(--g-text-tertiary);
+  font-size: clamp(13px, 2.2vw, 14.5px);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ENHANCED 3D GLASS CARD
+   ═══════════════════════════════════════════════════════════ */
+.guide-card {
+  background: var(--g-surface-glass);
+  backdrop-filter: blur(32px) saturate(150%);
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  border: 1px solid var(--g-surface-glass-border);
+  border-radius: var(--g-radius-xl);
+  box-shadow: var(--g-surface-glass-shadow),
+    inset 0 1px 0 var(--g-glass-highlight),
+    inset 0 -1px 0 var(--g-glass-depth);
+  padding: var(--g-card-pad);
+  transition: all var(--g-transition-smooth);
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  max-width: 100%;
+}
+
+/* Glossy diagonal highlight */
+.guide-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    135deg,
+    transparent 40%,
+    var(--g-glass-highlight) 50%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.guide-card:hover::after {
+  opacity: 1;
+}
+
+/* Subtle inner border for depth */
+.guide-card::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  border: 1px solid rgba(255,255,255,0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.guide-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.guide-card:hover {
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 var(--g-glass-highlight),
+    inset 0 -1px 0 var(--g-glass-depth);
+  transform: translateY(-2px);
+}
+
+@media (hover: none) {
+  .guide-card:hover,
+  .guide-subcard:hover,
+  .guide-status-row:hover,
+  .guide-flow .fstep:hover,
+  .guide-diagram .pill:hover {
+    transform: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NUMBERED STEPS
+   ═══════════════════════════════════════════════════════════ */
+.guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2.5vw, 18px);
+}
+
+.guide-step-row {
+  display: flex;
+  gap: clamp(12px, 2.5vw, 16px);
+}
+
+.guide-step-row .dot {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--g-surface-glass);
+  border: 1px solid var(--g-surface-glass-border);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--g-brand-600);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 var(--g-glass-highlight);
+}
+
+.guide-step-row .body {
+  min-width: 0;
+}
+
+.guide-step-row .body strong {
+  display: block;
+  color: var(--g-text-primary);
+  font-size: clamp(14px, 2.4vw, 15px);
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.guide-step-row .body p {
+  margin: 0;
+  font-size: clamp(13px, 2.3vw, 14px);
+  color: var(--g-text-tertiary);
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CALLOUTS – also glass
+   ═══════════════════════════════════════════════════════════ */
+.guide-callout {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: clamp(16px, 3vw, 22px);
+  padding: clamp(13px, 2.4vw, 16px) clamp(14px, 3vw, 20px);
+  border-radius: var(--g-radius-md);
+  font-size: clamp(12.5px, 2.2vw, 13.5px);
+  line-height: 1.65;
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.guide-callout i {
+  font-size: 18px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.guide-callout span {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.guide-callout.tip {
+  background: rgba(10, 132, 255, 0.08);
+  border-color: rgba(10, 132, 255, 0.25);
+  color: var(--g-brand-700);
+}
+
+.guide-callout.warn {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #92650b;
+}
+
+.guide-callout.important {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #b91c1c;
+}
+
+.guide-page[data-theme="dark"] .guide-callout.tip {
+  color: #bfdbfe;
+}
+.guide-page[data-theme="dark"] .guide-callout.warn {
+  color: #fde68a;
+}
+.guide-page[data-theme="dark"] .guide-callout.important {
+  color: #fecaca;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   KYC VISUAL – 3D circles
+   ═══════════════════════════════════════════════════════════ */
+.guide-kyc-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: clamp(20px, 3.5vw, 28px);
+  flex-wrap: wrap;
+  row-gap: 18px;
+}
+
+.guide-kyc-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: clamp(76px, 18vw, 100px);
+}
+
+.guide-kyc-circle {
+  width: clamp(48px, 10vw, 60px);
+  height: clamp(48px, 10vw, 60px);
+  border-radius: 50%;
+  background: var(--g-surface-glass);
+  border: 1px solid var(--g-surface-glass-border);
+  display: grid;
+  place-items: center;
+  font-size: clamp(18px, 3.6vw, 22px);
+  color: var(--g-brand-500);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08),
+    inset 0 2px 4px var(--g-glass-highlight),
+    inset 0 -2px 4px var(--g-glass-depth);
+  transition: all var(--g-transition-fast);
+  transform-style: preserve-3d;
+}
+
+.guide-kyc-circle:hover {
+  transform: translateZ(10px) scale(1.08);
+  box-shadow: 0 16px 40px rgba(0, 113, 227, 0.25),
+    inset 0 2px 4px var(--g-glass-highlight),
+    inset 0 -2px 4px var(--g-glass-depth);
+}
+
+.guide-kyc-item span {
+  font-size: clamp(11px, 2.2vw, 12.5px);
+  font-weight: 700;
+  color: var(--g-text-secondary);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.guide-kyc-line {
+  width: clamp(20px, 5vw, 38px);
+  height: 2px;
+  background: linear-gradient(90deg, var(--g-brand-300), var(--g-brand-500));
+  border-radius: 2px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 6px rgba(0, 113, 227, 0.2);
+  flex: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SUB-CARD GRID – 3D tiles
+   ═══════════════════════════════════════════════════════════ */
+.guide-subgrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(12px, 2.5vw, 16px);
+}
+
+.guide-subcard {
+  background: var(--g-surface-glass);
+  border: 1px solid var(--g-surface-glass-border);
+  border-radius: var(--g-radius-lg);
+  padding: clamp(16px, 2.8vw, 20px);
+  box-shadow: var(--g-surface-glass-shadow),
+    inset 0 1px 0 var(--g-glass-highlight);
+  transition: all var(--g-transition-fast);
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.guide-subcard::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  left: -30%;
+  width: 160%;
+  height: 160%;
+  background: radial-gradient(circle at 30% 30%, var(--g-glass-highlight), transparent 50%);
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+
+.guide-subcard:hover {
+  background: var(--g-surface-glass-hover);
+  transform: translateY(-3px) rotateX(1deg) rotateY(1deg);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 var(--g-glass-highlight);
+}
+
+.guide-subcard:hover::after {
+  opacity: 1;
+}
+
+.guide-subcard .tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--g-brand-500), var(--g-brand-700));
+  color: #fff;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.4);
+}
+
+.guide-subcard h4 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(14px, 2.4vw, 15px);
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--g-text-primary);
+  word-break: break-word;
+}
+
+.guide-subcard p,
+.guide-subcard ul {
+  font-size: clamp(12.5px, 2.2vw, 13.5px);
+  color: var(--g-text-tertiary);
+  line-height: 1.65;
+  margin: 0;
+  word-break: break-word;
+}
+
+.guide-subcard ul {
+  padding-left: 18px;
+}
+
+.guide-subcard.wide {
+  grid-column: 1 / -1;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATUS LIST – glass rows
+   ═══════════════════════════════════════════════════════════ */
+.guide-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guide-status-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 2.5vw, 16px);
+  background: var(--g-surface-glass);
+  border: 1px solid var(--g-surface-glass-border);
+  border-radius: var(--g-radius-lg);
+  padding: clamp(13px, 2.5vw, 16px) clamp(14px, 3vw, 20px);
+  box-shadow: var(--g-surface-glass-shadow),
+    inset 0 1px 0 var(--g-glass-highlight);
+  transition: all var(--g-transition-fast);
+  flex-wrap: wrap;
+}
+
+.guide-status-row:hover {
+  background: var(--g-surface-glass-hover);
+  transform: translateX(4px);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.1),
+    inset 0 1px 0 var(--g-glass-highlight);
+}
+
+.guide-status-chip {
+  flex: none;
+  padding: 7px 16px;
+  border-radius: var(--g-radius-full);
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #fff;
+  min-width: 124px;
+  text-align: center;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.guide-status-chip.pending {
+  background: var(--g-warning);
+}
+.guide-status-chip.approved {
+  background: var(--g-success);
+}
+.guide-status-chip.rejected {
+  background: var(--g-danger);
+}
+
+.guide-status-row p {
+  margin: 0;
+  font-size: clamp(13px, 2.3vw, 14px);
+  color: var(--g-text-secondary);
+  line-height: 1.5;
+  min-width: 0;
+  word-break: break-word;
+  flex: 1 1 180px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FLOW DIAGRAM – glass pills
+   ═══════════════════════════════════════════════════════════ */
+.guide-diagram {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.guide-diagram .pill {
+  padding: 10px 18px;
+  border-radius: var(--g-radius-full);
+  font-size: clamp(12px, 2.2vw, 13px);
+  font-weight: 700;
+  background: var(--g-surface-glass);
+  border: 1px solid var(--g-surface-glass-border);
+  color: var(--g-text-primary);
+  box-shadow: var(--g-surface-glass-shadow),
+    inset 0 1px 0 var(--g-glass-highlight);
+  transition: all var(--g-transition-fast);
+  white-space: nowrap;
+}
+
+.guide-diagram .pill:hover {
+  background: var(--g-surface-glass-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.1),
+    inset 0 1px 0 var(--g-glass-highlight);
+}
+
+.guide-diagram .arrow-icon {
+  color: var(--g-text-placeholder);
+  font-size: 14px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FAQ ACCORDION – glass panels
+   ═══════════════════════════════════════════════════════════ */
+.guide-faq-item {
+  background: var(--g-surface-glass);
+  border: 1px solid var(--g-surface-glass-border);
+  border-radius: var(--g-radius-lg);
+  margin-bottom: 10px;
+  overflow: hidden;
+  box-shadow: var(--g-surface-glass-shadow),
+    inset 0 1px 0 var(--g-glass-highlight);
+  transition: all var(--g-transition-fast);
+}
+
+.guide-faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: clamp(14px, 2.6vw, 17px) clamp(16px, 3vw, 22px);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: clamp(13.5px, 2.4vw, 15px);
+  color: var(--g-text-primary);
+  transition: background var(--g-transition-fast);
+  user-select: none;
+  min-height: 44px;
+}
+
+.guide-faq-q:hover {
+  background: var(--g-surface-glass-hover);
+}
+
+.guide-faq-q i {
+  transition: transform var(--g-transition-smooth);
+  color: var(--g-brand-500);
+  font-size: 16px;
+  flex: none;
+}
+
+.guide-faq-item.open .guide-faq-q i {
+  transform: rotate(180deg);
+}
+
+.guide-faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+  padding: 0 clamp(16px, 3vw, 22px);
+  font-size: clamp(13px, 2.2vw, 14px);
+  color: var(--g-text-tertiary);
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.guide-faq-item.open .guide-faq-a {
+  max-height: 260px;
+  padding: 0 clamp(16px, 3vw, 22px) 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCROLL TO TOP BUTTON – 3D glass
+   ═══════════════════════════════════════════════════════════ */
+.guide-scroll-top {
+  position: fixed;
+  bottom: max(28px, env(safe-area-inset-bottom, 0px) + 16px);
+  right: max(28px, env(safe-area-inset-right, 0px) + 16px);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--g-surface-glass);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  color: var(--g-brand-600);
+  border: 1px solid var(--g-surface-glass-border);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  box-shadow: 0 8px 24px rgba(0, 113, 227, 0.25),
+    inset 0 1px 0 var(--g-glass-highlight);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: all var(--g-transition-smooth);
+  z-index: 99;
+}
+
+.guide-scroll-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.guide-scroll-top:hover {
+  background: var(--g-surface-glass-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(0, 113, 227, 0.4),
+    inset 0 1px 0 var(--g-glass-highlight);
+  color: var(--g-brand-700);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.guide-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.guide-reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .guide-page {
+    scroll-behavior: auto;
+  }
+  .guide-card,
+  .guide-subcard,
+  .guide-status-row,
+  .guide-flow .fstep,
+  .guide-diagram .pill,
+  .guide-kyc-circle,
+  .guide-scroll-top {
+    transition: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Tablet landscape / small laptop — rapatkan sedikit tanpa ubah layout besar */
+@media (max-width: 1024px) {
+  .guide-wrap {
+    max-width: 100%;
+  }
+}
+
+/* Tablet potret */
+@media (max-width: 768px) {
+  .guide-page {
+    border-radius: var(--g-radius-lg);
+  }
+
+  .guide-subgrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .guide-kyc-visual {
+    gap: 10px 6px;
+  }
+}
+
+/* Mobile besar (HP standar) */
+@media (max-width: 640px) {
+  .guide-navbar {
+    border-radius: var(--g-radius-lg);
+    gap: 8px;
+  }
+
+  .guide-nav-logo {
+    font-size: 13.5px;
+  }
+
+  .guide-nav-logo span {
+    display: none;
+  }
+
+  .guide-nav-link {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .guide-theme-toggle span {
+    display: none;
+  }
+
+  .guide-theme-toggle {
+    padding: 8px;
+    width: 32px;
+    height: 32px;
+    justify-content: center;
+  }
+
+  .guide-subgrid {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-status-chip {
+    min-width: 108px;
+    font-size: 11.5px;
+    padding: 6px 12px;
+  }
+}
+
+/* Mobile umum */
+@media (max-width: 480px) {
+  .guide-page {
+    padding: 24px 14px 64px;
+    border-radius: var(--g-radius-lg);
+  }
+
+  .guide-navbar {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .guide-section-head {
+    gap: 12px;
+  }
+
+  .guide-badge {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+    border-radius: 14px;
+  }
+
+  .guide-card {
+    padding: 20px;
+    border-radius: var(--g-radius-lg);
+  }
+
+  .guide-kyc-visual {
+    justify-content: space-evenly;
+  }
+
+  .guide-kyc-item {
+    width: 74px;
+  }
+
+  .guide-kyc-circle {
+    width: 46px;
+    height: 46px;
+    font-size: 17px;
+  }
+
+  .guide-kyc-line {
+    width: 16px;
+    margin-bottom: 26px;
+  }
+
+  .guide-flow .fstep {
+    font-size: 11.5px;
+    padding: 8px 12px 8px 8px;
+  }
+
+  .guide-flow .fstep .num {
+    width: 22px;
+    height: 22px;
+    font-size: 10.5px;
+  }
+
+  .guide-status-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .guide-status-chip {
+    min-width: 0;
+  }
+
+  .guide-scroll-top {
+    bottom: max(18px, env(safe-area-inset-bottom, 0px) + 10px);
+    right: max(14px, env(safe-area-inset-right, 0px) + 10px);
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
+  }
+}
+
+/* Mobile kecil / layar sempit (mis. 320–374px) */
+@media (max-width: 374px) {
+  .guide-page {
+    padding: 20px 10px 56px;
+  }
+
+  .guide-hero h1 {
+    font-size: clamp(22px, 8vw, 28px);
+  }
+
+  .guide-hero .eyebrow {
+    padding: 7px 14px;
+    font-size: 11.5px;
+  }
+
+  .guide-flow {
+    gap: 6px;
+  }
+
+  .guide-flow .arrow-icon {
+    display: none;
+  }
+
+  .guide-card {
+    padding: 16px;
+  }
+
+  .guide-nav-links {
+    gap: 2px;
+  }
+
+  .guide-nav-link {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .guide-kyc-item {
+    width: 64px;
+  }
+
+  .guide-kyc-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+  }
+
+  .guide-kyc-item span {
+    font-size: 10px;
+  }
+
+  .guide-status-chip {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .guide-faq-q {
+    padding: 13px 14px;
+    font-size: 13px;
+  }
+
+  .guide-faq-a {
+    padding: 0 14px;
+    font-size: 12.5px;
+  }
+
+  .guide-faq-item.open .guide-faq-a {
+    padding: 0 14px 14px;
+  }
+}
+
+/* Mode landscape HP (tinggi layar pendek) — hemat ruang vertikal */
+@media (max-height: 480px) and (orientation: landscape) {
+  .guide-navbar {
+    position: static;
+  }
+
+  .guide-hero {
+    padding: 8px 4px 20px;
+  }
+
+  .guide-hero .eyebrow {
+    margin-bottom: 14px;
+  }
+
+  .guide-hero .hero-subtitle {
+    margin-bottom: 18px;
+  }
+}
+
+/* Layar sangat lebar — batasi lebar konten supaya tidak melebar berlebihan */
+@media (min-width: 1440px) {
+  .guide-wrap {
+    max-width: 980px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INTERACTIVE 3D TILT EFFECT (JavaScript driven)
+   for main cards: .guide-card, .guide-subcard, .guide-status-row
+   ═══════════════════════════════════════════════════════════ */
+.guide-card.tilt-active,
+.guide-subcard.tilt-active,
+.guide-status-row.tilt-active {
+  transition: transform 0.1s ease, box-shadow 0.3s ease;
+}
+</style>
+
+<div class="guide-page" id="guidePage">
+  <div class="guide-wrap">
+
+    <nav class="guide-navbar" id="guideNavbar">
+      <a href="#guidePage" class="guide-nav-logo">
+        <i class="bi bi-shield-check"></i> <span>{{ site_name }}</span>
+      </a>
+      <div class="guide-nav-links" id="guideNavLinks">
+        <a href="#daftar" class="guide-nav-link">Daftar</a>
+        <a href="#kyc" class="guide-nav-link">KYC</a>
+        <a href="#kredit" class="guide-nav-link">Kredit</a>
+        <a href="#status" class="guide-nav-link">Status</a>
+        <a href="#ringkasan" class="guide-nav-link">Ringkasan</a>
+        <a href="#soalan-lazim" class="guide-nav-link">FAQ</a>
+      </div>
+      <button type="button" class="guide-theme-toggle" onclick="toggleGuideTheme()" aria-label="Ganti tema terang/gelap">
+        <i class="bi bi-moon-stars" id="guideThemeIcon"></i> <span id="guideThemeLabel">Gelap</span>
+      </button>
+      <div class="guide-progress-bar" id="guideProgressBar"></div>
+    </nav>
+
+    <div class="guide-hero">
+      <span class="eyebrow"><i class="bi bi-stars"></i> Panduan Pengguna</span>
+      <h1>Daftar akun, verifikasi<br><span>KYC</span>, lalu ajukan kredit.</h1>
+      <p class="hero-subtitle">Empat langkah mudah dari membuat akun hingga cicilan bulanan Anda aktif — semua dapat diselesaikan langsung dari ponsel Anda.</p>
+
+      <div class="guide-flow guide-reveal">
+        <div class="fstep"><span class="num">1</span> Daftar Akun</div>
+        <i class="bi bi-arrow-right arrow-icon"></i>
+        <div class="fstep"><span class="num">2</span> Verifikasi KYC</div>
+        <i class="bi bi-arrow-right arrow-icon"></i>
+        <div class="fstep"><span class="num">3</span> Ajukan Kredit</div>
+        <i class="bi bi-arrow-right arrow-icon"></i>
+        <div class="fstep"><span class="num">4</span> Peninjauan Admin</div>
+      </div>
+    </div>
+
+    <!-- 1. Membuat Akun -->
+    <div class="guide-section" id="daftar">
+      <div class="guide-section-head guide-reveal">
+        <div class="guide-badge"><i class="bi bi-person-plus"></i></div>
+        <div>
+          <h2>1. Membuat Akun</h2>
+          <p>Isi data pribadi ringkas untuk mulai menggunakan layanan.</p>
+        </div>
+      </div>
+
+      <div class="guide-card guide-reveal">
+        <div class="guide-steps">
+          <div class="guide-step-row">
+            <div class="dot">1</div>
+            <div class="body">
+              <strong>Isi formulir pendaftaran</strong>
+              <p>Buka halaman pendaftaran dan lengkapi: <b>Nama Pengguna</b>, <b>Nama Lengkap</b>, <b>Email</b>, <b>Nomor Ponsel</b>, dan <b>Kata Sandi</b> (minimal 8 karakter).</p>
+            </div>
+          </div>
+          <div class="guide-step-row">
+            <div class="dot">2</div>
+            <div class="body">
+              <strong>Gunakan data yang belum terdaftar</strong>
+              <p>Pastikan email dan nomor ponsel belum pernah digunakan untuk akun lain di {{ site_name }}.</p>
+            </div>
+          </div>
+          <div class="guide-step-row">
+            <div class="dot">3</div>
+            <div class="body">
+              <strong>Klik Daftar</strong>
+              <p>Akun langsung aktif dan Anda secara otomatis masuk ke akun baru Anda.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-callout tip">
+          <i class="bi bi-lightbulb"></i>
+          <span><b>Tips:</b> gunakan email dan nomor ponsel yang aktif — keduanya dipakai untuk notifikasi status pengajuan kredit Anda nanti.</span>
+        </div>
+        <div class="guide-callout warn">
+          <i class="bi bi-info-circle"></i>
+          <span>Setelah daftar, status akun Anda masih <b>belum terverifikasi</b>. Anda sudah bisa belanja tunai, namun pengajuan kredit memerlukan verifikasi KYC terlebih dahulu.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. KYC -->
+    <div class="guide-section" id="kyc">
+      <div class="guide-section-head guide-reveal">
+        <div class="guide-badge"><i class="bi bi-fingerprint"></i></div>
+        <div>
+          <h2>2. Verifikasi Identitas (KYC)</h2>
+          <p>Memastikan permohonan dibuat oleh pemilik identitas yang sah.</p>
+        </div>
+      </div>
+
+      <div class="guide-card guide-reveal">
+        <div class="guide-kyc-visual">
+          <div class="guide-kyc-item">
+            <div class="guide-kyc-circle"><i class="bi bi-credit-card-2-front"></i></div>
+            <span>Unggah KTP</span>
+          </div>
+          <div class="guide-kyc-line"></div>
+          <div class="guide-kyc-item">
+            <div class="guide-kyc-circle"><i class="bi bi-person-bounding-box"></i></div>
+            <span>Swafoto Wajah</span>
+          </div>
+          <div class="guide-kyc-line"></div>
+          <div class="guide-kyc-item">
+            <div class="guide-kyc-circle"><i class="bi bi-patch-check"></i></div>
+            <span>Verifikasi</span>
+          </div>
+        </div>
+
+        <div class="guide-steps">
+          <div class="guide-step-row">
+            <div class="dot">1</div>
+            <div class="body">
+              <strong>Unggah foto KTP</strong>
+              <p>Foto dengan pencahayaan cukup, seluruh bagian KTP terlihat jelas dan tidak buram.</p>
+            </div>
+          </div>
+          <div class="guide-step-row">
+            <div class="dot">2</div>
+            <div class="body">
+              <strong>Ambil swafoto wajah</strong>
+              <p>Ikuti panduan di layar. Sistem secara otomatis mencocokkan wajah Anda dengan foto pada KTP.</p>
+            </div>
+          </div>
+          <div class="guide-step-row">
+            <div class="dot">3</div>
+            <div class="body">
+              <strong>Verifikasi otomatis</strong>
+              <p>Jika kecocokan berhasil, status akun berubah menjadi <b>Terverifikasi</b> dan Anda dapat langsung mengajukan kredit.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-callout warn">
+          <i class="bi bi-exclamation-triangle"></i>
+          <span>Jika verifikasi gagal, ulangi dari Langkah 1. Ambil foto langsung di tempat dengan pencahayaan baik — bukan mengambil gambar dari layar atau foto lain.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Pengajuan Kredit -->
+    <div class="guide-section" id="kredit">
+      <div class="guide-section-head guide-reveal">
+        <div class="guide-badge"><i class="bi bi-wallet2"></i></div>
+        <div>
+          <h2>3. Mengajukan Kredit/Cicilan</h2>
+          <p>Setelah akun terverifikasi, siapkan data berikut sebelum mengajukan.</p>
+        </div>
+      </div>
+
+      <div class="guide-card guide-reveal">
+        <div class="guide-subgrid">
+          <div class="guide-subcard wide">
+            <span class="tag">A</span>
+            <h4>Pilih Paket Cicilan</h4>
+            <p>Pilih jangka waktu (misalnya 6/12/24 bulan) dan lihat simulasi cicilan bulanan sebelum mengajukan, agar Anda tahu perkiraan pembayaran setiap bulan.</p>
+          </div>
+          <div class="guide-subcard">
+            <span class="tag">B</span>
+            <h4>Data Pribadi</h4>
+            <ul>
+              <li>Nama lengkap sesuai KTP</li>
+              <li>No. KTP — 16 digit angka</li>
+              <li>Nomor ponsel &amp; email</li>
+              <li>Tempat/tanggal lahir, jenis kelamin, status perkawinan</li>
+              <li>Alamat sesuai KTP</li>
+            </ul>
+          </div>
+          <div class="guide-subcard">
+            <span class="tag">C</span>
+            <h4>Data Pekerjaan</h4>
+            <ul>
+              <li>Jenis pekerjaan</li>
+              <li>Nama perusahaan/usaha &amp; jabatan</li>
+              <li>Pendapatan bulanan</li>
+            </ul>
+          </div>
+          <div class="guide-subcard">
+            <span class="tag">D</span>
+            <h4>Kontak Darurat</h4>
+            <ul>
+              <li>Nama kontak</li>
+              <li>Nomor ponsel</li>
+              <li>Hubungan (anggota keluarga/kerabat)</li>
+            </ul>
+          </div>
+          <div class="guide-subcard">
+            <span class="tag">E</span>
+            <h4>Dokumen Pendukung</h4>
+            <ul>
+              <li>Foto KTP &amp; swafoto</li>
+              <li>Slip gaji (jika ada)</li>
+              <li>Slip/saldo BPJS Ketenagakerjaan (jika ada)</li>
+              <li>Tagihan Utilitas (Air/Listrik)</li>
+            </ul>
+          </div>
+          <div class="guide-subcard wide">
+            <span class="tag">F</span>
+            <h4>Kirim Permohonan</h4>
+            <p>Setelah semua data dan dokumen lengkap, kirim permohonan Anda. Status akan ditampilkan sebagai <b>Menunggu Peninjauan (Pending)</b>.</p>
+          </div>
+        </div>
+
+        <div class="guide-callout important">
+          <i class="bi bi-exclamation-circle"></i>
+          <span><b>Penting:</b> Anda hanya dapat memiliki satu permohonan berstatus <i>pending</i> pada satu waktu. Untuk mengajukan produk lain, tunggu permohonan sebelumnya diproses terlebih dahulu.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Status -->
+    <div class="guide-section" id="status">
+      <div class="guide-section-head guide-reveal">
+        <div class="guide-badge"><i class="bi bi-list-check"></i></div>
+        <div>
+          <h2>4. Setelah Permohonan Dikirim</h2>
+          <p>Pantau status permohonan Anda melalui halaman profil.</p>
+        </div>
+      </div>
+
+      <div class="guide-card guide-reveal">
+        <div class="guide-status-list">
+          <div class="guide-status-row">
+            <span class="guide-status-chip pending">PENDING</span>
+            <p>Permohonan sedang menunggu diperiksa oleh admin.</p>
+          </div>
+          <div class="guide-status-row">
+            <span class="guide-status-chip approved">DISETUJUI</span>
+            <p>Permohonan diterima — jadwal cicilan bulanan Anda akan aktif.</p>
+          </div>
+          <div class="guide-status-row">
+            <span class="guide-status-chip rejected">DITOLAK</span>
+            <p>Permohonan tidak disetujui, biasanya disertai alasan penolakan.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ringkasan Aliran -->
+    <div class="guide-section" id="ringkasan">
+      <div class="guide-section-head guide-reveal">
+        <div class="guide-badge"><i class="bi bi-signpost-split"></i></div>
+        <div>
+          <h2>Ringkasan Aliran</h2>
+          <p>Perjalanan lengkap dari pendaftaran hingga cicilan aktif.</p>
+        </div>
+      </div>
+      <div class="guide-card guide-reveal">
+        <div class="guide-diagram">
+          <span class="pill">Daftar Akun</span><i class="bi bi-arrow-right arrow-icon"></i>
+          <span class="pill">Verifikasi KYC</span><i class="bi bi-arrow-right arrow-icon"></i>
+          <span class="pill">Pilih Paket &amp; Isi Data</span><i class="bi bi-arrow-right arrow-icon"></i>
+          <span class="pill">Unggah Dokumen</span><i class="bi bi-arrow-right arrow-icon"></i>
+          <span class="pill">Kirim Permohonan</span><i class="bi bi-arrow-right arrow-icon"></i>
+          <span class="pill">Menunggu Peninjauan</span><i class="bi bi-arrow-right arrow-icon"></i>
+          <span class="pill">Disetujui / Ditolak</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Soalan Lazim -->
+    <div class="guide-section" id="soalan-lazim">
+      <div class="guide-section-head guide-reveal">
+        <div class="guide-badge"><i class="bi bi-question-circle"></i></div>
+        <div>
+          <h2>Soalan Lazim</h2>
+          <p>Perkara yang sering ditanya mengenai proses ini.</p>
+        </div>
+      </div>
+
+      <div class="guide-reveal">
+        <div class="guide-faq-item">
+          <div class="guide-faq-q" onclick="toggleGuideFaq(this)">
+            Apakah saya bisa mengajukan kredit tanpa verifikasi KYC?
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="guide-faq-a">Tidak. Verifikasi KYC wajib diselesaikan terlebih dahulu sebelum permohonan kredit dapat diproses.</div>
+        </div>
+        <div class="guide-faq-item">
+          <div class="guide-faq-q" onclick="toggleGuideFaq(this)">
+            Berapa lama proses peninjauan permohonan?
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="guide-faq-a">Waktu peninjauan bergantung pada kebijakan tim kami. Anda akan mendapat pemberitahuan segera setelah status permohonan berubah.</div>
+        </div>
+        <div class="guide-faq-item">
+          <div class="guide-faq-q" onclick="toggleGuideFaq(this)">
+            Apa yang terjadi jika permohonan saya ditolak?
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="guide-faq-a">Anda dapat mengajukan kembali dengan melengkapi atau memperbaiki data/dokumen yang diperlukan.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <button type="button" class="guide-scroll-top" id="guideScrollTop" onclick="scrollGuideToTop()" aria-label="Kembali ke atas">
+    <i class="bi bi-arrow-up"></i>
+  </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function applyGuideTheme(theme){
+    const page = document.getElementById('guidePage');
+    const icon = document.getElementById('guideThemeIcon');
+    const label = document.getElementById('guideThemeLabel');
+    if (theme === 'dark'){
+      page.setAttribute('data-theme', 'dark');
+      icon.className = 'bi bi-sun';
+      label.textContent = 'Terang';
+    } else {
+      page.removeAttribute('data-theme');
+      icon.className = 'bi bi-moon-stars';
+      label.textContent = 'Gelap';
+    }
+  }
+
+  function toggleGuideTheme(){
+    const page = document.getElementById('guidePage');
+    const next = page.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('guideTheme', next);
+    applyGuideTheme(next);
+  }
+
+  (function(){
+    const saved = localStorage.getItem('guideTheme');
+    const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyGuideTheme(saved || (systemPrefersDark ? 'dark' : 'light'));
+  })();
+
+  function toggleGuideFaq(el){
+    const item = el.parentElement;
+    document.querySelectorAll('.guide-faq-item').forEach(f => { if (f !== item) f.classList.remove('open'); });
+    item.classList.toggle('open');
+  }
+
+  (function(){
+    const guideObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.guide-reveal').forEach(el => guideObserver.observe(el));
+  })();
+
+  function scrollGuideToTop(){
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  (function(){
+    const navbar = document.getElementById('guideNavbar');
+    const progressBar = document.getElementById('guideProgressBar');
+    const scrollTopBtn = document.getElementById('guideScrollTop');
+    const navLinks = navbar ? navbar.querySelectorAll('.guide-nav-link') : [];
+    const sections = document.querySelectorAll('.guide-section[id]');
+
+    function onGuideScroll(){
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+
+      if (navbar) {
+        navbar.classList.toggle('scrolled', scrollY > 24);
+      }
+
+      if (scrollTopBtn) {
+        scrollTopBtn.classList.toggle('visible', scrollY > 400);
+      }
+
+      if (progressBar) {
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = docHeight > 0 ? Math.min(100, Math.max(0, (scrollY / docHeight) * 100)) : 0;
+        progressBar.style.width = progress + '%';
+      }
+
+      if (navLinks.length && sections.length) {
+        let currentId = '';
+        sections.forEach(section => {
+          const rect = section.getBoundingClientRect();
+          if (rect.top <= 140 && rect.bottom > 140) {
+            currentId = section.id;
+          }
+        });
+        navLinks.forEach(link => {
+          const targetId = link.getAttribute('href').replace('#', '');
+          link.classList.toggle('active', targetId === currentId);
+        });
+      }
+    }
+
+    window.addEventListener('scroll', onGuideScroll, { passive: true });
+    onGuideScroll();
+  })();
+
+  (function(){
+    const tiltSelector = '.guide-card, .guide-subcard, .guide-status-row';
+    const maxTilt = 6;
+
+    function handleMove(e){
+      const el = e.currentTarget;
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const rotateY = ((x / rect.width) - 0.5) * (maxTilt * 2);
+      const rotateX = ((y / rect.height) - 0.5) * (maxTilt * -2);
+      el.style.transform = `translateY(-2px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`;
+      el.classList.add('tilt-active');
+    }
+
+    function handleLeave(e){
+      const el = e.currentTarget;
+      el.style.transform = '';
+      el.classList.remove('tilt-active');
+    }
+
+    document.querySelectorAll(tiltSelector).forEach(el => {
+      el.addEventListener('mousemove', handleMove);
+      el.addEventListener('mouseleave', handleLeave);
+    });
+  })();
+</script>
+{% endblock %}

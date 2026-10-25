@@ -1,0 +1,494 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div x-data="dashboard()" x-init="init()" class="relative">
+    <!-- Toast Notification -->
+    <div x-show="toast.show" x-transition
+         class="fixed top-6 right-6 z-50 px-6 py-3 rounded-xl shadow-lg flex items-center gap-3"
+         :class="toast.type === 'success' ? 'bg-green-600 text-white' : (toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white')">
+        <i class="fas" :class="toast.type === 'success' ? 'fa-check-circle' : (toast.type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle')"></i>
+        <span x-text="toast.message"></span>
+    </div>
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center gap-3">
+            <i class="fas fa-chart-line text-2xl text-blue-600"></i>
+            Overview
+        </h1>
+        <p class="text-sm text-gray-400 flex items-center gap-2">
+            <i class="far fa-clock"></i>
+            {{ now|default('') | format_datetime if now else '-' }}
+        </p>
+    </div>
+
+    <!-- Statistik Utama -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div class="admin-card p-5 flex flex-col relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-blue-400 rounded-full opacity-10"></div>
+            <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">Produk</div>
+            <div class="text-3xl font-bold text-gray-800">{{ total_products|default(0) }}</div>
+            <div class="mt-2 text-xs text-gray-400">Total produk aktif</div>
+        </div>
+
+        <div class="admin-card p-5 flex flex-col relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-blue-400 rounded-full opacity-10"></div>
+            <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">Total Order</div>
+            <div class="text-3xl font-bold text-gray-800">{{ total_orders|default(0) }}</div>
+            <div class="mt-2 text-xs text-gray-400">Semua periode</div>
+        </div>
+
+        <div class="admin-card p-5 flex flex-col relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-yellow-400 rounded-full opacity-10"></div>
+            <div class="text-xs text-yellow-600 font-semibold uppercase tracking-wider mb-1">Pending</div>
+            <div class="text-3xl font-bold text-yellow-600">{{ pending_orders|default(0) }}</div>
+            <div class="mt-2 text-xs text-gray-400">Menunggu pembayaran</div>
+        </div>
+
+        <div class="admin-card p-5 flex flex-col relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-green-400 rounded-full opacity-10"></div>
+            <div class="text-xs text-green-600 font-semibold uppercase tracking-wider mb-1">Revenue</div>
+            <div class="text-2xl font-bold text-green-600">{{ format_price(total_revenue|default(0)) }}</div>
+            <div class="mt-2 text-xs text-gray-400">Total pendapatan</div>
+        </div>
+
+        <div class="admin-card p-5 flex flex-col relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-orange-400 rounded-full opacity-10"></div>
+            <div class="text-xs text-orange-600 font-semibold uppercase tracking-wider mb-1">Processing</div>
+            <div class="text-3xl font-bold text-orange-600">{{ processing_orders|default(0) }}</div>
+            <div class="mt-2 text-xs text-gray-400">Sedang diproses</div>
+        </div>
+
+        <div class="admin-card p-5 flex flex-col relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-amber-700 rounded-full opacity-10"></div>
+            <div class="text-xs text-amber-700 font-semibold uppercase tracking-wider mb-1">Redemption</div>
+            <div class="text-3xl font-bold text-amber-700">{{ ready_for_redemption_count|default(0) }}</div>
+            <div class="mt-2 text-xs text-gray-400">Lunas & siap cetak</div>
+        </div>
+    </div>
+
+    <!-- OpenRouter AI Status Panel -->
+    <div class="admin-card p-6 mb-8 relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-brain text-2xl text-blue-600"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        OpenRouter AI Integration
+                        {% if settings.get('openrouter_api_key') %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                <span class="w-2 h-2 mr-1.5 bg-green-500 rounded-full animate-pulse"></span> Active
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-700/50">
+                                <span class="w-2 h-2 mr-1.5 bg-gray-400 rounded-full"></span> Inactive
+                            </span>
+                        {% endif %}
+                    </h3>
+                    <p class="text-sm text-gray-400 mt-1">
+                        Model: <code class="text-xs bg-gray-100/80 px-2 py-1 rounded-lg">{{ settings.get('openrouter_model', 'openrouter/free') }}</code>
+                    <span class="mx-1 text-gray-300">|</span>
+                    Endpoint: <code class="text-xs bg-gray-100/80 px-2 py-1 rounded-lg">{{ settings.get('openrouter_base_url', 'https://openrouter.ai/api/v1') }}</code>
+                    </p>
+                    {% if openclaw_status %}
+                    <p class="text-xs text-gray-400 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i> {{ openclaw_status }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ url_for('admin_ai_config') }}" class="flex items-center gap-2 px-4 py-2 admin-card border border-gray-700/50 text-gray-700 text-sm font-medium rounded-xl hover:bg-dark-800/50 transition-all shadow-sm">
+                    <i class="fas fa-cog"></i> Configure
+                </a>
+                {% if settings.get('openrouter_api_key') %}
+                <button @click="testAiConnection()" :disabled="testingAi"
+                        class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-all shadow-sm disabled:opacity-50">
+                    <i class="fas" :class="testingAi ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i>
+                    <span x-text="testingAi ? 'Testing...' : 'Test Connection'"></span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        <div x-show="aiTestResult" x-html="aiTestResult" x-transition class="mt-4 text-sm p-3 rounded-xl"
+             :class="aiTestSuccess ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'"></div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Revenue Chart -->
+        <div class="admin-card p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="fas fa-chart-bar text-blue-600"></i> Pendapatan 7 Hari Terakhir
+            </h3>
+            <div class="h-64 flex items-end justify-between gap-2 px-2">
+                {% for day in revenue_chart|default([]) %}
+                <div class="flex-1 flex flex-col items-center gap-2 group">
+                    <div class="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">{{ format_price(day.amount) }}</div>
+                    <div class="w-full bg-blue-200 rounded-t-lg transition-all duration-300 hover:bg-blue-500 relative"
+                         style="height: {{ day.percent|default(0) }}%"></div>
+                    <div class="text-xs text-gray-400">{{ day.label }}</div>
+                </div>
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                    Belum ada data
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Order Status Distribution -->
+        <div class="admin-card p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="fas fa-chart-pie text-blue-600"></i> Distribusi Status Order
+            </h3>
+            <div class="space-y-4">
+                {% set status_data = [
+                    {'label': 'Pending', 'count': pending_orders|default(0), 'color': 'bg-yellow-500', 'text': 'text-yellow-600'},
+                    {'label': 'Processing', 'count': processing_orders|default(0), 'color': 'bg-blue-500', 'text': 'text-blue-600'},
+                    {'label': 'Ready to Ship', 'count': ready_to_ship_orders|default(0), 'color': 'bg-orange-500', 'text': 'text-orange-600'},
+                    {'label': 'Shipped', 'count': shipped_orders|default(0), 'color': 'bg-cyan-500', 'text': 'text-cyan-600'},
+                    {'label': 'Completed', 'count': completed_orders|default(0), 'color': 'bg-green-500', 'text': 'text-green-600'}
+                ] %}
+                {% for item in status_data %}
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full {{ item.color }}"></div>
+                    <div class="flex-1">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-medium text-gray-700">{{ item.label }}</span>
+                            <span class="font-semibold {{ item.text }}">{{ item.count }}</span>
+                        </div>
+                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div class="h-full {{ item.color }} rounded-full transition-all duration-500"
+                                 style="width: {{ (item.count / (total_orders or 1) * 100)|round(1) }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="admin-card relative overflow-hidden mb-8">
+        <div class="absolute -top-20 -right-20 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl z-0 pointer-events-none"></div>
+
+        <div class="relative z-10 p-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-shopping-cart text-blue-600"></i> Pesanan Terbaru
+                </h3>
+                <a href="{{ url_for('admin_orders') }}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition flex items-center gap-1">
+                    Lihat Semua <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700/50">
+                    <thead class="bg-dark-800/50/50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">No. Order</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Pelanggan</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Tanggal</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Total</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for order in recent_orders|default([]) %}
+                        <tr class="hover:admin-card transition-colors">
+                            <td class="px-4 py-3 text-sm font-semibold text-gray-800">{{ order.order_number }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ order.customer_name }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-400">{{ order.created_at | format_datetime }}</td>
+                            <td class="px-4 py-3 text-sm font-bold text-blue-600">{{ format_price(order.total) }}</td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border {% if order.status == 'Pending' %}bg-yellow-50 text-yellow-700 border-yellow-200 {% elif order.status == 'Paid' %}bg-blue-50 text-blue-700 border-blue-200 {% elif order.status == 'Processing' %}bg-blue-50 text-blue-700 border-blue-200 {% elif order.status == 'Ready_to_Ship' %}bg-orange-50 text-orange-700 border-orange-200 {% elif order.status == 'Shipped' %}bg-cyan-50 text-cyan-700 border-cyan-200 {% elif order.status == 'Completed' %}bg-green-50 text-green-700 border-green-200 {% else %}bg-red-50 text-red-700 border-red-200{% endif %}">
+                                    {{ order.status.replace('_', ' ') }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors" title="Lihat Detail">
+                                    <i class="fas fa-eye text-sm"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="px-4 py-12 text-center">
+                                <div class="flex flex-col items-center justify-center">
+                                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                        <i class="fas fa-inbox text-2xl text-gray-400"></i>
+                                    </div>
+                                    <p class="text-sm text-gray-400">Belum ada pesanan</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Redemption Letters & Products Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Recent Paid Orders -->
+        <div class="admin-card relative overflow-hidden">
+            <div class="absolute -top-20 -right-20 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl z-0 pointer-events-none"></div>
+
+            <div class="relative z-10 p-6">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-file-signature text-amber-700"></i> Pesanan Lunas (Surat Penebusan)
+                    </h3>
+                    <a href="{{ url_for('admin_redemption_letters') }}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition flex items-center gap-1">
+                        Lihat Semua <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-700/50">
+                        <thead class="bg-dark-800/50/50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">No. Order</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Pelanggan</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for order in recent_paid_orders|default([]) %}
+                            <tr class="hover:admin-card transition-colors">
+                                <td class="px-4 py-3 text-sm font-mono text-gray-800">{{ order.order_number }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-600">{{ order.customer_name }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-400">{{ order.updated_at | format_date if order.updated_at else order.created_at | format_date }}</td>
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-2">
+                                        <a href="{{ url_for('redemption_letter', order_id=order.id) }}" target="_blank"
+                                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-700 text-white hover:bg-amber-800 transition">
+                                            <i class="fas fa-print"></i> Cetak
+                                        </a>
+                                        <a href="{{ url_for('admin_order_detail', order_id=order.id) }}"
+                                           class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors" title="Detail">
+                                            <i class="fas fa-eye text-sm"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="px-4 py-12 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                            <i class="fas fa-file-alt text-2xl text-gray-400"></i>
+                                        </div>
+                                        <p class="text-sm text-gray-400">Belum ada pesanan yang lunas</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Products -->
+        <div class="admin-card relative overflow-hidden">
+            <div class="absolute -top-20 -right-20 w-60 h-60 bg-green-500/10 rounded-full blur-3xl z-0 pointer-events-none"></div>
+
+            <div class="relative z-10 p-6">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-boxes text-green-600"></i> Produk Terbaru
+                    </h3>
+                    <a href="{{ url_for('admin_product_new') }}" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 transition-all shadow-sm">
+                        <i class="fas fa-plus"></i> Tambah Produk
+                    </a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-700/50">
+                        <thead class="bg-dark-800/50/50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Nama</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Harga</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Stok</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for product in recent_products|default([]) %}
+                            <tr class="hover:admin-card transition-colors">
+                                <td class="px-4 py-3 text-sm font-medium text-gray-800">{{ product.name }}</td>
+                                <td class="px-4 py-3 text-sm font-semibold text-blue-600">{{ format_price(product.price) }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-600">{{ product.stock }}</td>
+                                <td class="px-4 py-3">
+                                    {% if product.stock > 10 %}
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                        <i class="fas fa-check-circle mr-1"></i> Tersedia
+                                    </span>
+                                    {% elif product.stock > 0 %}
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i> Stok Menipis
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                                        <i class="fas fa-times-circle mr-1"></i> Habis
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <a href="{{ url_for('admin_product_edit', id=product.id) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors" title="Edit">
+                                        <i class="fas fa-edit text-sm"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="px-4 py-12 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                            <i class="fas fa-box text-2xl text-gray-400"></i>
+                                        </div>
+                                        <p class="text-sm text-gray-400">Belum ada produk</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 text-right">
+                    <a href="{{ url_for('admin_products') }}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition flex items-center justify-end gap-1">
+                        Lihat Semua Produk <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <a href="{{ url_for('admin_orders', status='Pending') }}" class="bg-yellow-50/70 border border-yellow-200 rounded-2xl p-5 hover:bg-yellow-100/70 transition-all group">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-yellow-600 font-semibold uppercase tracking-wider">Perlu Tindakan</div>
+                    <div class="text-2xl font-bold text-yellow-700 mt-1">{{ (pending_orders|default(0)) + (processing_orders|default(0)) }}</div>
+                </div>
+                <i class="fas fa-exclamation-circle text-3xl text-yellow-400 group-hover:text-yellow-600 transition"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('admin_orders', status='Ready_to_Ship') }}" class="bg-orange-50/70 border border-orange-200 rounded-2xl p-5 hover:bg-orange-100/70 transition-all group">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-orange-600 font-semibold uppercase tracking-wider">Siap Kirim</div>
+                    <div class="text-2xl font-bold text-orange-700 mt-1">{{ ready_to_ship_orders|default(0) }}</div>
+                </div>
+                <i class="fas fa-box text-3xl text-orange-400 group-hover:text-orange-600 transition"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('admin_users') }}" class="bg-blue-50/70 border border-blue-200 rounded-2xl p-5 hover:bg-blue-100/70 transition-all group">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider">Pelanggan Baru</div>
+                    <div class="text-2xl font-bold text-blue-700 mt-1">{{ new_customers_today|default(0) }}</div>
+                </div>
+                <i class="fas fa-user-plus text-3xl text-blue-400 group-hover:text-blue-600 transition"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('admin_orders', status='Completed') }}" class="bg-green-50/70 border border-green-200 rounded-2xl p-5 hover:bg-green-100/70 transition-all group">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-green-600 font-semibold uppercase tracking-wider">Selesai Hari Ini</div>
+                    <div class="text-2xl font-bold text-green-700 mt-1">{{ completed_today|default(0) }}</div>
+                </div>
+                <i class="fas fa-check-double text-3xl text-green-400 group-hover:text-green-600 transition"></i>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function dashboard() {
+    return {
+        testingAi: false,
+        aiTestResult: '',
+        aiTestSuccess: false,
+        toast: {
+            show: false,
+            message: '',
+            type: 'success'
+        },
+
+        init() {
+            this.$watch('toast.show', value => {
+                if (value) {
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, 4000);
+                }
+            });
+        },
+
+        showToast(message, type = 'success') {
+            this.toast.message = message;
+            this.toast.type = type;
+            this.toast.show = true;
+        },
+
+        async testAiConnection() {
+            this.testingAi = true;
+            this.aiTestResult = '';
+
+            try {
+                const response = await fetch('{{ url_for("admin_test_ai_connection") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        base_url: '{{ settings.get("openrouter_base_url", "https://openrouter.ai/api/v1") }}',
+                        api_key: '{{ settings.get("openrouter_api_key", "") }}',
+                        model: '{{ settings.get("openrouter_model", "openrouter/free") }}',
+                        site_url: '{{ settings.get("openrouter_site_url", "") }}',
+                        app_name: '{{ settings.get("openrouter_app_name", "") }}'
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    this.aiTestSuccess = true;
+                    this.aiTestResult = '<i class="fas fa-check-circle mr-2"></i> ' + (data.message || 'Koneksi ke OpenRouter berhasil!');
+                    this.showToast('Koneksi OpenRouter berhasil', 'success');
+                } else {
+                    throw new Error(data.message || 'OpenRouter tidak merespons');
+                }
+            } catch (error) {
+                this.aiTestSuccess = false;
+                this.aiTestResult = '<i class="fas fa-exclamation-circle mr-2"></i> Gagal terhubung: ' + error.message;
+                this.showToast('Gagal terhubung ke OpenRouter', 'error');
+            } finally {
+                this.testingAi = false;
+            }
+        } }
+}
+
+/* ─── OpenRouter AI Integration ─── */
+window.aiPageContext = {
+    page: 'admin_dashboard',
+    prompt: 'Anda adalah asisten dashboard untuk admin Pusat Gadai Indonesia. Membantu admin dengan:\n- Interpretasi statistik dan metrik bisnis\n- Analisis tren penjualan dan order\n- Identifikasi masalah atau bottleneck\n- Rekomendasi optimasi operasional\n- Insight tentang performa produk\n- Tips peningkatan efisiensi dan revenue\nJawab dengan data-driven, profesional, dan gunakan bahasa Indonesia.'
+};
+</script>
+{% endblock %}

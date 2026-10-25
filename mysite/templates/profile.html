@@ -1,0 +1,2470 @@
+{% extends "base.html" %}
+
+{% block title %}Profil Saya — {{ site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════════════════
+   USER PROFILE — MODERN DARK/LIGHT THEME (aligned with global tokens)
+   Uses --bg-glass, --border-default, --glass-highlight, --glass-depth,
+   --glass-contact, --shadow-card, --glass-blur, --radius-soft, etc.
+   from the global theme stylesheet (section 18/18B).
+   ═══════════════════════════════════════════════════════════ */
+
+.profile-page {
+  /* ── Map profile-scoped vars ke token global ─────────── */
+  --p-glass:          var(--bg-glass);
+  --p-glass-hover:    var(--bg-glass-strong);
+  --p-glass-strong:   var(--bg-glass-strong);
+
+  --p-border:         var(--border-default);
+  --p-border-strong:  var(--border-strong);
+
+  /* Bevel 3D modern (subtle, sesuai section 18) */
+  --p-bevel-top:      var(--glass-highlight);
+  --p-bevel-bottom:   var(--glass-depth);
+  --p-bevel-left:     inset 1px 0 0 rgba(255, 255, 255, 0.03);
+  --p-bevel-right:    inset -1px 0 0 rgba(255, 255, 255, 0.03);
+  --p-inner-glow:     inset 0 0 40px rgba(255, 255, 255, 0.02);
+
+  /* 3D glass ring — versi modern: 2 lapis luar tipis + highlight/depth */
+  --p-glass-ring:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.18),
+    var(--glass-highlight),
+    var(--glass-depth),
+    0 0 0 1px rgba(0, 0, 0, 0.28),
+    0 0 0 2px rgba(255, 255, 255, 0.05);
+
+  /* Shadows — pakai token global */
+  --p-shadow-contact: var(--glass-contact);
+  --p-shadow-sm:      var(--shadow-sm);
+  --p-shadow-md:      var(--shadow-card);
+  --p-shadow-lg:      var(--shadow-card-hover);
+
+  /* Blur */
+  --p-blur:           var(--glass-blur);
+  --p-blur-sm:        var(--glass-blur-sm);
+
+  /* Radius */
+  --p-radius:         var(--radius-soft);    /* 24px */
+  --p-radius-lg:      var(--radius-softer);  /* 32px */
+  --p-radius-sm:      12px;
+  --p-transition:     var(--transition-cream);
+
+  padding-bottom: 4rem;
+  position: relative;
+  isolation: isolate;
+}
+
+/* Light mode — override nilai yang berbeda dari token global */
+html[data-theme="light"] .profile-page {
+  --p-bevel-left:     inset 1px 0 0 rgba(255, 255, 255, 0.5);
+  --p-bevel-right:    inset -1px 0 0 rgba(255, 255, 255, 0.5);
+  --p-inner-glow:     inset 0 0 40px rgba(255, 255, 255, 0.35);
+
+  --p-glass-ring:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+    var(--glass-highlight),
+    var(--glass-depth),
+    0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 0 0 2px rgba(15, 23, 42, 0.05);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DECORATIVE BACKGROUND
+   ═══════════════════════════════════════════════════════════ */
+.profile-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bg-grid {
+  position: absolute;
+  inset: -10%;
+  background-image: var(--grid-bg);
+  background-size: 64px 64px, 64px 64px;
+  background-position: center center;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 20%, transparent 80%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 20%, transparent 80%);
+  opacity: 0.95;
+  animation: gridDrift 40s linear infinite;
+}
+@keyframes gridDrift {
+  0%   { background-position: 0 0, 0 0; }
+  100% { background-position: 64px 64px, 64px 64px; }
+}
+
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  will-change: transform;
+}
+.bg-blob.a {
+  top: 5%; left: 10%; width: 480px; height: 480px;
+  background: radial-gradient(circle, rgba(10, 132, 255, 0.42), rgba(10, 132, 255, 0.08) 60%, transparent 75%);
+  animation: blobFloatA 22s ease-in-out infinite;
+}
+.bg-blob.b {
+  top: 3%; right: 5%; width: 420px; height: 420px;
+  background: radial-gradient(circle, rgba(77, 168, 255, 0.32), rgba(77, 168, 255, 0.06) 60%, transparent 75%);
+  animation: blobFloatB 26s ease-in-out infinite;
+}
+.bg-blob.c {
+  top: 45%; right: 20%; width: 380px; height: 380px;
+  background: radial-gradient(circle, rgba(52, 211, 153, 0.22), rgba(52, 211, 153, 0.04) 60%, transparent 75%);
+  animation: blobFloatC 30s ease-in-out infinite;
+}
+.bg-blob.d {
+  bottom: 5%; left: 15%; width: 440px; height: 440px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.20), rgba(251, 191, 36, 0.04) 60%, transparent 75%);
+  animation: blobFloatD 28s ease-in-out infinite;
+}
+@keyframes blobFloatA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(60px, 40px) scale(1.12); }
+}
+@keyframes blobFloatB {
+  0%, 100% { transform: translate(0, 0) scale(1.05); }
+  50%      { transform: translate(-50px, 60px) scale(0.92); }
+}
+@keyframes blobFloatC {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-40px, -50px) scale(1.15); }
+}
+@keyframes blobFloatD {
+  0%, 100% { transform: translate(0, 0) scale(0.95); }
+  50%      { transform: translate(70px, -30px) scale(1.08); }
+}
+html[data-theme="light"] .bg-blob { filter: blur(110px); opacity: 0.55; }
+
+.bg-panel {
+  position: absolute;
+  border-radius: 24px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-default);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  box-shadow: var(--shadow-card);
+  will-change: transform;
+  opacity: 1;
+}
+.bg-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%; height: 1.5px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  border-radius: inherit;
+}
+html[data-theme="light"] .bg-panel::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+}
+.bg-panel.p1 {
+  top: 8%; left: 5%; width: 160px; height: 160px;
+  transform: rotate(-18deg);
+  animation: panelFloat1 18s ease-in-out infinite;
+}
+.bg-panel.p2 {
+  top: 18%; right: 8%; width: 200px; height: 140px;
+  transform: rotate(12deg);
+  animation: panelFloat2 22s ease-in-out infinite;
+}
+.bg-panel.p3 {
+  bottom: 12%; left: 8%; width: 130px; height: 130px;
+  transform: rotate(25deg);
+  animation: panelFloat3 20s ease-in-out infinite;
+}
+.bg-panel.p4 {
+  bottom: 18%; right: 6%; width: 180px; height: 100px;
+  transform: rotate(-15deg);
+  animation: panelFloat4 24s ease-in-out infinite;
+}
+@keyframes panelFloat1 {
+  0%, 100% { transform: rotate(-18deg) translateY(0) translateZ(0); }
+  50%      { transform: rotate(-22deg) translateY(-30px) translateZ(0); }
+}
+@keyframes panelFloat2 {
+  0%, 100% { transform: rotate(12deg) translateY(0); }
+  50%      { transform: rotate(16deg) translateY(25px); }
+}
+@keyframes panelFloat3 {
+  0%, 100% { transform: rotate(25deg) translate(0, 0); }
+  50%      { transform: rotate(28deg) translate(15px, -25px); }
+}
+@keyframes panelFloat4 {
+  0%, 100% { transform: rotate(-15deg) translate(0, 0); }
+  50%      { transform: rotate(-18deg) translate(-25px, 20px); }
+}
+
+.bg-grain {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+html[data-theme="light"] .bg-grain { opacity: 0.04; mix-blend-mode: multiply; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-grid, .bg-blob, .bg-panel { animation: none !important; }
+}
+@media (max-width: 768px) {
+  .bg-panel.p2, .bg-panel.p4 { display: none; }
+  .bg-blob { filter: blur(70px); }
+  .bg-blob.a, .bg-blob.d { width: 340px; height: 340px; }
+  .bg-blob.b, .bg-blob.c { width: 280px; height: 280px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLASS FRAME OVERLAY (wrapper)
+   ═══════════════════════════════════════════════════════════ */
+.profile-glass-frame {
+  position: relative;
+  z-index: 1;
+  margin: 1.25rem auto;
+  width: 100%;
+  max-width: var(--container-max);
+  padding: 1.5rem 1.5rem 2rem;
+  border-radius: var(--radius-softer);
+
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+
+  border: 1px solid var(--border-default);
+
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.28),
+    0 0 0 2px rgba(255, 255, 255, 0.05),
+    var(--shadow-card-hover),
+    var(--shadow-glow),
+    var(--glass-highlight),
+    var(--glass-depth);
+
+  isolation: isolate;
+  overflow: hidden;
+  transition: var(--transition-cream);
+}
+
+.profile-glass-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.profile-glass-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(155deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.02) 22%,
+      transparent 45%),
+    radial-gradient(circle at 92% 108%, rgba(10, 132, 255, 0.06) 0%, transparent 55%),
+    radial-gradient(circle at 8% -8%, rgba(255, 255, 255, 0.04) 0%, transparent 48%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 1;
+}
+
+.profile-glass-frame:hover {
+  border-color: var(--border-strong);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.32),
+    0 0 0 2px rgba(255, 255, 255, 0.08),
+    var(--shadow-card-hover),
+    var(--shadow-glow),
+    var(--glass-highlight),
+    var(--glass-depth);
+}
+
+.profile-glass-frame > * {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-theme="light"] .profile-glass-frame {
+  background: var(--bg-glass-strong);
+  border: 1px solid var(--border-default);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 0 0 2px rgba(15, 23, 42, 0.05),
+    var(--shadow-card-hover),
+    var(--shadow-glow),
+    var(--glass-highlight),
+    var(--glass-depth);
+}
+html[data-theme="light"] .profile-glass-frame::before {
+  background: linear-gradient(90deg, transparent, rgba(10, 132, 255, 0.35), transparent);
+}
+html[data-theme="light"] .profile-glass-frame::after {
+  background:
+    linear-gradient(155deg,
+      rgba(255, 255, 255, 0.45) 0%,
+      rgba(255, 255, 255, 0.15) 22%,
+      transparent 45%),
+    radial-gradient(circle at 92% 108%, rgba(0, 113, 227, 0.05) 0%, transparent 55%),
+    radial-gradient(circle at 8% -8%, rgba(255, 255, 255, 0.30) 0%, transparent 48%);
+}
+html[data-theme="light"] .profile-glass-frame:hover {
+  border-color: var(--border-strong);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 0 0 2px rgba(15, 23, 42, 0.08),
+    var(--shadow-card-hover),
+    var(--shadow-glow),
+    var(--glass-highlight),
+    var(--glass-depth);
+}
+
+@media (max-width: 991px) {
+  .profile-glass-frame {
+    margin: 1rem auto;
+    padding: 1.25rem 1rem 1.5rem;
+    border-radius: var(--radius-soft);
+  }
+}
+@media (max-width: 576px) {
+  .profile-glass-frame {
+    margin: 0.75rem auto;
+    padding: 1rem 0.75rem 1.25rem;
+    border-radius: var(--radius-soft);
+    border-width: 1px;
+  }
+  .profile-glass-frame::before { height: 1px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-glass-frame { transition: none; }
+}
+
+/* ═══ HEADER ═══ */
+.profile-header {
+  padding: 2rem 0 1.5rem;
+  text-align: center;
+}
+
+.profile-avatar-wrap {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  transform-style: preserve-3d;
+}
+
+.profile-avatar {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--border-strong);
+  display: block;
+  transition: var(--transition-cream);
+  box-shadow:
+    var(--shadow-card),
+    var(--glass-highlight),
+    var(--glass-depth);
+}
+.profile-avatar-wrap:hover .profile-avatar {
+  border-color: var(--primary-500);
+  transform: scale(1.02) translateZ(12px);
+  box-shadow:
+    var(--shadow-card-hover),
+    var(--shadow-glow),
+    var(--glass-highlight),
+    var(--glass-depth);
+}
+
+.profile-avatar-edit {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+  border: 3px solid var(--bg-base);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: var(--transition-cream);
+  box-shadow:
+    0 4px 12px var(--primary-glow-soft),
+    var(--glass-highlight);
+}
+.profile-avatar-edit:hover {
+  transform: scale(1.1) translateZ(8px);
+  box-shadow:
+    0 8px 22px var(--primary-glow),
+    var(--glass-highlight);
+}
+
+.profile-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.02em;
+}
+.profile-email {
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* ═══ KYC BADGE ═══ */
+.kyc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: var(--r-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  transition: var(--transition-cream);
+  box-shadow: var(--glass-highlight), var(--glass-depth);
+}
+.kyc-badge.verified {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  box-shadow: var(--glass-highlight), 0 0 20px rgba(52, 211, 153, 0.14);
+}
+.kyc-badge.unverified {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  box-shadow: var(--glass-highlight), 0 0 20px rgba(251, 191, 36, 0.14);
+}
+.kyc-badge.unverified:hover {
+  background: rgba(251, 191, 36, 0.16);
+  transform: translateY(-1px);
+  box-shadow: var(--glass-highlight), 0 0 26px rgba(251, 191, 36, 0.22);
+}
+
+/* ═══ STATS ═══ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  position: relative;
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-default);
+  border-radius: var(--p-radius);
+  padding: 1.15rem 0.75rem;
+  text-align: center;
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-card);
+  transition: var(--transition-cream);
+  transform-style: preserve-3d;
+  will-change: transform;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 12%; right: 12%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 2;
+}
+html[data-theme="light"] .stat-card::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+}
+.stat-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 20%, transparent 45%),
+    radial-gradient(circle at 50% 120%, rgba(10, 132, 255, 0.06) 0%, transparent 55%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 1;
+}
+html[data-theme="light"] .stat-card::after {
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.18) 20%, transparent 45%),
+    radial-gradient(circle at 50% 120%, rgba(0, 113, 227, 0.05) 0%, transparent 55%);
+}
+.stat-card:hover {
+  background: var(--bg-glass-strong);
+  border-color: var(--border-strong);
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-card-hover),
+    var(--shadow-glow);
+}
+.stat-card > * { position: relative; z-index: 1; }
+
+.stat-icon {
+  font-size: 1.25rem;
+  color: var(--primary-400);
+  margin-bottom: 0.5rem;
+  display: block;
+  filter: drop-shadow(0 2px 8px var(--primary-glow-soft));
+  transition: var(--transition-cream);
+}
+.stat-card:hover .stat-icon {
+  transform: translateY(-2px) scale(1.12) translateZ(6px);
+}
+.stat-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.stat-label {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
+/* ═══ TABS ═══ */
+.profile-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-default);
+  border-radius: var(--p-radius);
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-sm);
+  position: relative;
+}
+.profile-tabs::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 8%; right: 8%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+html[data-theme="light"] .profile-tabs::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+}
+.profile-tabs::-webkit-scrollbar { display: none; }
+
+.profile-tab {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: var(--p-radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition-cream);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  min-width: 100px;
+  font-family: inherit;
+  position: relative;
+  z-index: 1;
+}
+.profile-tab:hover {
+  color: var(--text-secondary);
+  background: var(--bg-glass-strong);
+}
+.profile-tab.active {
+  background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+  color: #fff;
+  box-shadow:
+    0 6px 20px var(--primary-glow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.20);
+}
+
+/* ═══ ENHANCED GLASS CARDS ═══ */
+.p-card {
+  position: relative;
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-default);
+  border-radius: var(--p-radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-card);
+  transition: var(--transition-cream);
+  transform-style: preserve-3d;
+  will-change: transform;
+  overflow: hidden;
+}
+.p-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 5%; right: 5%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  pointer-events: none;
+  z-index: 2;
+  border-radius: inherit;
+}
+html[data-theme="light"] .p-card::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+}
+.p-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(155deg,
+      rgba(255, 255, 255, 0.10) 0%,
+      rgba(255, 255, 255, 0.02) 18%,
+      transparent 38%),
+    radial-gradient(circle at 88% 105%, rgba(10, 132, 255, 0.06) 0%, transparent 55%),
+    radial-gradient(circle at 12% -5%, rgba(255, 255, 255, 0.04) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 1;
+  transition: var(--transition-cream);
+}
+html[data-theme="light"] .p-card::after {
+  background:
+    linear-gradient(155deg,
+      rgba(255, 255, 255, 0.60) 0%,
+      rgba(255, 255, 255, 0.20) 18%,
+      transparent 42%),
+    radial-gradient(circle at 88% 105%, rgba(0, 113, 227, 0.05) 0%, transparent 55%),
+    radial-gradient(circle at 12% -5%, rgba(255, 255, 255, 0.30) 0%, transparent 45%);
+}
+.p-card:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-glass-strong);
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-card-hover),
+    var(--shadow-glow);
+}
+.p-card > * { position: relative; z-index: 1; }
+
+.p-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.p-card-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  letter-spacing: -0.01em;
+}
+.p-card-title i {
+  color: var(--primary-400);
+  font-size: 1rem;
+  filter: drop-shadow(0 2px 8px var(--primary-glow-soft));
+}
+
+/* ═══ FORM FIELDS ═══ */
+.profile-field { margin-bottom: 1rem; }
+.profile-field label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-bottom: 0.35rem;
+}
+.profile-field .form-control {
+  background: var(--bg-elevated);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--border-default);
+  border-radius: 14px;
+  color: var(--text-primary);
+  padding: 0.65rem 0.9rem;
+  font-size: 0.875rem;
+  transition: var(--transition-cream);
+  box-shadow: var(--glass-highlight);
+}
+.profile-field .form-control:focus {
+  background: var(--bg-surface);
+  border-color: var(--primary-500);
+  box-shadow:
+    0 0 0 4px var(--primary-glow-soft),
+    var(--glass-highlight);
+  color: var(--text-primary);
+  outline: none;
+}
+.profile-field .form-control::placeholder { color: var(--text-disabled); }
+.profile-field .field-value {
+  padding: 0.65rem 0.9rem;
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--border-default);
+  border-radius: 14px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  box-shadow: var(--glass-highlight);
+}
+
+/* ═══ ORDER CARDS ═══ */
+.order-card {
+  position: relative;
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--border-default);
+  border-radius: var(--p-radius);
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  transition: var(--transition-cream);
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-sm);
+  transform-style: preserve-3d;
+  will-change: transform;
+  overflow: hidden;
+}
+.order-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  pointer-events: none;
+  border-radius: inherit;
+}
+html[data-theme="light"] .order-card::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+}
+.order-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.06) 0%, transparent 32%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.85;
+}
+html[data-theme="light"] .order-card::after {
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.45) 0%, transparent 40%);
+}
+.order-card:hover {
+  background: var(--bg-glass-strong);
+  border-color: var(--border-strong);
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-card-hover),
+    var(--shadow-glow);
+}
+.order-card > * { position: relative; z-index: 1; }
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.order-number {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+.order-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--r-full);
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  box-shadow: var(--glass-highlight);
+  border: 1px solid transparent;
+}
+.order-status.pending    { background: var(--warning-bg); color: var(--warning); border-color: rgba(251,191,36,0.20); }
+.order-status.paid       { background: var(--info-bg);    color: var(--info);    border-color: rgba(77,168,255,0.20); }
+.order-status.processing { background: var(--info-bg);    color: var(--info);    border-color: rgba(77,168,255,0.20); }
+.order-status.shipped    { background: var(--info-bg);    color: var(--info);    border-color: rgba(77,168,255,0.20); }
+.order-status.completed  { background: var(--success-bg); color: var(--success); border-color: rgba(52,211,153,0.20); }
+.order-status.cancelled  { background: var(--danger-bg);  color: var(--danger);  border-color: rgba(248,113,113,0.20); }
+
+.order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.order-item-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  gap: 1rem;
+}
+.order-item-row .item-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 70%;
+}
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-default);
+}
+.order-total {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--primary-400);
+}
+
+/* ═══ CREDIT SECTION ═══ */
+.credit-section {
+  position: relative;
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-default);
+  border-radius: var(--p-radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-card);
+  transition: var(--transition-cream);
+  transform-style: preserve-3d;
+  will-change: transform;
+  overflow: hidden;
+}
+.credit-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 5%; right: 5%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  border-radius: inherit;
+  z-index: 2;
+}
+html[data-theme="light"] .credit-section::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+}
+.credit-section::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.08) 0%, transparent 32%),
+    radial-gradient(circle at 15% 105%, rgba(10, 132, 255, 0.06) 0%, transparent 48%),
+    radial-gradient(circle at 88% -5%, rgba(77, 168, 255, 0.04) 0%, transparent 42%);
+  pointer-events: none;
+  z-index: 0;
+}
+html[data-theme="light"] .credit-section::after {
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.55) 0%, transparent 40%),
+    radial-gradient(circle at 15% 105%, rgba(0, 113, 227, 0.05) 0%, transparent 48%),
+    radial-gradient(circle at 88% -5%, rgba(10, 132, 255, 0.04) 0%, transparent 42%);
+}
+.credit-section:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-glass-strong);
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-card-hover),
+    var(--shadow-glow);
+}
+.credit-section > * { position: relative; z-index: 1; }
+
+.credit-status-card {
+  position: relative;
+  text-align: center;
+  padding: 1rem 0.75rem;
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border-radius: var(--p-radius);
+  border: 1px solid var(--border-default);
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-sm);
+  transition: var(--transition-cream);
+  transform-style: preserve-3d;
+  overflow: hidden;
+}
+.credit-status-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 12%; right: 12%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  border-radius: inherit;
+}
+html[data-theme="light"] .credit-status-card::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+}
+.credit-status-card:hover {
+  background: var(--bg-glass-strong);
+  border-color: var(--border-strong);
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-md),
+    var(--shadow-glow);
+}
+.credit-status-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 0.75rem;
+  font-size: 1.15rem;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+.credit-status-icon.approved { background: var(--success-bg); color: var(--success); }
+.credit-status-icon.pending  { background: var(--warning-bg); color: var(--warning); }
+.credit-status-icon.rejected { background: var(--danger-bg);  color: var(--danger); }
+.credit-status-icon.none     { background: var(--bg-glass-strong); color: var(--text-tertiary); }
+
+.credit-amount {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 0.35rem;
+  letter-spacing: -0.01em;
+}
+.credit-label {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+/* ═══ PROGRESS RING ═══ */
+.progress-ring-wrap {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  margin: 0 auto 1rem;
+  filter: drop-shadow(0 0 30px var(--primary-glow-soft));
+}
+.progress-ring-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+.progress-ring-wrap circle { fill: none; stroke-width: 7; }
+.progress-ring-wrap .bg { stroke: var(--border-default); }
+.progress-ring-wrap .progress {
+  stroke: var(--primary-500);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 8px var(--primary-glow-soft));
+}
+.progress-ring-text { position: absolute; inset: 0; display: grid; place-items: center; }
+.progress-ring-text .value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.progress-ring-text .label {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* ═══ SCHEDULE TABLE ═══ */
+.schedule-table { width: 100%; border-collapse: collapse; }
+.schedule-table th {
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-default);
+}
+.schedule-table td {
+  padding: 0.9rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.schedule-table tr:last-child td { border-bottom: none; }
+.schedule-table tr:hover td { background: var(--bg-glass); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--r-full);
+  font-size: 0.68rem;
+  font-weight: 600;
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  box-shadow: var(--glass-highlight);
+  border: 1px solid transparent;
+}
+.status-badge.paid    { background: var(--success-bg); color: var(--success); border-color: rgba(52,211,153,0.20); }
+.status-badge.pending { background: var(--warning-bg); color: var(--warning); border-color: rgba(251,191,36,0.20); }
+.status-badge.overdue { background: var(--danger-bg);  color: var(--danger);  border-color: rgba(248,113,113,0.20); }
+
+/* ═══ ADDRESS ═══ */
+.address-card {
+  position: relative;
+  padding: 1.1rem 1.25rem;
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--border-default);
+  border-radius: var(--p-radius);
+  margin-bottom: 0.75rem;
+  transition: var(--transition-cream);
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-sm);
+  transform-style: preserve-3d;
+  overflow: hidden;
+}
+.address-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  border-radius: inherit;
+}
+html[data-theme="light"] .address-card::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+}
+.address-card:hover {
+  background: var(--bg-glass-strong);
+  border-color: var(--border-strong);
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-card-hover),
+    var(--shadow-glow);
+}
+.address-card.default {
+  border-color: rgba(10, 132, 255, 0.45);
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-card-hover),
+    0 0 32px var(--primary-glow-soft);
+}
+.address-badge {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--r-full);
+  background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 8px var(--primary-glow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.address-label { font-weight: 700; font-size: 0.85rem; color: var(--text-primary); margin-bottom: 0.35rem; }
+.address-text  { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
+.address-recipient {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-default);
+}
+
+/* ═══ EMPTY STATE ═══ */
+.empty-state { text-align: center; padding: 2.5rem 1rem; }
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--border-default);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 1rem;
+  font-size: 1.5rem;
+  color: var(--text-tertiary);
+  box-shadow:
+    var(--p-glass-ring),
+    var(--shadow-sm);
+}
+.empty-state h4,
+.empty-state h5 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+  font-size: 1rem;
+}
+.empty-state p {
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  max-width: 320px;
+  margin: 0 auto 1rem;
+  line-height: 1.5;
+}
+
+/* ═══ GHOST BUTTONS ═══ */
+.btn-ghost {
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-weight: 600;
+  transition: var(--transition-cream);
+  box-shadow: var(--glass-highlight);
+}
+.btn-ghost:hover {
+  background: var(--bg-glass-strong);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  box-shadow: var(--glass-highlight), var(--shadow-sm);
+  transform: translateY(-1px);
+}
+.btn-ghost.text-danger:hover {
+  background: var(--danger-bg);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: var(--danger);
+  box-shadow: var(--glass-highlight), 0 6px 20px rgba(248, 113, 113, 0.22);
+}
+
+.quick-actions .btn {
+  justify-content: flex-start;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  border-radius: var(--p-radius-sm);
+}
+
+/* ═══ VERIFICATION STATUS ═══ */
+.verif-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.9rem;
+  border-radius: var(--p-radius);
+  border: 1px solid var(--border-default);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  box-shadow: var(--glass-highlight), var(--shadow-sm);
+}
+.verif-status.verified   { background: var(--success-bg); border-color: rgba(52, 211, 153, 0.30); box-shadow: var(--glass-highlight), 0 0 26px rgba(52, 211, 153, 0.14); }
+.verif-status.pending    { background: var(--info-bg);    border-color: rgba(77, 168, 255, 0.30); box-shadow: var(--glass-highlight), 0 0 26px rgba(77, 168, 255, 0.14); }
+.verif-status.unverified { background: var(--warning-bg); border-color: rgba(251, 191, 36, 0.30); box-shadow: var(--glass-highlight), 0 0 26px rgba(251, 191, 36, 0.14); }
+
+.verif-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  color: #fff;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+.verif-status.verified   .verif-icon { background: linear-gradient(135deg, var(--success), #059669); }
+.verif-status.pending    .verif-icon { background: linear-gradient(135deg, var(--info), var(--primary-500)); }
+.verif-status.unverified .verif-icon { background: linear-gradient(135deg, var(--warning), #d97706); }
+
+/* ═══ BUTTONS ═══ */
+.profile-page .btn-primary {
+  background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    0 6px 20px var(--primary-glow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+  transition: var(--transition-cream);
+}
+.profile-page .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 30px var(--primary-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+  filter: brightness(1.06);
+}
+.profile-page .btn-secondary {
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  box-shadow: var(--glass-highlight);
+  transition: var(--transition-cream);
+}
+.profile-page .btn-secondary:hover {
+  background: var(--bg-glass-strong);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  box-shadow: var(--glass-highlight), var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 991px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .profile-tabs { flex-wrap: nowrap; }
+  .profile-tab { flex: 0 0 auto; min-width: 0; }
+}
+@media (max-width: 576px) {
+  .profile-header { padding: 1.5rem 0 1rem; }
+  .profile-avatar { width: 96px; height: 96px; }
+  .profile-name { font-size: 1.25rem; }
+  .p-card { padding: 1.15rem; }
+  .credit-section { padding: 1.15rem; }
+  .progress-ring-wrap { width: 110px; height: 110px; }
+  .stat-value { font-size: 1.2rem; }
+  .stat-card { padding: 0.9rem 0.5rem; }
+}
+
+/* ═══ REDUCED MOTION ═══ */
+@media (prefers-reduced-motion: reduce) {
+  .bg-grid, .bg-blob, .bg-panel { animation: none !important; }
+  .stat-card, .p-card, .order-card, .credit-section, .credit-status-card, .address-card {
+    transition: border-color var(--transition-cream), box-shadow var(--transition-cream) !important;
+  }
+}
+
+/* ═══ UTILITIES ═══ */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeTab 0.28s ease; }
+@keyframes fadeTab {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ FALLBACK (tanpa backdrop-filter) ═══ */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html[data-theme="dark"] .stat-card,
+  html[data-theme="dark"] .p-card,
+  html[data-theme="dark"] .order-card,
+  html[data-theme="dark"] .credit-section,
+  html[data-theme="dark"] .credit-status-card,
+  html[data-theme="dark"] .address-card,
+  html[data-theme="dark"] .profile-tabs,
+  html[data-theme="dark"] .kyc-badge,
+  html[data-theme="dark"] .profile-glass-frame {
+    background: rgba(16, 22, 33, 0.94) !important;
+  }
+  html[data-theme="light"] .stat-card,
+  html[data-theme="light"] .p-card,
+  html[data-theme="light"] .order-card,
+  html[data-theme="light"] .credit-section,
+  html[data-theme="light"] .credit-status-card,
+  html[data-theme="light"] .address-card,
+  html[data-theme="light"] .profile-tabs,
+  html[data-theme="light"] .kyc-badge,
+  html[data-theme="light"] .profile-glass-frame {
+    background: rgba(241, 245, 249, 0.95) !important;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+
+  <!-- Decorative background (fixed, behind glass frame) -->
+  <div class="profile-bg" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-blob a"></div>
+    <div class="bg-blob b"></div>
+    <div class="bg-blob c"></div>
+    <div class="bg-blob d"></div>
+    <div class="bg-panel p1"></div>
+    <div class="bg-panel p2"></div>
+    <div class="bg-panel p3"></div>
+    <div class="bg-panel p4"></div>
+    <div class="bg-grain"></div>
+  </div>
+
+  <!-- GLASS FRAME — transparent glass wrapper with border & shadow -->
+  <div class="profile-glass-frame">
+
+    <!-- HEADER -->
+    <div class="profile-header">
+      <div class="profile-avatar-wrap">
+        <img src="{{ get_user_avatar_url(current_user) }}" alt="Avatar" class="profile-avatar" id="profileAvatar">
+        <label class="profile-avatar-edit" for="avatarInput" title="Ganti foto">
+          <i class="bi bi-camera-fill"></i>
+        </label>
+        <input type="file" id="avatarInput" accept="image/*" style="display:none;" onchange="updateAvatar(event)">
+      </div>
+      <h1 class="profile-name">{{ current_user.full_name or current_user.username }}</h1>
+      <p class="profile-email">{{ current_user.email }}</p>
+
+      {% if current_user.kyc_verified %}
+      <span class="kyc-badge verified">
+        <i class="bi bi-shield-check-fill"></i> Terverifikasi KYC
+      </span>
+      {% else %}
+      <a href="{{ url_for('kyc_verification_page') }}" class="kyc-badge unverified">
+        <i class="bi bi-shield-exclamation"></i> Verifikasi KYC Sekarang
+      </a>
+      {% endif %}
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card tilt-3d" data-tilt-max="6">
+        <i class="bi bi-bag stat-icon"></i>
+        <div class="stat-value">{{ orders|length if orders else 0 }}</div>
+        <div class="stat-label">Total Pesanan</div>
+      </div>
+      <div class="stat-card tilt-3d" data-tilt-max="6">
+        <i class="bi bi-check-circle stat-icon"></i>
+        <div class="stat-value">{{ completed_orders_count or 0 }}</div>
+        <div class="stat-label">Selesai</div>
+      </div>
+      <div class="stat-card tilt-3d" data-tilt-max="6">
+        <i class="bi bi-clock stat-icon"></i>
+        <div class="stat-value">{{ pending_orders_count or 0 }}</div>
+        <div class="stat-label">Diproses</div>
+      </div>
+      <div class="stat-card tilt-3d" data-tilt-max="6">
+        <i class="bi bi-credit-card-2-front stat-icon"></i>
+        <div class="stat-value" id="creditCount">0</div>
+        <div class="stat-label">Cicilan</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="profile-tabs" id="profileTabs">
+      <button class="profile-tab active" onclick="switchTab('profile', event)">
+        <i class="bi bi-person"></i> Profil
+      </button>
+      <button class="profile-tab" onclick="switchTab('orders', event)">
+        <i class="bi bi-bag"></i> Pesanan
+      </button>
+      <button class="profile-tab" onclick="switchTab('credit', event)">
+        <i class="bi bi-credit-card"></i> Cicilan
+      </button>
+      <button class="profile-tab" onclick="switchTab('addresses', event)">
+        <i class="bi bi-geo-alt"></i> Alamat
+      </button>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-8">
+
+        <!-- TAB: PROFILE -->
+        <div id="tab-profile" class="tab-panel active">
+          <div class="p-card tilt-3d" data-tilt-max="3">
+            <div class="p-card-header">
+              <div class="p-card-title">
+                <i class="bi bi-person-gear"></i> Informasi Pribadi
+              </div>
+            </div>
+
+            <form id="profileForm" onsubmit="saveProfile(event)">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="profile-field">
+                    <label>Nama Lengkap</label>
+                    <input type="text" class="form-control" name="fullname" value="{{ current_user.full_name or '' }}" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="profile-field">
+                    <label>Username</label>
+                    <div class="field-value">{{ current_user.username or '-' }}</div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="profile-field">
+                    <label>Email</label>
+                    <div class="field-value">{{ current_user.email }}</div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="profile-field">
+                    <label>Nomor Telepon</label>
+                    <input type="tel" class="form-control" name="phone" value="{{ current_user.phone or '' }}" placeholder="628123456789">
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="profile-field">
+                    <label>Alamat</label>
+                    <textarea class="form-control" name="address" rows="2" placeholder="Alamat lengkap">{{ current_user.address or '' }}</textarea>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="profile-field">
+                    <label>Provinsi</label>
+                    <input type="text" class="form-control" name="default_province" value="{{ current_user.default_province or '' }}">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="profile-field">
+                    <label>Kota</label>
+                    <input type="text" class="form-control" name="default_city" value="{{ current_user.default_city or '' }}">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="profile-field">
+                    <label>Kecamatan</label>
+                    <input type="text" class="form-control" name="default_district" value="{{ current_user.default_district or '' }}">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="profile-field">
+                    <label>Kode Pos</label>
+                    <input type="text" class="form-control" name="default_postal_code" value="{{ current_user.default_postal_code or '' }}">
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-2 mt-4 flex-wrap">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                  <i class="bi bi-check-lg"></i> Simpan Perubahan
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="openPasswordModal()">
+                  <i class="bi bi-key"></i> Ganti Password
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- TAB: ORDERS -->
+        <div id="tab-orders" class="tab-panel">
+          <div class="p-card tilt-3d" data-tilt-max="2">
+            <div class="p-card-header">
+              <div class="p-card-title">
+                <i class="bi bi-bag-check"></i> Riwayat Pesanan
+              </div>
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('user_orders') }}" class="btn btn-secondary btn-sm">
+                  <i class="bi bi-truck"></i> Semua
+                </a>
+                <a href="{{ url_for('user_orders') }}" class="btn btn-primary btn-sm">
+                  <i class="bi bi-box-seam"></i> Lihat Paket
+                </a>
+              </div>
+            </div>
+
+            {% if orders %}
+              {% for order in orders %}
+              <div class="order-card tilt-3d" data-tilt-max="3">
+                <div class="order-card-header">
+                  <div>
+                    <div class="order-number">{{ order.order_number }}</div>
+                    <div class="small" style="color:var(--text-disabled); font-size:0.72rem;">
+                      {{ order.created_at.strftime('%d %b %Y %H:%M') }}
+                    </div>
+                  </div>
+                  <span class="order-status {{ order.status|lower }}">
+                    {% if order.status == 'Pending' %}<i class="bi bi-clock"></i>{% endif %}
+                    {% if order.status == 'Paid' %}<i class="bi bi-check-circle"></i>{% endif %}
+                    {% if order.status == 'Processing' %}<i class="bi bi-gear"></i>{% endif %}
+                    {% if order.status == 'Shipped' %}<i class="bi bi-truck"></i>{% endif %}
+                    {% if order.status == 'Completed' %}<i class="bi bi-check-circle-fill"></i>{% endif %}
+                    {% if order.status == 'Cancelled' %}<i class="bi bi-x-circle"></i>{% endif %}
+                    {{ order.status }}
+                  </span>
+                </div>
+                <div class="order-items">
+                  {% for item in order.items %}
+                  <div class="order-item-row">
+                    <span class="item-name">{{ item.name }} ×{{ item.quantity }}</span>
+                    <span>{{ format_price(item.price * item.quantity) }}</span>
+                  </div>
+                  {% endfor %}
+                </div>
+                <div class="order-footer">
+                  <span style="font-size:0.75rem;color:var(--text-tertiary);">
+                    {% if order.is_credit_order %}
+                    <i class="bi bi-credit-card"></i> Cicilan
+                    {% else %}
+                    {{ order.payment_method or 'Transfer' }}
+                    {% endif %}
+                  </span>
+                  <span class="order-total">{{ format_price(order.total) }}</span>
+                </div>
+                {% if order.status in ['Shipped', 'Out_for_Delivery', 'Completed'] and order.tracking_number %}
+                <div style="margin-top:0.6rem;">
+                  <button type="button" class="btn btn-secondary btn-sm w-100" onclick="trackShipment('{{ order.tracking_number }}', '{{ order.order_number }}', '{{ order.carrier_name or 'Kurir' }}')">
+                    <i class="bi bi-geo-alt"></i> Lacak Paket · {{ order.carrier_name or 'Kurir' }}
+                  </button>
+                </div>
+                {% endif %}
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty-state">
+                <div class="empty-state-icon"><i class="bi bi-bag-x"></i></div>
+                <h5>Belum Ada Pesanan</h5>
+                <p>Anda belum memiliki pesanan. Mulai belanja sekarang!</p>
+                <a href="{{ url_for('catalog') }}" class="btn btn-primary btn-sm">
+                  <i class="bi bi-shop"></i> Jelajahi Katalog
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- TAB: CREDIT -->
+        <div id="tab-credit" class="tab-panel">
+          <div class="credit-section tilt-3d" data-tilt-max="3">
+            <div class="row g-3 align-items-center">
+              <div class="col-md-4 text-center">
+                <div class="progress-ring-wrap">
+                  <svg viewBox="0 0 140 140">
+                    <circle class="bg" cx="70" cy="70" r="60" />
+                    <circle class="progress" id="creditProgressRing" cx="70" cy="70" r="60"
+                            stroke-dasharray="377" stroke-dashoffset="377" />
+                  </svg>
+                  <div class="progress-ring-text">
+                    <div>
+                      <div class="value" id="creditProgressText">0%</div>
+                      <div class="label">Terbayar</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-8">
+                <h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--text-primary);margin-bottom:1rem;font-size:1.05rem;">
+                  <i class="bi bi-credit-card-2-front" style="color:var(--primary-400);filter:drop-shadow(0 2px 8px var(--primary-glow-soft));"></i>
+                  Status Cicilan Aktif
+                </h4>
+                <div id="creditActiveInfo">
+                  <p style="color:var(--text-tertiary);font-size:0.85rem;margin:0;">Memuat data...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-card tilt-3d" data-tilt-max="2">
+            <div class="p-card-header">
+              <div class="p-card-title">
+                <i class="bi bi-file-text"></i> Pengajuan Cicilan
+              </div>
+              <a href="{{ url_for('installment_apply') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg"></i> Ajukan
+              </a>
+            </div>
+            <div id="creditApplicationsList">
+              <div class="text-center py-4">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-card tilt-3d" id="scheduleCard" data-tilt-max="2" style="display:none;">
+            <div class="p-card-header">
+              <div class="p-card-title">
+                <i class="bi bi-calendar-check"></i> Jadwal Pembayaran
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="schedule-table">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Jatuh Tempo</th>
+                    <th>Pokok</th>
+                    <th>Bunga</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="scheduleTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: ADDRESSES -->
+        <div id="tab-addresses" class="tab-panel">
+          <div class="p-card tilt-3d" data-tilt-max="2">
+            <div class="p-card-header">
+              <div class="p-card-title">
+                <i class="bi bi-geo-alt"></i> Alamat Pengiriman
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" onclick="openAddressModal()">
+                <i class="bi bi-plus-lg"></i> Tambah
+              </button>
+            </div>
+            <div id="addressesList">
+              <div class="text-center py-4">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="col-lg-4">
+        <div class="p-card tilt-3d" data-tilt-max="5">
+          <div class="p-card-header" style="margin-bottom:1rem;">
+            <div class="p-card-title" style="font-size:0.95rem;">
+              <i class="bi bi-lightning-charge"></i> Aksi Cepat
+            </div>
+          </div>
+          <div class="d-grid gap-2 quick-actions">
+            <a href="{{ url_for('catalog') }}" class="btn btn-primary">
+              <i class="bi bi-shop me-2"></i> Belanja Sekarang
+            </a>
+            <a href="{{ url_for('user_orders') }}" class="btn btn-secondary">
+              <i class="bi bi-bag-check me-2"></i> Pesanan Saya
+            </a>
+            {% if not current_user.kyc_verified %}
+            <a href="{{ url_for('installment_apply') }}" class="btn btn-secondary">
+              <i class="bi bi-credit-card me-2"></i> Ajukan Cicilan
+            </a>
+            {% endif %}
+            {% if not current_user.kyc_verified and kyc_pending %}
+            <a href="{{ url_for('kyc_verification_page') }}" class="btn btn-ghost" style="border-color:var(--info);color:var(--info);">
+              <i class="bi bi-hourglass-split me-2"></i> Lihat Status Verifikasi
+            </a>
+            {% elif not current_user.kyc_verified %}
+            <a href="{{ url_for('kyc_verification_page') }}" class="btn btn-ghost" style="border-color:var(--warning);color:var(--warning);">
+              <i class="bi bi-shield-check me-2"></i> Verifikasi KYC
+            </a>
+            {% endif %}
+            <button type="button" class="btn btn-ghost text-danger" onclick="logoutUser()">
+              <i class="bi bi-box-arrow-right me-2"></i> Keluar
+            </button>
+          </div>
+        </div>
+
+        <div class="p-card tilt-3d" data-tilt-max="5">
+          <div class="p-card-header" style="margin-bottom:1rem;">
+            <div class="p-card-title" style="font-size:0.95rem;">
+              <i class="bi bi-shield-lock"></i> Status Verifikasi
+            </div>
+          </div>
+
+          {% if current_user.kyc_verified %}
+          <div class="verif-status verified">
+            <div class="verif-icon"><i class="bi bi-check-lg"></i></div>
+            <div>
+              <div style="font-weight:700;color:var(--success);font-size:0.85rem;">Terverifikasi</div>
+              <div style="font-size:0.75rem;color:var(--text-tertiary);margin-top:0.15rem;">
+                {% if current_user.kyc_verified_at %}
+                Sejak {{ current_user.kyc_verified_at.strftime('%d %b %Y') }}
+                {% else %}
+                Akun Anda sudah terverifikasi
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% elif kyc_pending %}
+          <div class="verif-status pending">
+            <div class="verif-icon"><i class="bi bi-hourglass-split"></i></div>
+            <div>
+              <div style="font-weight:700;color:var(--info);font-size:0.85rem;">Menunggu Review</div>
+              <div style="font-size:0.75rem;color:var(--text-tertiary);margin-top:0.15rem;">
+                {% if kyc_pending.created_at %}
+                Diajukan {{ kyc_pending.created_at.strftime('%d %b %Y') }} ·
+                {% endif %}
+                Review 1×24 jam
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="verif-status unverified">
+            <div class="verif-icon"><i class="bi bi-exclamation-triangle"></i></div>
+            <div style="flex:1;">
+              <div style="font-weight:700;color:var(--warning);font-size:0.85rem;">Belum Terverifikasi</div>
+              <div style="font-size:0.75rem;color:var(--text-tertiary);margin:0.15rem 0 0.6rem;">
+                Verifikasi KYC untuk mengajukan cicilan
+              </div>
+              <a href="{{ url_for('kyc_verification_page') }}" class="btn btn-sm" style="background:linear-gradient(135deg,var(--warning),#d97706);color:#fff;border:none;font-size:0.75rem;padding:0.35rem 0.75rem;box-shadow:0 6px 18px rgba(251,191,36,0.3),inset 0 1px 0 rgba(255,255,255,0.3);">
+                Verifikasi Sekarang
+              </a>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="p-card tilt-3d" id="creditSummaryCard" data-tilt-max="5">
+          <div class="p-card-header" style="margin-bottom:1rem;">
+            <div class="p-card-title" style="font-size:0.95rem;">
+              <i class="bi bi-credit-card-2-front"></i> Ringkasan Cicilan
+            </div>
+          </div>
+          <div id="creditSummaryContent">
+            <div class="text-center py-3" style="color:var(--text-tertiary);font-size:0.82rem;">Memuat...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.profile-glass-frame -->
+</div><!-- /.profile-page -->
+
+<!-- Password Modal -->
+<div class="modal fade" id="passwordModal" tabindex="-1" data-bs-backdrop="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="fw-bold">Ganti Password</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="passwordForm" onsubmit="changePassword(event)">
+          <div class="mb-3">
+            <label class="form-label">Password Saat Ini</label>
+            <input type="password" class="form-control" name="current_password" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password Baru</label>
+            <input type="password" class="form-control" name="new_password" minlength="8" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Konfirmasi Password Baru</label>
+            <input type="password" class="form-control" name="confirm_password" minlength="8" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Simpan Password</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Address Modal -->
+<div class="modal fade" id="addressModal" tabindex="-1" data-bs-backdrop="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="fw-bold" id="addressModalTitle">Tambah Alamat</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addressForm" onsubmit="saveAddress(event)">
+          <input type="hidden" name="address_id" id="addressId">
+          <div class="mb-3">
+            <label class="form-label">Label Alamat</label>
+            <input type="text" class="form-control" name="label" placeholder="Rumah, Kantor, dll" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nama Penerima</label>
+            <input type="text" class="form-control" name="recipient_name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">No. Telepon</label>
+            <input type="tel" class="form-control" name="recipient_phone" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Alamat Lengkap</label>
+            <textarea class="form-control" name="full_address" rows="2" required></textarea>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Provinsi</label>
+              <input type="text" class="form-control" name="province" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Kota</label>
+              <input type="text" class="form-control" name="city" required>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Kecamatan</label>
+              <input type="text" class="form-control" name="district" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Kode Pos</label>
+              <input type="text" class="form-control" name="postal_code" required>
+            </div>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" name="is_default" id="isDefaultAddress">
+            <label class="form-check-label" for="isDefaultAddress" style="font-size:0.85rem;">Jadikan alamat utama</label>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Simpan Alamat</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Track Shipment Modal -->
+<div class="modal fade" id="trackModal" tabindex="-1" data-bs-backdrop="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="fw-bold"><i class="bi bi-truck"></i> Lacak Paket <span id="trackOrderNumber" style="font-weight:400;font-size:0.8rem;color:var(--text-tertiary);"></span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="trackResiLabel" style="font-size:0.78rem;color:var(--text-tertiary);margin-bottom:0.75rem;"></div>
+        <div id="trackContent">
+          <div class="empty-state" style="padding:1.5rem 1rem;">
+            <div class="empty-state-icon" style="width:44px;height:44px;font-size:1.1rem;"><i class="bi bi-hourglass-split"></i></div>
+            <p style="font-size:0.85rem;">Memuat status pengiriman...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ============================================================
+   PROFILE PAGE — 3D TRANSPARENT GLASS + BACKGROUND + GLASS FRAME
+   ============================================================ */
+
+function initTiltEngine(scope) {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const root = scope || document;
+  const cards = root.querySelectorAll('.tilt-3d:not([data-tilt-bound])');
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  cards.forEach(card => {
+    card.setAttribute('data-tilt-bound', '1');
+    const maxTilt = parseFloat(card.dataset.tiltMax || '4');
+    const MAX_LIFT = 14;
+
+    let tX = 0, tY = 0, tZ = 0;
+    let cX = 0, cY = 0, cZ = 0;
+    let rafId = null;
+    let hovering = false;
+
+    function tick() {
+      cX = lerp(cX, tX, 0.18);
+      cY = lerp(cY, tY, 0.18);
+      cZ = lerp(cZ, tZ, 0.18);
+
+      card.style.transform =
+        `perspective(1400px) rotateX(${cX}deg) rotateY(${cY}deg) translateZ(${cZ}px)`;
+
+      const settled =
+        Math.abs(cX - tX) < 0.02 &&
+        Math.abs(cY - tY) < 0.02 &&
+        Math.abs(cZ - tZ) < 0.15;
+
+      if (!settled || hovering) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        rafId = null;
+        if (Math.abs(cX) < 0.05 && Math.abs(cY) < 0.05 && Math.abs(cZ) < 0.3) {
+          card.style.transform = '';
+        }
+      }
+    }
+
+    function start() { if (!rafId) rafId = requestAnimationFrame(tick); }
+
+    card.addEventListener('mouseenter', () => {
+      hovering = true;
+      tZ = MAX_LIFT;
+      start();
+    });
+
+    card.addEventListener('mousemove', (e) => {
+      const r = card.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      const cx = r.width / 2;
+      const cy = r.height / 2;
+
+      tY = ((x - cx) / cx) * maxTilt;
+      tX = -((y - cy) / cy) * maxTilt;
+      start();
+    });
+
+    card.addEventListener('mouseleave', () => {
+      hovering = false;
+      tX = 0; tY = 0; tZ = 0;
+      start();
+    });
+  });
+}
+window.reinitTilt = function() { initTiltEngine(); };
+
+function switchTab(tabName, event) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tabName).classList.add('active');
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+
+  if (tabName === 'credit') loadCreditData();
+  if (tabName === 'addresses') loadAddresses();
+}
+
+async function saveProfile(e) {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form));
+  try {
+    const res = await fetch('/update_profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast('Profil berhasil diperbarui', 'success');
+      if (result.avatar_url) document.getElementById('profileAvatar').src = result.avatar_url;
+    } else {
+      showToast(result.message || 'Gagal menyimpan', 'error');
+    }
+  } catch (err) {
+    showToast('Terjadi kesalahan', 'error');
+  }
+}
+
+async function updateAvatar(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const formData = new FormData();
+  formData.append('avatar', file);
+  try {
+    const res = await fetch('/update_profile', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+      body: formData
+    });
+    const result = await res.json();
+    if (result.success && result.avatar_url) {
+      document.getElementById('profileAvatar').src = result.avatar_url;
+      showToast('Foto profil diperbarui', 'success');
+    }
+  } catch (err) {
+    showToast('Gagal mengupload foto', 'error');
+  }
+}
+
+function openPasswordModal() {
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('passwordModal')).show();
+}
+
+async function changePassword(e) {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form));
+
+  if (data.new_password !== data.confirm_password) {
+    showToast('Password baru tidak cocok', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch('/update_profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+      body: JSON.stringify({
+        current_password: data.current_password,
+        new_password: data.new_password
+      })
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast('Password berhasil diubah', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
+      form.reset();
+    } else {
+      showToast(result.message || 'Gagal mengubah password', 'error');
+    }
+  } catch (err) {
+    showToast('Terjadi kesalahan', 'error');
+  }
+}
+
+async function logoutUser() {
+  if (!confirm('Yakin ingin keluar?')) return;
+  try {
+    await fetch('/api/user/logout', { method: 'POST' });
+    showToast('Logout berhasil', 'success');
+    setTimeout(() => location.reload(), 600);
+  } catch (err) {
+    location.href = '/user/logout';
+  }
+}
+
+let creditData = null;
+
+async function loadCreditData() {
+  if (creditData) return;
+  try {
+    const res = await fetch('/api/credit/check-approved');
+    const data = await res.json();
+
+    if (data.success && data.has_credit) {
+      creditData = data.credit;
+      renderCreditActive(data.credit);
+      renderCreditSummary(data.credit);
+      if (data.credit.installments) renderSchedule(data.credit.installments);
+    } else {
+      renderCreditEmpty();
+    }
+    await loadCreditApplications();
+  } catch (err) {
+    console.error('Credit load error:', err);
+    document.getElementById('creditApplicationsList').innerHTML =
+      '<div class="empty-state" style="padding:1rem;"><p style="color:var(--text-tertiary);font-size:0.85rem;">Gagal memuat data cicilan.</p></div>';
+  }
+}
+
+function renderCreditActive(credit) {
+  const paidCount = credit.installments ? credit.installments.filter(i => i.status === 'paid').length : 0;
+  const totalCount = credit.tenor_months || 0;
+  const progress = totalCount > 0 ? (paidCount / totalCount) * 100 : 0;
+  const circumference = 2 * Math.PI * 60;
+  const offset = circumference - (progress / 100) * circumference;
+
+  setTimeout(() => {
+    const ring = document.getElementById('creditProgressRing');
+    if (ring) ring.style.strokeDashoffset = offset;
+    const txt = document.getElementById('creditProgressText');
+    if (txt) txt.textContent = Math.round(progress) + '%';
+  }, 300);
+
+  document.getElementById('creditActiveInfo').innerHTML = `
+    <div class="row g-2">
+      <div class="col-6"><div class="credit-status-card tilt-3d" data-tilt-max="5">
+        <div class="credit-status-icon approved"><i class="bi bi-check-lg"></i></div>
+        <div class="credit-label">Status</div>
+        <div style="font-weight:700;color:var(--success);font-size:0.85rem;margin-top:0.2rem;">Disetujui</div>
+      </div></div>
+      <div class="col-6"><div class="credit-status-card tilt-3d" data-tilt-max="5">
+        <div class="credit-status-icon none"><i class="bi bi-cash-stack"></i></div>
+        <div class="credit-label">Harga Produk</div>
+        <div class="credit-amount" style="font-size:0.95rem;">${formatRupiah(credit.product_price)}</div>
+      </div></div>
+      <div class="col-6"><div class="credit-status-card tilt-3d" data-tilt-max="5">
+        <div class="credit-status-icon none"><i class="bi bi-wallet2"></i></div>
+        <div class="credit-label">DP</div>
+        <div class="credit-amount" style="font-size:0.95rem;">${formatRupiah(credit.down_payment)}</div>
+      </div></div>
+      <div class="col-6"><div class="credit-status-card tilt-3d" data-tilt-max="5">
+        <div class="credit-status-icon none"><i class="bi bi-calendar-month"></i></div>
+        <div class="credit-label">Angsuran/Bulan</div>
+        <div class="credit-amount" style="font-size:0.95rem;">${formatRupiah(credit.monthly_installment)}</div>
+      </div></div>
+    </div>
+  `;
+
+  document.getElementById('scheduleCard').style.display = 'block';
+  document.getElementById('creditCount').textContent = '1';
+  if (window.reinitTilt) window.reinitTilt();
+}
+
+function renderCreditSummary(credit) {
+  const paidCount = credit.installments ? credit.installments.filter(i => i.status === 'paid').length : 0;
+  const totalCount = credit.tenor_months || 0;
+  const remaining = totalCount - paidCount;
+  document.getElementById('creditSummaryContent').innerHTML = `
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--primary-glow-soft);display:grid;place-items:center;color:var(--primary-400);font-size:1rem;box-shadow:0 0 20px var(--primary-glow-soft),var(--glass-highlight);">
+        <i class="bi bi-credit-card-2-front"></i>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--text-primary);font-size:0.9rem;">${formatRupiah(credit.monthly_installment)}/bln</div>
+        <div style="font-size:0.75rem;color:var(--text-tertiary);">${remaining} pembayaran tersisa</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSchedule(installments) {
+  const tbody = document.getElementById('scheduleTableBody');
+  tbody.innerHTML = installments.map(inst => {
+    const statusClass = inst.status === 'paid' ? 'paid' :
+                       (new Date(inst.due_date) < new Date() && inst.status !== 'paid') ? 'overdue' : 'pending';
+    const statusText = inst.status === 'paid' ? 'Lunas' :
+                      statusClass === 'overdue' ? 'Jatuh Tempo' : 'Menunggu';
+    const statusIcon = inst.status === 'paid' ? 'bi-check-circle-fill' :
+                      statusClass === 'overdue' ? 'bi-exclamation-circle-fill' : 'bi-clock';
+
+    return `
+      <tr>
+        <td style="font-weight:700;color:var(--text-primary);">${inst.installment_no}</td>
+        <td>${inst.due_date ? new Date(inst.due_date).toLocaleDateString('id-ID') : '-'}</td>
+        <td>${formatRupiah(inst.principal_amount || 0)}</td>
+        <td>${formatRupiah(inst.interest_amount || 0)}</td>
+        <td style="font-weight:700;color:var(--text-primary);">${formatRupiah(inst.total_amount || inst.amount || 0)}</td>
+        <td><span class="status-badge ${statusClass}"><i class="bi ${statusIcon}"></i> ${statusText}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderCreditEmpty() {
+  document.getElementById('creditActiveInfo').innerHTML = `
+    <div style="text-align:center;padding:0.5rem 0;">
+      <p style="color:var(--text-tertiary);font-size:0.85rem;margin-bottom:0.75rem;">Anda belum memiliki cicilan aktif.</p>
+      <a href="{{ url_for('installment_apply') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> Ajukan Cicilan
+      </a>
+    </div>
+  `;
+  document.getElementById('scheduleCard').style.display = 'none';
+  document.getElementById('creditSummaryContent').innerHTML = `
+    <div class="text-center py-2">
+      <div style="color:var(--text-tertiary);font-size:0.82rem;margin-bottom:0.6rem;">Belum ada cicilan aktif</div>
+      <a href="{{ url_for('installment_apply') }}" class="btn btn-primary btn-sm">Ajukan Sekarang</a>
+    </div>
+  `;
+}
+
+async function loadCreditApplications() {
+  const container = document.getElementById('creditApplicationsList');
+  try {
+    const res = await fetch('/api/credit/my-applications');
+    const data = await res.json();
+
+    if (!data.success || !data.applications || data.applications.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state" style="padding:1.5rem 1rem;">
+          <div class="empty-state-icon" style="width:56px;height:56px;font-size:1.3rem;"><i class="bi bi-file-earmark-text"></i></div>
+          <h5 style="font-size:0.9rem;">Riwayat Pengajuan</h5>
+          <p style="font-size:0.8rem;">Pengajuan cicilan Anda akan muncul di sini.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const statusMeta = {
+      pending:   { label: 'Menunggu Review', cls: 'pending' },
+      reviewing: { label: 'Sedang Direview',  cls: 'pending' },
+      approved:  { label: 'Disetujui',        cls: 'paid' },
+      rejected:  { label: 'Ditolak',          cls: 'overdue' },
+    };
+
+    container.innerHTML = data.applications.map(app => {
+      const meta = statusMeta[app.status] || { label: app.status, cls: 'pending' };
+      const dateTxt = app.created_at ? new Date(app.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
+      return `
+        <div class="credit-status-card tilt-3d" data-tilt-max="4" style="text-align:left;margin-bottom:0.6rem;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;margin-bottom:0.5rem;">
+            <div>
+              <div style="font-weight:700;color:var(--text-primary);font-size:0.88rem;">${app.product_name || app.application_code}</div>
+              <div style="font-size:0.72rem;color:var(--text-tertiary);">${app.application_code} · ${dateTxt}</div>
+            </div>
+            <span class="status-badge ${meta.cls}">${meta.label}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.82rem;">
+            <span style="color:var(--text-tertiary);">Harga Produk</span>
+            <span style="font-weight:700;color:var(--text-primary);">${formatRupiah(app.product_price)}</span>
+          </div>
+          ${app.monthly_installment ? `
+          <div style="display:flex;justify-content:space-between;font-size:0.82rem;">
+            <span style="color:var(--text-tertiary);">Angsuran/Bulan</span>
+            <span style="font-weight:700;color:var(--text-primary);">${formatRupiah(app.monthly_installment)}${app.tenor_months ? ' × ' + app.tenor_months + ' bln' : ''}</span>
+          </div>` : ''}
+          ${app.status === 'rejected' && app.rejection_reason ? `
+          <div style="font-size:0.78rem;color:var(--danger);margin-top:0.5rem;">Alasan: ${app.rejection_reason}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    if (window.reinitTilt) window.reinitTilt();
+  } catch (err) {
+    console.error('Load applications error:', err);
+    container.innerHTML =
+      '<div class="empty-state" style="padding:1rem;"><p style="color:var(--text-tertiary);font-size:0.85rem;">Gagal memuat riwayat pengajuan.</p></div>';
+  }
+}
+
+let cachedAddresses = [];
+
+async function loadAddresses() {
+  try {
+    const res = await fetch('/api/user/addresses');
+    const data = await res.json();
+    if (data.success && data.addresses.length > 0) {
+      cachedAddresses = data.addresses;
+      renderAddresses(data.addresses);
+    } else {
+      cachedAddresses = [];
+      renderAddressesEmpty();
+    }
+  } catch (err) {
+    renderAddressesEmpty();
+  }
+}
+
+function renderAddresses(addresses) {
+  const container = document.getElementById('addressesList');
+  container.innerHTML = addresses.map(addr => `
+    <div class="address-card tilt-3d" data-tilt-max="4">
+      ${addr.is_default ? '<span class="address-badge">Utama</span>' : ''}
+      <div class="address-label">${addr.label}</div>
+      <div class="address-text">${addr.full_address}</div>
+      <div class="address-text">${addr.district}, ${addr.city}, ${addr.province} ${addr.postal_code}</div>
+      <div class="address-recipient">
+        <i class="bi bi-person"></i> ${addr.recipient_name} · <i class="bi bi-phone"></i> ${addr.recipient_phone}
+      </div>
+      <div style="display:flex;gap:0.5rem;margin-top:0.9rem;flex-wrap:wrap;">
+        ${!addr.is_default ? `<button class="btn btn-sm btn-secondary" onclick="setDefaultAddress(${addr.id})">Jadikan Utama</button>` : ''}
+        <button class="btn btn-sm btn-ghost" onclick="editAddress(${addr.id})">Edit</button>
+        <button class="btn btn-sm btn-ghost text-danger" onclick="deleteAddress(${addr.id})">Hapus</button>
+      </div>
+    </div>
+  `).join('');
+  if (window.reinitTilt) window.reinitTilt();
+}
+
+function renderAddressesEmpty() {
+  document.getElementById('addressesList').innerHTML = `
+    <div class="empty-state" style="padding:2rem 1rem;">
+      <div class="empty-state-icon"><i class="bi bi-geo-alt"></i></div>
+      <h5>Belum Ada Alamat</h5>
+      <p>Tambahkan alamat pengiriman untuk kemudahan checkout.</p>
+    </div>
+  `;
+}
+
+function openAddressModal() {
+  document.getElementById('addressForm').reset();
+  document.getElementById('addressId').value = '';
+  document.getElementById('addressModalTitle').textContent = 'Tambah Alamat';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('addressModal')).show();
+}
+
+function editAddress(id) {
+  const addr = cachedAddresses.find(a => a.id === id);
+  if (!addr) { showToast('Data alamat tidak ditemukan, muat ulang halaman.', 'error'); return; }
+  const form = document.getElementById('addressForm');
+  form.reset();
+  document.getElementById('addressId').value = addr.id;
+  form.label.value = addr.label || '';
+  form.recipient_name.value = addr.recipient_name || '';
+  form.recipient_phone.value = addr.recipient_phone || '';
+  form.full_address.value = addr.full_address || '';
+  form.province.value = addr.province || '';
+  form.city.value = addr.city || '';
+  form.district.value = addr.district || '';
+  form.postal_code.value = addr.postal_code || '';
+  form.is_default.checked = !!addr.is_default;
+  document.getElementById('addressModalTitle').textContent = 'Edit Alamat';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('addressModal')).show();
+}
+
+async function saveAddress(e) {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form));
+  data.is_default = form.is_default.checked;
+  const editingId = document.getElementById('addressId').value;
+  const url = editingId ? `/api/user/addresses/${editingId}` : '/api/user/addresses';
+  const method = editingId ? 'PUT' : 'POST';
+  try {
+    const res = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast(editingId ? 'Alamat berhasil diperbarui' : 'Alamat berhasil disimpan', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('addressModal')).hide();
+      loadAddresses();
+    } else {
+      showToast(result.message || 'Gagal menyimpan', 'error');
+    }
+  } catch (err) {
+    showToast('Terjadi kesalahan', 'error');
+  }
+}
+
+async function setDefaultAddress(id) {
+  try {
+    const res = await fetch(`/api/user/addresses/${id}/set-default`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+    });
+    const result = await res.json();
+    if (result.success) { showToast('Alamat utama diperbarui', 'success'); loadAddresses(); }
+  } catch (err) { showToast('Gagal mengubah alamat utama', 'error'); }
+}
+
+async function deleteAddress(id) {
+  if (!confirm('Yakin ingin menghapus alamat ini?')) return;
+  try {
+    const res = await fetch(`/api/user/addresses/${id}`, {
+      method: 'DELETE',
+      headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+    });
+    const result = await res.json();
+    if (result.success) { showToast('Alamat dihapus', 'success'); loadAddresses(); }
+  } catch (err) { showToast('Gagal menghapus alamat', 'error'); }
+}
+
+function formatRupiah(amount) {
+  if (!amount) return 'Rp 0';
+  const num = parseInt(amount);
+  return 'Rp ' + num.toLocaleString('id-ID');
+}
+
+document.addEventListener('hidden.bs.modal', function() {
+  setTimeout(function() {
+    if (document.querySelectorAll('.modal.show').length === 0) {
+      document.querySelectorAll('.modal-backdrop').forEach(bd => bd.remove());
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('overflow');
+      document.body.style.removeProperty('padding-right');
+    }
+  }, 350);
+});
+
+function normalizeShipment(payload) {
+  const d = (payload && payload.data) ? payload.data : (payload || {});
+  const raw = d.history || d.riwayat || d.events || d.timeline || d.tracking_history || [];
+  const history = (Array.isArray(raw) ? raw : []).map(e => ({
+    status: e.status || e.status_label || e.title || '-',
+    location: e.location || e.lokasi || e.city || '',
+    description: e.description || e.deskripsi || e.note || e.message || '',
+    created_at: e.created_at || e.timestamp || e.time || e.datetime || e.date || null
+  }));
+  history.sort((a, b) => {
+    const ta = Date.parse(a.created_at), tb = Date.parse(b.created_at);
+    return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta);
+  });
+  return {
+    success: !!payload && payload.success !== false && (history.length > 0 || !!d.status),
+    status: d.status || null,
+    history: history
+  };
+}
+
+async function trackShipment(resi, orderNumber, carrierName) {
+  document.getElementById('trackOrderNumber').textContent = orderNumber ? '· ' + orderNumber : '';
+  document.getElementById('trackResiLabel').innerHTML =
+    '<i class="bi bi-upc-scan"></i> No. Resi: <strong>' + resi + '</strong>' +
+    (carrierName ? ' · ' + carrierName : '');
+  const content = document.getElementById('trackContent');
+  content.innerHTML = `
+    <div class="empty-state" style="padding:1.5rem 1rem;">
+      <div class="empty-state-icon" style="width:44px;height:44px;font-size:1.1rem;"><i class="bi bi-hourglass-split"></i></div>
+      <p style="font-size:0.85rem;">Memuat status pengiriman...</p>
+    </div>
+  `;
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('trackModal')).show();
+
+  try {
+    const res = await fetch(`/api/shipments/${encodeURIComponent(resi)}`, {
+      headers: { 'Accept': 'application/json' },
+      credentials: 'same-origin'
+    });
+    const payload = await res.json();
+    const shipment = normalizeShipment(payload);
+
+    if (!shipment.success) {
+      content.innerHTML = `
+        <div class="empty-state" style="padding:1.5rem 1rem;">
+          <div class="empty-state-icon" style="width:44px;height:44px;font-size:1.1rem;"><i class="bi bi-exclamation-circle"></i></div>
+          <p style="font-size:0.85rem;">Status pengiriman belum tersedia.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const historyHtml = shipment.history.length ? shipment.history.map((h, idx) => `
+      <div style="display:flex;gap:0.75rem;padding:0.6rem 0;${idx !== shipment.history.length - 1 ? 'border-bottom:1px solid var(--border-default);' : ''}">
+        <div style="flex-shrink:0;width:8px;height:8px;border-radius:50%;margin-top:0.35rem;background:${idx === 0 ? 'var(--success)' : 'var(--border-strong)'};"></div>
+        <div style="flex:1;">
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">${h.status}</div>
+          ${h.location ? `<div style="font-size:0.75rem;color:var(--text-tertiary);">${h.location}</div>` : ''}
+          ${h.description ? `<div style="font-size:0.78rem;color:var(--text-secondary);">${h.description}</div>` : ''}
+          ${h.created_at ? `<div style="font-size:0.72rem;color:var(--text-disabled);">${new Date(h.created_at).toLocaleString('id-ID')}</div>` : ''}
+        </div>
+      </div>
+    `).join('') : '<p style="font-size:0.82rem;color:var(--text-tertiary);">Belum ada riwayat status.</p>';
+
+    content.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+        <span class="status-badge paid">${shipment.status || '-'}</span>
+      </div>
+      <div>${historyHtml}</div>
+    `;
+  } catch (err) {
+    console.error('Track shipment error:', err);
+    content.innerHTML = `
+      <div class="empty-state" style="padding:1.5rem 1rem;">
+        <div class="empty-state-icon" style="width:44px;height:44px;font-size:1.1rem;"><i class="bi bi-wifi-off"></i></div>
+        <p style="font-size:0.85rem;">Terjadi kesalahan saat memuat status pengiriman.</p>
+      </div>
+    `;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('creditCount');
+  if (el) el.textContent = '0';
+  initTiltEngine();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,523 @@
+/* ============================================
+   ADMIN DESIGN SYSTEM (Migrated from base_admin.html)
+   ============================================ */
+
+/* ============================================
+         PUSAT GADAI INDONESIA - DARK PREMIUM THEME
+         (Aligned with Public Navy-Charcoal Theme)
+         ============================================ */
+
+      :root {
+        --primary: #3b82f6;
+        --primary-dark: #2563eb;
+        --primary-light: #60a5fa;
+        --secondary: #4f8cf7;
+        --dark-900: #080c14;
+        --dark-800: #0d1119;
+        --dark-700: #111720;
+        --dark-600: #181f2c;
+        --dark-500: #1a2235;
+        --glass-bg: rgba(13, 18, 27, 0.55);
+        --glass-border: rgba(255, 255, 255, 0.07);
+        --glass-border-light: rgba(255, 255, 255, 0.11);
+        --text-primary: #e4e8f0;
+        --text-secondary: #b0becb;
+        --text-muted: #6b7d92;
+
+        --glass-contact: 0 1px 1px rgba(0, 0, 0, 0.30);
+        --shadow-card: var(--glass-contact), 0 10px 34px rgba(0, 0, 0, 0.45), 0 0 40px rgba(59, 130, 246, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+        --shadow-card-hover: var(--glass-contact), 0 18px 46px rgba(0, 0, 0, 0.52), 0 0 60px rgba(59, 130, 246, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+      }
+
+      body {
+        font-family: "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
+        background-image:
+            radial-gradient(ellipse 80% 50% at 0% -10%, rgba(59, 130, 246, 0.08), transparent),
+            radial-gradient(ellipse 60% 40% at 100% 0%, rgba(96, 165, 250, 0.06), transparent),
+            radial-gradient(ellipse 60% 40% at 50% 100%, rgba(15, 21, 34, 0.90), transparent),
+            linear-gradient(180deg, #080c14 0%, #0c121c 50%, #0f1522 100%);
+        background-color: var(--dark-900);
+        background-attachment: fixed;
+        color: var(--text-primary);
+        overflow-x: hidden;
+        min-height: 100vh;
+      }
+
+      /* Glassmorphism Sidebar - Dark */
+      .sidebar {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 18rem;
+        background: rgba(13, 18, 27, 0.65);
+        backdrop-filter: blur(26px) saturate(160%);
+        -webkit-backdrop-filter: blur(26px) saturate(160%);
+        border-right: 1px solid var(--glass-border);
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
+        z-index: 40;
+        transition: opacity 0.3s;
+      }
+
+      .sidebar-overlay.active {
+        display: block;
+        opacity: 1;
+      }
+
+      .main-content {
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @media (max-width: 1023px) {
+        .sidebar {
+          position: fixed;
+          top: 0; left: 0; bottom: 0;
+          z-index: 50;
+          transform: translateX(-100%);
+          box-shadow: 10px 0 40px -10px rgba(0, 0, 0, 0.5);
+        }
+        .sidebar.open {
+          transform: translateX(0);
+        }
+        .main-content {
+          margin-left: 0 !important;
+          width: 100%;
+        }
+      }
+
+      /* Admin Cards - Aligned with surface-card */
+      .admin-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(26px) saturate(160%);
+        -webkit-backdrop-filter: blur(26px) saturate(160%);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        box-shadow: var(--shadow-card);
+        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .admin-card:hover {
+        box-shadow: var(--shadow-card-hover);
+        transform: translateY(-4px);
+        border-color: var(--glass-border-light);
+      }
+
+      /* Sidebar Navigation - Dark */
+      .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 0.875rem;
+        padding: 0.875rem 1.125rem;
+        border-radius: 1rem;
+        color: var(--text-secondary);
+        transition: all 0.2s ease;
+        font-weight: 500;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .sidebar-link::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 0;
+        background: var(--primary);
+        border-radius: 0 4px 4px 0;
+        transition: height 0.3s ease;
+        box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+      }
+
+      .sidebar-link i {
+        width: 1.5rem;
+        font-size: 1.125rem;
+        color: var(--text-muted);
+        transition: all 0.2s ease;
+      }
+
+      .sidebar-link:hover {
+        background: rgba(59, 130, 246, 0.06);
+        color: var(--primary-light);
+      }
+
+      .sidebar-link:hover i {
+        color: var(--primary);
+        transform: scale(1.1);
+      }
+
+      .sidebar-link.active {
+        background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), transparent);
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .sidebar-link.active::before {
+        height: 60%;
+      }
+
+      .sidebar-link.active i {
+        color: var(--primary);
+      }
+
+      /* Primary Button - Blue Gradient */
+      .btn-primary {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        color: white;
+        font-weight: 600;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.875rem;
+        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.22);
+        border: 1px solid rgba(59, 130, 246, 0.1);
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 28px rgba(59, 130, 246, 0.3);
+      }
+
+      .btn-primary:active {
+        transform: scale(0.96);
+      }
+
+      /* Badges - Dark Glass */
+      .badge {
+        padding: 0.375rem 0.875rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+      }
+
+      .badge-success {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        backdrop-filter: blur(4px);
+      }
+
+      .badge-warning {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        backdrop-filter: blur(4px);
+      }
+
+      .badge-danger {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        backdrop-filter: blur(4px);
+      }
+
+      .badge-info {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        backdrop-filter: blur(4px);
+      }
+
+      /* Header - Dark Glass */
+      .header-glass {
+        background: rgba(13, 18, 27, 0.8);
+        backdrop-filter: blur(26px) saturate(160%);
+        -webkit-backdrop-filter: blur(26px) saturate(160%);
+        border-bottom: 1px solid var(--glass-border);
+      }
+
+      /* Scrollbar - Dark */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--primary);
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .animate-fade-in {
+        animation: fadeIn 0.4s ease-out;
+      }
+
+      /* Glow Animation */
+      @keyframes glow {
+        0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.2); }
+        50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.1); }
+      }
+
+      .animate-glow {
+        animation: glow 2s ease-in-out infinite;
+      }
+
+      .notif-badge {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 8px;
+        height: 8px;
+        background: #ef4444;
+        border-radius: 50%;
+        border: 2px solid var(--dark-900);
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+      }
+
+      /* User Avatar - Blue Gradient */
+      .user-avatar {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        color: white;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+      }
+
+      /* Soft Buttons - Dark Glass */
+      .btn-indigo-soft {
+        background-color: rgba(102, 16, 242, 0.1);
+        border: 1px solid rgba(102, 16, 242, 0.2);
+        color: #a78bfa;
+      }
+      .btn-indigo-soft:hover {
+        background-color: rgba(102, 16, 242, 0.2);
+      }
+
+      .btn-purple-soft {
+        background-color: rgba(111, 66, 193, 0.1);
+        border: 1px solid rgba(111, 66, 193, 0.2);
+        color: #c4b5fd;
+      }
+      .btn-purple-soft:hover {
+        background-color: rgba(111, 66, 193, 0.2);
+      }
+
+      .btn-primary-soft {
+        background-color: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+      }
+      .btn-primary-soft:hover {
+        background-color: rgba(245, 158, 11, 0.2);
+      }
+
+      .btn-warning-soft {
+        background-color: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+      }
+      .btn-warning-soft:hover {
+        background-color: rgba(245, 158, 11, 0.2);
+      }
+
+      .btn-danger-soft {
+        background-color: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #f87171;
+      }
+      .btn-danger-soft:hover {
+        background-color: rgba(239, 68, 68, 0.2);
+      }
+
+      .text-indigo { color: #a78bfa !important; }
+      .text-purple { color: #c4b5fd !important; }
+
+      .hover-shadow-lg:hover {
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.4) !important;
+      }
+
+      .hover-scale:hover { transform: scale(1.05); }
+      .hover-opacity-100:hover { opacity: 1 !important; }
+      .hover-bg-secondary:hover { background-color: rgba(255,255,255,0.05) !important; }
+
+      .transition-all { transition: all 0.3s ease; }
+      .transition-transform { transition: transform 0.3s ease; }
+      .transition-opacity { transition: opacity 0.2s ease; }
+      .cursor-pointer { cursor: pointer; }
+
+      .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .object-fit-cover { object-fit: cover; }
+
+      .bg-gradient-dark {
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+      }
+
+      .table-responsive::-webkit-scrollbar { height: 8px; }
+      .table-responsive::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
+      .table-responsive::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+      .table-responsive::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+      .bg-teal-subtle { background-color: rgba(32, 201, 151, 0.1) !important; }
+      .text-teal { color: #34d399 !important; }
+      .border-teal-subtle { border-color: rgba(32, 201, 151, 0.3) !important; }
+
+      .bg-purple { background-color: #8b5cf6 !important; }
+
+      .rotate-180 { transform: rotate(180deg); }
+
+      .backdrop-blur {
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+
+      .translate-middle-x { transform: translateX(-50%); }
+
+      .form-check-input:checked {
+        background-color: var(--primary);
+        border-color: var(--primary);
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+      }
+
+      .card.hover-shadow-lg { transition: box-shadow 0.3s ease; }
+
+      .opacity-0 { opacity: 0; }
+      .opacity-100 { opacity: 1; pointer-events: auto; }
+
+      .modal-backdrop { backdrop-filter: blur(4px); }
+
+      /* Dark theme utility overrides */
+      .bg-white { background-color: rgba(255, 255, 255, 0.03) !important; }
+      .bg-gray-50 { background-color: rgba(255, 255, 255, 0.02) !important; }
+      .bg-gray-100 { background-color: rgba(255, 255, 255, 0.04) !important; }
+      .bg-gray-200 { background-color: rgba(255, 255, 255, 0.06) !important; }
+      .text-gray-800 { color: #f3f4f6 !important; }
+      .text-gray-700 { color: #e5e7eb !important; }
+      .text-gray-600 { color: #d1d5db !important; }
+      .text-gray-500 { color: #9ca3af !important; }
+      .text-gray-400 { color: #6b7280 !important; }
+      .border-gray-200 { border-color: rgba(255, 255, 255, 0.08) !important; }
+      .border-gray-100 { border-color: rgba(255, 255, 255, 0.06) !important; }
+      .border-gray-300 { border-color: rgba(255, 255, 255, 0.12) !important; }
+
+      /* product_form.html (and other pages) use Tailwind's slate-50/800
+         instead of gray-*, which the block above never caught -- these
+         rendered as a near-white box with dark text on the dark theme. */
+      .bg-slate-50 { background-color: rgba(255, 255, 255, 0.03) !important; }
+      .text-slate-800 { color: #f3f4f6 !important; }
+      .hover\:bg-slate-50:hover { background-color: rgba(255, 255, 255, 0.06) !important; }
+
+      /* Table dark theme */
+      table { color: #e5e7eb; }
+      thead th { color: #9ca3af !important; border-bottom-color: rgba(255,255,255,0.1) !important; }
+      tbody td { border-bottom-color: rgba(255,255,255,0.05) !important; }
+      tbody tr:hover { background-color: rgba(59, 130, 246, 0.04) !important; }
+
+      /* Input dark theme */
+      input, select, textarea {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: #f3f4f6 !important;
+      }
+      input::placeholder, textarea::placeholder { color: #6b7280 !important; }
+      input:focus, select:focus, textarea:focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+      }
+
+      /* ============================================
+         BOOTSTRAP BUTTON CONTRAST FIX (Dark Theme)
+         Bootstrap's .btn variants ship with light-theme
+         colors and were never covered by the gray-*
+         overrides above (those only catch Tailwind
+         utility classes) -- so any page using plain
+         Bootstrap button classes renders them with
+         Bootstrap's defaults, which is why some buttons
+         disappear against this dark background.
+         ============================================ */
+
+      /* Bootstrap's dismiss/close (X) button is a black SVG icon by
+         default -- on a dark background it's essentially invisible.
+         Force it light regardless of which template renders it. */
+      .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+        opacity: 0.7;
+      }
+      .btn-close:hover,
+      .btn-close:focus {
+        opacity: 1;
+      }
+
+      .btn-light {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+        color: #f3f4f6 !important;
+      }
+      .btn-light:hover {
+        background-color: rgba(255, 255, 255, 0.14) !important;
+        color: #f3f4f6 !important;
+      }
+
+      .btn-secondary {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
+        color: #f3f4f6 !important;
+      }
+      .btn-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.14) !important;
+        border-color: rgba(255, 255, 255, 0.25) !important;
+      }
+
+      .btn-dark {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        color: #f3f4f6 !important;
+      }
+
+      .btn-outline-dark {
+        background-color: transparent !important;
+        border-color: rgba(255, 255, 255, 0.25) !important;
+        color: #f3f4f6 !important;
+      }
+      .btn-outline-dark:hover {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+      }
+
+      .btn-outline-secondary {
+        background-color: transparent !important;
+        border-color: rgba(255, 255, 255, 0.25) !important;
+        color: #d1d5db !important;
+      }
+      .btn-outline-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #f3f4f6 !important;
+      }
+
+      /* Tailwind hover:bg-gray-* / hover:text-gray-* utilities used on
+         buttons (e.g. cancel/close buttons in modals across admin pages)
+         -- only the resting-state gray-* classes were overridden above,
+         so hover states were still Tailwind's light-theme defaults
+         (near-white), which made buttons flash light-on-light on hover. */
+      .hover\:bg-gray-50:hover { background-color: rgba(255, 255, 255, 0.04) !important; }
+      .hover\:bg-gray-100:hover { background-color: rgba(255, 255, 255, 0.06) !important; }
+      .hover\:bg-gray-200:hover { background-color: rgba(255, 255, 255, 0.08) !important; }
+      .hover\:text-gray-600:hover { color: #d1d5db !important; }
+      .hover\:text-gray-700:hover { color: #e5e7eb !important; }
+      .hover\:text-gray-800:hover { color: #f3f4f6 !important; }

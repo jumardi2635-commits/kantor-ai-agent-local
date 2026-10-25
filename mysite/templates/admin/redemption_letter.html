@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Surat Penebusan Barang Gadai · {{ order_number }}</title>
+  <style>
+    @page {
+      size: A5 portrait;
+      margin: 4mm 5mm;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #e5e5e5;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .a4-sheet {
+      width: 148mm;
+      min-height: 210mm;
+      margin: 0 auto;
+      background: #fff;
+      position: relative;
+      box-shadow: 0 0 20px rgba(0,0,0,0.15);
+      overflow: hidden;
+      border: 1pt solid #d1d5db;
+    }
+
+    /* ===== PREMIUM WATERMARK ===== */
+    .wm-layer {
+      position: absolute;
+      inset: 3mm;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      border: 0.3pt solid rgba(26, 39, 68, 0.08);
+      border-radius: 2mm;
+    }
+
+    .wm-main {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-family: 'Georgia', serif;
+      font-size: 28pt;
+      font-weight: 700;
+      color: #1a2744;
+      opacity: 0.06;
+      letter-spacing: 4pt;
+      text-transform: uppercase;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .wm-sub {
+      position: absolute;
+      top: 44%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 8pt;
+      font-weight: 600;
+      color: #1a2744;
+      opacity: 0.04;
+      letter-spacing: 8pt;
+      text-transform: uppercase;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .wm-dots {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, #1a2744 0.3pt, transparent 0.3pt);
+      background-size: 10mm 10mm;
+      opacity: 0.04;
+    }
+
+    .wm-accent {
+      position: absolute;
+      width: 30mm;
+      height: 30mm;
+      opacity: 0.04;
+      border: 0.5pt solid #1a2744;
+    }
+
+    .wm-accent.tl { top: 6mm; left: 6mm; border-right: none; border-bottom: none; }
+    .wm-accent.br { bottom: 6mm; right: 6mm; border-left: none; border-top: none; }
+
+    /* ===== HEADER ===== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 18px;
+      border-bottom: 3px solid #c9a227;
+      position: relative;
+      z-index: 1;
+      background: #fff;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-box {
+      width: 44px;
+      height: 44px;
+      background: #1a2744;
+      border: 3px solid #c9a227;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-radius: 4px;
+    }
+
+    .logo-box::before {
+      content: 'G';
+      color: #c9a227;
+      font-size: 22px;
+      font-weight: 800;
+      font-family: Georgia, serif;
+    }
+
+    .logo-box::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      bottom: -6px;
+      width: 16px;
+      height: 16px;
+      border-right: 3px solid #c9a227;
+      border-bottom: 3px solid #c9a227;
+    }
+
+    .brand-text h1 {
+      font-size: 11pt;
+      font-weight: 800;
+      color: #1a2744;
+      letter-spacing: 0.5px;
+      line-height: 1.1;
+    }
+
+    .brand-text p {
+      font-size: 8pt;
+      color: #c9a227;
+      font-weight: 600;
+      letter-spacing: 2px;
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      text-align: right;
+      font-size: 8pt;
+      color: #1a2744;
+      line-height: 1.4;
+    }
+
+    .header-right .row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
+    .header-right .icon {
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9pt;
+    }
+
+    /* ===== TITLE ===== */
+    .doc-title-area {
+      text-align: center;
+      padding: 8px 18px 4px;
+      position: relative;
+      z-index: 1;
+      background: #fff;
+    }
+
+    .doc-title-area h2 {
+      font-size: 18pt;
+      font-weight: 900;
+      color: #1a2744;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-family: 'Georgia', serif;
+    }
+
+    .doc-number {
+      font-size: 10pt;
+      color: #555;
+      margin-top: 4px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .doc-number span {
+      background: #f0f0f0;
+      padding: 2px 10px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+
+    /* ===== SECTIONS ===== */
+    .section {
+      padding: 0 18px 2px;
+      position: relative;
+      z-index: 1;
+      background: #fff;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .section-num {
+      width: 22px;
+      height: 22px;
+      background: #1a2744;
+      color: #fff;
+      font-size: 9pt;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .section-label {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #1a2744;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .boxed-area {
+      border: 1.5pt solid #1a2744;
+      border-radius: 6px;
+      padding: 6px 12px;
+      background: #fff;
+      margin-bottom: 4px;
+    }
+
+    .form-row {
+      display: flex;
+      align-items: baseline;
+      font-size: 10pt;
+      margin-bottom: 3px;
+      color: #1a2744;
+    }
+    .form-row:last-child { margin-bottom: 0; }
+
+    .form-label {
+      width: 130px;
+      flex-shrink: 0;
+      font-weight: 600;
+    }
+    .form-sep {
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .form-value {
+      flex: 1;
+      border-bottom: 1px dotted #999;
+      min-height: 14px;
+      padding: 0 4px;
+      font-weight: 500;
+    }
+
+    /* Section 2 specific */
+    .sec2-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .sec2-row:last-child { margin-bottom: 0; }
+
+    .sec2-icon {
+      width: 24px;
+      height: 24px;
+      background: #1a2744;
+      color: #fff;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10pt;
+      flex-shrink: 0;
+    }
+
+    .sec2-text {
+      flex: 1;
+      display: flex;
+      align-items: baseline;
+      font-size: 10pt;
+    }
+    .sec2-text .lbl {
+      width: 180px;
+      font-weight: 600;
+      color: #1a2744;
+    }
+    .sec2-text .sep {
+      width: 20px;
+      text-align: center;
+    }
+    .sec2-text .val {
+      flex: 1;
+      border-bottom: 1px dotted #999;
+      min-height: 14px;
+    }
+
+    /* ===== TABLE ===== */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.5pt;
+      margin-top: 2px;
+    }
+
+    .data-table th {
+      background: #1a2744;
+      color: #fff;
+      padding: 5px 8px;
+      text-align: center;
+      font-weight: 600;
+      border: 1px solid #1a2744;
+      font-size: 9pt;
+    }
+
+    .data-table td {
+      border: 1px solid #1a2744;
+      padding: 5px 8px;
+      text-align: center;
+      color: #1a2744;
+      height: 22px;
+    }
+
+    .data-table td.left { text-align: left; }
+
+    /* ===== SECTION 4 ===== */
+    .section4-box {
+      display: flex;
+      border: 2px solid #c9a227;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 2px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .section4-left {
+      background: #1a2744;
+      color: #fff;
+      padding: 8px 14px;
+      font-size: 11pt;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .section4-left span:first-child { font-size: 16pt; }
+
+    .section4-right {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding: 6px 14px;
+      gap: 8px;
+      font-size: 10pt;
+      font-weight: 700;
+      color: #1a2744;
+    }
+
+    .section4-right .rp {
+      font-weight: 800;
+      font-size: 12pt;
+      color: #1a2744;
+    }
+
+    .section4-right .amount-line {
+      flex: 1;
+      border-bottom: 2px dotted #1a2744;
+      min-height: 18px;
+      font-size: 12pt;
+      font-weight: 800;
+      color: #1a2744;
+      padding: 0 4px;
+    }
+
+    /* ===== LEGAL ===== */
+    .legal-area {
+      padding: 2px 18px;
+      position: relative;
+      z-index: 1;
+      background: #fff;
+    }
+
+    .legal-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 3px;
+      align-items: flex-start;
+    }
+
+    .legal-icon {
+      width: 26px;
+      height: 26px;
+      border: 2px solid #1a2744;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #1a2744;
+      font-size: 10pt;
+      background: #f9f9f9;
+    }
+
+    .legal-text {
+      font-size: 9pt;
+      color: #1a2744;
+      line-height: 1.3;
+      text-align: justify;
+    }
+
+    /* ===== SIGNATURE ===== */
+    .signature-area {
+      padding: 4px 18px 6px;
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      margin-top: 8px;
+      position: relative;
+      z-index: 1;
+      background: #fff;
+    }
+
+    .sig-col {
+      flex: 1;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .sig-title {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #1a2744;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .materai-box {
+      width: 80px;
+      height: 50px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .materai-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .sig-stamp-area {
+      width: 100%;
+      height: 50px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sig-stamp-area img {
+      max-height: 42px;
+      max-width: 130px;
+      object-fit: contain;
+    }
+
+    .sig-line {
+      border-bottom: 1.5px solid #1a2744;
+      width: 75%;
+      margin: 0 auto 6px;
+    }
+
+    .sig-name {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #1a2744;
+    }
+
+    .sig-note {
+      font-size: 8pt;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer-bar {
+      background: #1a2744;
+      padding: 6px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 6px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+    }
+
+    .footer-icon {
+      width: 28px;
+      height: 28px;
+      border: 2px solid #c9a227;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #c9a227;
+      font-size: 10pt;
+      flex-shrink: 0;
+    }
+
+    .footer-text h4 {
+      font-size: 9pt;
+      font-weight: 700;
+      color: #c9a227;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .footer-text p {
+      font-size: 8pt;
+      color: #ccc;
+      margin-top: 1px;
+    }
+
+    /* ===== PRINT BUTTON ===== */
+    .print-btn {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: #1a2744;
+      color: #fff;
+      border: 2px solid #c9a227;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Segoe UI', sans-serif;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 999;
+      transition: 0.2s;
+      font-size: 9pt;
+    }
+
+    .print-btn:hover {
+      background: #c9a227;
+      color: #1a2744;
+    }
+
+    /* ===== RESPONSIVE & PRINT ===== */
+    @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+      html, body {
+        background: #fff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+      }
+      .a4-sheet {
+        margin: 0 auto !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        max-width: 148mm !important;
+        min-height: auto !important;
+        border: 1pt solid #1a2744 !important;
+        page-break-after: avoid;
+      }
+      .print-btn { display: none !important; }
+      .section, .legal-area, .signature-area, .footer-bar {
+        page-break-inside: avoid;
+      }
+      .signature-area {
+        flex-direction: row !important;
+        gap: 24px !important;
+      }
+      .sig-col { flex: 1 !important; }
+      .materai-box { width: 80px !important; height: 50px !important; margin-bottom: 12px !important; }
+      .sig-stamp-area { height: 50px !important; margin-bottom: 12px !important; }
+      .sig-stamp-area img { max-height: 42px !important; max-width: 130px !important; }
+    }
+
+    @media (max-width: 768px) {
+      body { background: #e5e5e5; padding: 6px; }
+      .a4-sheet {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .header {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+        padding: 6px 12px;
+      }
+      .header-left { justify-content: center; }
+      .header-right { text-align: center; font-size: 8pt; }
+      .header-right .row { justify-content: center; }
+      .doc-title-area h2 { font-size: 15pt; }
+      .doc-number { font-size: 9pt; }
+      .section { padding: 0 12px 2px; }
+      .section-header { gap: 6px; margin-bottom: 4px; }
+      .section-num { width: 20px; height: 20px; font-size: 8pt; }
+      .section-label { font-size: 9pt; }
+      .boxed-area { padding: 4px 8px; }
+      .form-row { font-size: 9pt; }
+      .form-label { width: 90px; }
+      .form-sep { width: 14px; }
+      .sec2-row { gap: 6px; margin-bottom: 3px; }
+      .sec2-icon { width: 20px; height: 20px; font-size: 8pt; }
+      .sec2-text { font-size: 9pt; }
+      .sec2-text .lbl { width: 120px; }
+      .data-table { font-size: 8.5pt; }
+      .data-table th, .data-table td { padding: 3px 5px; height: auto; }
+      .section4-box { flex-direction: column; }
+      .section4-left { justify-content: center; padding: 6px 10px; font-size: 10pt; }
+      .section4-right { padding: 4px 10px; font-size: 9pt; }
+      .section4-right .rp { font-size: 10pt; }
+      .section4-right .amount-line { font-size: 10pt; }
+      .legal-area { padding: 2px 12px; }
+      .legal-icon { width: 22px; height: 22px; font-size: 8pt; }
+      .legal-text { font-size: 8pt; }
+      .signature-area {
+        flex-direction: row;
+        gap: 12px;
+        padding: 4px 12px 6px;
+        margin-top: 6px;
+      }
+      .sig-col { flex: 1; }
+      .sig-title { font-size: 9pt; margin-bottom: 6px; }
+      .materai-box { width: 60px !important; height: 38px !important; margin-bottom: 8px !important; }
+      .sig-stamp-area { height: 38px !important; margin-bottom: 8px !important; }
+      .sig-stamp-area img { max-height: 32px !important; max-width: 90px !important; }
+      .sig-line { width: 70%; margin-bottom: 4px; }
+      .sig-name { font-size: 9pt; }
+      .sig-note { font-size: 7pt; margin-top: 2px; }
+      .footer-bar { flex-direction: column; gap: 6px; padding: 6px 12px; }
+      .footer-item { justify-content: center; }
+      .print-btn { bottom: 10px; right: 10px; padding: 6px 12px; font-size: 8pt; }
+    }
+  </style>
+  {% if auto_print %}
+  <script>
+    window.onload = function() {
+      setTimeout(function() { window.print(); }, 500);
+    };
+  </script>
+  {% endif %}
+</head>
+<body>
+
+<div class="a4-sheet">
+
+  <!-- Premium Watermark -->
+  <div class="wm-layer">
+    <div class="wm-dots"></div>
+    <div class="wm-accent tl"></div>
+    <div class="wm-accent br"></div>
+    <div class="wm-main">PUSAT GADAI</div>
+    <div class="wm-sub">TERPERCAYA · AMAN · RESMI</div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-box"></div>
+      <div class="brand-text">
+        <h1>PT. PUSAT GADAI</h1>
+        <p>Solusi Aman, Gadai Nyaman</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="row"><span class="icon">📞</span> (0265) 1234 5678</div>
+      <div class="row"><span class="icon">📍</span> Jl. Ahmad Yani No. 88, Tasikmalaya 46113</div>
+      <div class="row"><span class="icon">✉️</span> info@pusatgadai.id</div>
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="doc-title-area">
+    <h2>Surat Penebusan Barang Gadai</h2>
+    <div class="doc-number"><span>Nomor: {{ order_number }} / PGI-RED/{{ redemption_year }}</span></div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">1</span>
+      <span class="section-label">Yang bertanda tangan di bawah ini:</span>
+    </div>
+    <div class="boxed-area">
+      <div class="form-row">
+        <span class="form-label">Nama</span>
+        <span class="form-sep">:</span>
+        <span class="form-value"><strong>{{ customer_name }}</strong></span>
+      </div>
+      <div class="form-row">
+        <span class="form-label">Alamat</span>
+        <span class="form-sep">:</span>
+        <span class="form-value">{{ customer_address }}{% if customer_district %}, {{ customer_district }}{% endif %}{% if customer_city %}, {{ customer_city }}{% endif %}{% if customer_province %}, {{ customer_province }}{% endif %}{% if customer_postal_code %} {{ customer_postal_code }}{% endif %}</span>
+      </div>
+      <div class="form-row">
+        <span class="form-label">Nomor Telepon</span>
+        <span class="form-sep">:</span>
+        <span class="form-value">{{ customer_phone | default('—') }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">2</span>
+      <span class="section-label">Dengan ini menyatakan telah melakukan penebusan barang gadai dari:</span>
+    </div>
+    <div class="boxed-area">
+      <div class="sec2-row">
+        <div class="sec2-icon">🏛️</div>
+        <div class="sec2-text">
+          <span class="lbl">Lembaga</span>
+          <span class="sep">:</span>
+          <span class="val">{{ site_name }}</span>
+        </div>
+      </div>
+      <div class="sec2-row">
+        <div class="sec2-icon">📄</div>
+        <div class="sec2-text">
+          <span class="lbl">Nomor Transaksi/Surat Gadai</span>
+          <span class="sep">:</span>
+          <span class="val">{{ receipt_number }}</span>
+        </div>
+      </div>
+      <div class="sec2-row">
+        <div class="sec2-icon">📅</div>
+        <div class="sec2-text">
+          <span class="lbl">Tanggal Penebusan</span>
+          <span class="sep">:</span>
+          <span class="val">{{ redemption_date }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">3</span>
+      <span class="section-label">Rincian barang yang ditebus:</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:40px">NO.</th>
+          <th>URAIAN BARANG</th>
+          <th>SPESIFIKASI (MERK / TYPE / UKURAN)</th>
+          <th style="width:80px">JUMLAH</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1.</td>
+          <td class="left">{{ product_name }}</td>
+          <td class="left">{{ product_specs|default('', true) }}</td>
+          <td>1 unit</td>
+        </tr>
+        <tr><td></td><td class="left"></td><td class="left"></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">4</span>
+      <span class="section-label">Jumlah uang tebusan</span>
+    </div>
+    <div class="section4-box">
+      <div class="section4-left">
+        <span>💰</span>
+        <span>JUMLAH UANG TEBUSAN</span>
+      </div>
+      <div class="section4-right">
+        <span class="rp">Rp</span>
+        <span class="amount-line">{{ format_price(redemption_amount) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEGAL -->
+  <div class="legal-area">
+    <div class="legal-row">
+      <div class="legal-icon">🛡️</div>
+      <div class="legal-text">
+        Dengan penebusan ini, maka seluruh hak atas barang gadai tersebut telah kembali kepada pihak penebus dan tidak ada lagi kewajiban antara pihak penggadai dengan pihak tempat gadai terhadap barang dimaksud, untuk pengesahan surat tebus harus menyelesaikan dana jaminan sementara untuk pengganti tanda tangan.
+      </div>
+    </div>
+    <div class="legal-row">
+      <div class="legal-icon">📝</div>
+      <div class="legal-text">
+        Demikian surat ini dibuat dengan sebenar-benarnya untuk dapat dipergunakan sebagaimana mestinya.
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGNATURES -->
+  <div class="signature-area">
+    <!-- Kolom Kiri: Yang Menebus -->
+    <div class="sig-col">
+      <div class="sig-title">Yang Menebus,</div>
+      <div class="materai-box">
+        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh3VCB__DOTE0gnUK6KvYj2zV_6WYHZ_o8WpgbkGlbpp5m7EyfXwGgRccMeS5BFw1sZDtPPN14O42UXfXQmjSBwcGvlV0JcoUh1aehnkdCqifq4wg5vfbx98LD2Y_88CJoVWW-jLVZniXZgXKX0hQckMROtXb8hBTz5uWegkAol-yOKZNNB6mKi_dyGdYQ/s1600/1654519617120.webp" alt="E-Materai 10000">
+      </div>
+      <div class="sig-line"></div>
+      <div class="sig-name">{{ customer_name }}</div>
+      <div class="sig-note">(tanda tangan &amp; materai 10.000)</div>
+    </div>
+
+    <!-- Kolom Kanan: Penanggung Jawab -->
+    <div class="sig-col">
+      <div class="sig-title">Penanggung Jawab,</div>
+      <div class="sig-stamp-area">
+        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg-iLVwu_RHwNnxElID3x_4ZOKJei7vjRBzVxFwc1UYPhaKcKa1zlLa5EvlthgdEjH_sQGguUDTRkMdqnOauMUXwo_DJapzxYtNg_arHp-UYvc6q3skj32enilIr41Did44MUBNAbaAMly834ryqUfP88ywGzEFygBFq37oybQWPcb-sENi1ddNcPKYHnA/s320/main-list-image-77ebb8a9-ac1d-4338-a6f5-4013e4c4d2a2-1.jpg" alt="Tanda Tangan">
+      </div>
+      <div class="sig-line"></div>
+      <div class="sig-name">{{ officer_name }}</div>
+      <div class="sig-note">Manager Operasional</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer-bar">
+    <div class="footer-item">
+      <div class="footer-icon">🛡️</div>
+      <div class="footer-text">
+        <h4>Terjamin & Aman</h4>
+        <p>Terdaftar & diawasi OJK</p>
+      </div>
+    </div>
+    <div class="footer-item">
+      <div class="footer-icon">⚡</div>
+      <div class="footer-text">
+        <h4>Proses Cepat</h4>
+        <p>Pencairan dalam 15 menit</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PRINT BUTTON -->
+<button class="print-btn" onclick="window.print();" {% if auto_print %}style="display:none !important;"{% endif %}>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+    <rect x="6" y="14" width="12" height="8"></rect>
+  </svg>
+  Cetak / Simpan PDF
+</button>
+
+</body>
+</html>

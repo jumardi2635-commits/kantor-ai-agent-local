@@ -1,0 +1,3411 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.meta_title or product.name }} — {{ site_name }}{% endblock %}
+{% block meta_description %}{{ product.meta_description or product.short_description or product.name }}{% endblock %}
+
+{# ── Macro: Parse specs universal (dict atau list) ── #}
+{% macro parse_specs(specs) %}
+  {% if specs is mapping %}
+    {% for k, v in specs.items() %}{"key": "{{ k }}", "value": "{{ v }}"}{% if not loop.last %},{% endif %}{% endfor %}
+  {% elif specs is iterable and specs is not string %}
+    {% for spec in specs %}{"key": "{{ spec.get('key','') }}", "value": "{{ spec.get('value','') }}"}{% if not loop.last %},{% endif %}{% endfor %}
+  {% endif %}
+{% endmacro %}
+
+{% block extra_css %}
+<!-- Swiper CSS CDN for carousel mechanics -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+<style>
+/* =========================================================
+   STREAMING_CHUNK: Initializing CSS Design Tokens ...
+   ========================================================= */
+:root {
+    --duration-fast: 0.18s;
+    --duration-base: 0.35s;
+    --duration-slow: 0.6s;
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+    --bg-base: #0b1120;                         /* BARU — sebelumnya tidak ada */
+    --bg-elevated: rgba(30, 41, 59, 0.45);
+    --bg-surface-hover: rgba(255, 255, 255, 0.05);
+
+    --border-default: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --border-subtle: rgba(255, 255, 255, 0.04);
+
+    --primary-400: #818cf8;                     /* FIX — sebelumnya self-reference */
+    --primary-500: #6366f1;                     /* FIX — sebelumnya self-reference */
+    --primary-600: #4f46e5;                     /* BARU — dipakai di beberapa gradient tapi tidak pernah didefinisikan */
+    --secondary-500: #a855f7;                   /* FIX — sebelumnya = primary-400 (indigo, bukan ungu) */
+    --accent-400: #c084fc;                      /* FIX — sebelumnya = primary-400 */
+
+    --primary-glow: rgba(99, 102, 241, 0.35);
+    --primary-glow-soft: rgba(99, 102, 241, 0.12);
+
+    --danger: #f87171;                          /* FIX — sebelumnya self-reference */
+    --danger-bg: rgba(248, 113, 113, 0.12);
+    --success: #34d399;                         /* FIX — sebelumnya self-reference */
+    --success-bg: rgba(52, 211, 153, 0.12);
+    --gold-400: #fbbf24;                        /* BARU — dipakai oleh --warning tapi tidak pernah didefinisikan */
+    --warning: var(--gold-400);
+
+    --text-disabled: var(--text-tertiary);
+
+    --r-xs: 6px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px; --r-full: 9999px;
+
+    --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.6);
+}
+
+/* =========================================================
+   STREAMING_CHUNK: Styling layout components ...
+   ========================================================= */
+
+/* Breadcrumb styling */
+.product-breadcrumb {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem;
+    font-size: 0.8rem; color: var(--text-tertiary);
+    margin-bottom: 1.5rem;
+    padding: 0.5rem 0;
+}
+.product-breadcrumb a {
+    color: var(--text-tertiary); text-decoration: none;
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    transition: color var(--duration-fast);
+}
+.product-breadcrumb a:hover { color: var(--primary-400); }
+.product-breadcrumb .sep { font-size: 0.7rem; color: var(--text-disabled); }
+.product-breadcrumb .current {
+    color: var(--text-secondary); font-weight: 600;
+    max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Gallery Viewport Setup */
+.product-gallery-main {
+    position: relative; aspect-ratio: 1; overflow: hidden;
+    background: var(--bg-elevated); border-radius: var(--r-lg);
+    border: 1px solid var(--border-default); cursor: zoom-in;
+    display: flex; align-items: center; justify-content: center;
+}
+.product-gallery-main img {
+    width: 100%; height: 100%; object-fit: contain;
+    transition: transform 0.6s var(--ease-out-expo);
+    padding: 1rem;
+}
+.product-gallery-main:hover img { transform: scale(1.05); }
+.gallery-zoom-hint {
+    position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+    background: rgba(2,6,23,0.7); backdrop-filter: blur(8px);
+    border: 1px solid var(--border-default); border-radius: var(--r-full);
+    padding: 0.4rem 1rem; font-size: 0.75rem; color: var(--text-tertiary);
+    opacity: 0; transition: opacity var(--duration-fast); pointer-events: none;
+    white-space: nowrap;
+}
+.product-gallery-main:hover .gallery-zoom-hint { opacity: 1; }
+
+.product-badges-overlay {
+    position: absolute; top: 0.75rem; left: 0.75rem;
+    display: flex; flex-direction: column; gap: 0.4rem; z-index: 2;
+    pointer-events: none;
+}
+.badge-featured {
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    color: var(--text-primary); font-size: 0.65rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 0.35rem 0.7rem; border-radius: var(--r-xs);
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    box-shadow: 0 4px 12px var(--primary-glow-soft);
+}
+.badge-discount {
+    background: var(--danger-bg); color: var(--danger);
+    border: 1px solid rgba(239,68,68,0.2);
+    font-size: 0.65rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 0.35rem 0.7rem; border-radius: var(--r-xs);
+    backdrop-filter: blur(8px);
+}
+
+.gallery-thumbs {
+    display: flex; gap: 0.6rem; margin-top: 0.75rem;
+    overflow-x: auto; padding-bottom: 0.25rem;
+}
+.gallery-thumbs::-webkit-scrollbar { height: 4px; }
+.gallery-thumbs::-webkit-scrollbar-thumb {
+    background: var(--border-strong); border-radius: var(--r-full);
+}
+.thumb-btn {
+    flex: 0 0 72px; height: 72px; border-radius: var(--r-md);
+    border: 2px solid transparent; overflow: hidden; cursor: pointer;
+    background: var(--bg-elevated); padding: 0; transition: all var(--duration-fast);
+    opacity: 0.7;
+}
+.thumb-btn img { width: 100%; height: 100%; object-fit: contain; display: block; padding: 4px; }
+.thumb-btn:hover { opacity: 1; border-color: var(--border-strong); }
+.thumb-btn.active { opacity: 1; border-color: var(--primary-500); box-shadow: 0 0 0 3px var(--primary-glow-soft); }
+
+/* Product Info */
+.product-title {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+    font-size: 1.65rem; line-height: 1.2; letter-spacing: -0.02em;
+    color: var(--text-primary); margin-bottom: 0.25rem;
+}
+.product-subtitle { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
+
+/* Share Trigger system */
+.share-btn {
+    width: 38px; height: 38px; border-radius: var(--r-full);
+    background: var(--bg-surface-hover); border: 1px solid var(--border-default);
+    color: var(--text-tertiary); display: grid; place-items: center;
+    cursor: pointer; transition: all var(--duration-fast); font-size: 0.95rem;
+}
+.share-btn:hover {
+    background: var(--primary-500); border-color: var(--primary-500);
+    color: var(--text-primary); transform: translateY(-1px);
+}
+.share-wrapper { position: relative; }
+.share-dropdown {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(11,17,32,0.98));
+    border: 1px solid var(--border-default); border-radius: var(--r-lg);
+    box-shadow: var(--shadow-lg); min-width: 180px; padding: 0.4rem;
+    opacity: 0; visibility: hidden; transform: translateY(-8px);
+    transition: all var(--duration-fast) var(--ease-out-expo); z-index: 100;
+}
+.share-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+.share-dropdown button {
+    width: 100%; text-align: left; background: transparent; border: none;
+    color: var(--text-secondary); padding: 0.6rem 0.8rem; border-radius: var(--r-sm);
+    font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 0.6rem;
+    transition: all var(--duration-fast);
+}
+.share-dropdown button:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+
+/* Rating system */
+.rating-stars { display: flex; align-items: center; gap: 0.2rem; }
+.rating-stars .bi-star-fill { font-size: 0.85rem; color: var(--warning); }
+.rating-stars .empty { color: var(--border-strong); }
+
+/* Pricing display */
+.price-box {
+    padding: 1.25rem; background: var(--bg-elevated);
+    border-radius: var(--r-lg); border: 1px solid var(--border-default);
+}
+.price-box .d-flex {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.price-main {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.75rem;
+    background: linear-gradient(135deg, var(--primary-400), var(--accent-400));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.price-original { font-size: 1rem; color: var(--text-disabled); text-decoration: line-through; }
+.price-save {
+    font-size: 0.75rem; font-weight: 800; text-transform: uppercase;
+    background: var(--success-bg); color: var(--success);
+    border: 1px solid rgba(16,185,129,0.2); padding: 0.25rem 0.6rem;
+    border-radius: var(--r-xs);
+}
+.condition-tag {
+    background: var(--bg-surface-hover); border: 1px solid var(--border-default);
+    color: var(--text-secondary); padding: 0.35rem 0.8rem;
+    border-radius: var(--r-full); font-size: 0.75rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+}
+.openclaw-badge {
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.1));
+    border: 1px solid rgba(99,102,241,0.25); color: var(--primary-400);
+    padding: 0.35rem 0.8rem; border-radius: var(--r-full);
+    font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;
+}
+
+/* Progress of current stock */
+.stock-progress-bar {
+    height: 6px; background: var(--bg-surface-hover);
+    border-radius: var(--r-full); overflow: hidden;
+}
+.stock-progress-fill {
+    height: 100%; border-radius: var(--r-full);
+    transition: width 0.6s var(--ease-out-expo);
+}
+
+/* Specifications Grid */
+.spec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+}
+.spec-item {
+    background: var(--bg-elevated); border: 1px solid var(--border-default);
+    border-radius: var(--r-md); padding: 0.75rem 1rem;
+}
+.spec-label {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 700; color: var(--text-disabled); margin-bottom: 0.25rem;
+}
+.spec-value { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); word-break: break-word; }
+
+/* Dimensions visual card designs */
+.dimension-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+@media (min-width: 576px) and (max-width: 991px) {
+    .dimension-grid { grid-template-columns: repeat(4, 1fr); }
+}
+.dim-card {
+    background: linear-gradient(180deg, rgba(15,23,42,0.9), rgba(11,17,32,0.8));
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    padding: 1rem;
+    text-align: center;
+    transition: all var(--duration-base) var(--ease-out-expo);
+    position: relative;
+    overflow: hidden;
+}
+.dim-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top center, var(--primary-glow-soft), transparent 70%);
+    opacity: 0;
+    transition: opacity var(--duration-base);
+    pointer-events: none;
+}
+.dim-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+.dim-card:hover::before { opacity: 1; }
+.dim-icon {
+    width: 44px; height: 44px;
+    border-radius: var(--r-md);
+    display: grid; place-items: center;
+    margin: 0 auto 0.6rem;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    position: relative;
+    z-index: 1;
+}
+.dim-icon.weight { background: linear-gradient(135deg, var(--warning), var(--warning)); box-shadow: 0 4px 12px rgba(245,158,11,0.25); }
+.dim-icon.width  { background: linear-gradient(135deg, var(--primary-500), var(--primary-600)); box-shadow: 0 4px 12px rgba(59,130,246,0.25); }
+.dim-icon.length { background: linear-gradient(135deg, var(--success), var(--success)); box-shadow: 0 4px 12px rgba(16,185,129,0.25); }
+.dim-icon.height { background: linear-gradient(135deg, var(--primary-400), var(--primary-600)); box-shadow: 0 4px 12px rgba(168,85,247,0.25); }
+
+.dim-label {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+    font-weight: 700; color: var(--text-disabled);
+    margin-bottom: 0.2rem; position: relative; z-index: 1;
+}
+.dim-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
+    position: relative; z-index: 1;
+}
+.dim-unit {
+    font-size: 0.75rem; color: var(--text-tertiary); font-weight: 500;
+    position: relative; z-index: 1;
+}
+
+/* Quantity selection elements */
+.qty-stepper {
+    display: inline-flex; align-items: center;
+    background: var(--bg-elevated); border: 1px solid var(--border-default);
+    border-radius: var(--r-md); overflow: hidden; height: 46px;
+}
+.qty-stepper button {
+    width: 42px; height: 100%; background: transparent; border: none;
+    color: var(--text-secondary); font-size: 1rem; cursor: pointer;
+    display: grid; place-items: center; transition: all var(--duration-fast);
+}
+.qty-stepper button:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+.qty-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+.qty-stepper input {
+    width: 50px; text-align: center; background: transparent; border: none;
+    color: var(--text-primary); font-weight: 700; font-size: 0.95rem;
+    -moz-appearance: textfield;
+}
+.qty-stepper input::-webkit-outer-spin-button,
+.qty-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Buy & Cart Trigger buttons */
+.btn-cart {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    height: 46px; padding: 0 1.5rem;
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    color: var(--text-primary); font-weight: 700; font-size: 0.875rem;
+    border: none; border-radius: var(--r-md); cursor: pointer;
+    box-shadow: 0 4px 16px var(--primary-glow-soft);
+    transition: all var(--duration-fast) var(--ease-out-expo);
+    position: relative; overflow: hidden;
+}
+.btn-cart:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 28px var(--primary-glow); }
+.btn-cart:active:not(:disabled) { transform: scale(0.97); }
+.btn-cart:disabled { opacity: 0.65; cursor: not-allowed; }
+.btn-cart::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.12), transparent);
+    transform: translateX(-100%); transition: transform 0.6s;
+}
+.btn-cart:hover:not(:disabled)::after { transform: translateX(100%); }
+
+.btn-wa {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    height: 46px; padding: 0 1.25rem;
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    color: var(--text-primary); font-weight: 700; font-size: 0.875rem;
+    text-decoration: none; border-radius: var(--r-md);
+    box-shadow: 0 4px 16px rgba(37,211,102,0.2);
+    transition: all var(--duration-fast) var(--ease-out-expo);
+    white-space: nowrap; flex-shrink: 0;
+}
+.btn-wa:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,211,102,0.3); color: var(--text-primary); }
+
+/* Action bar: qty + cart on one row, Checkout Sekarang as its own full-width
+   row underneath. Credit trigger now lives in its own full-width row above
+   this bar (see .btn-credit-trigger) so it always renders regardless of
+   stock, instead of being squeezed into action-row-top only when in stock. */
+.product-action-bar { display: flex; flex-direction: column; gap: 0.75rem; }
+.action-row-top { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.action-row-top .qty-stepper { flex: 0 0 auto; }
+.action-row-top .btn-cart { flex: 1 1 180px; }
+.product-action-bar .btn-checkout-now { width: 100%; }
+
+/* Credit simulation trigger — glass / frosted style so it reads as a
+   distinct, always-available action separate from the primary cart CTA. */
+.btn-credit-trigger {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    height: 46px; padding: 0 1.25rem;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-md);
+    color: var(--primary-400);
+    font-weight: 700; font-size: 0.875rem;
+    white-space: nowrap; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: all var(--duration-fast) var(--ease-out-expo);
+}
+.btn-credit-trigger:hover {
+    background: rgba(99,102,241,0.14);
+    border-color: var(--primary-500);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--primary-glow-soft), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.btn-credit-trigger:active { transform: translateY(0) scale(0.98); }
+.btn-credit-trigger.w-100 { width: 100%; }
+
+.btn-checkout-now {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    height: 46px; padding: 0 1.25rem;
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    color: var(--text-primary); font-weight: 700; font-size: 0.875rem;
+    border: none; border-radius: var(--r-md); cursor: pointer;
+    box-shadow: 0 4px 16px var(--primary-glow-soft);
+    transition: all var(--duration-fast) var(--ease-out-expo);
+    white-space: nowrap; flex-shrink: 0;
+}
+.btn-checkout-now:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px var(--primary-glow); color: var(--text-primary); }
+.btn-checkout-now:disabled { opacity: 0.65; cursor: not-allowed; }
+.product-action-bar .btn-checkout-now { width: 100%; }
+
+.out-of-stock-box {
+    background: var(--danger-bg); border: 1px solid rgba(239,68,68,0.2);
+    color: var(--danger); border-radius: var(--r-md);
+    padding: 1rem 1.25rem; font-weight: 600; font-size: 0.9rem;
+    display: flex; align-items: center; gap: 0.6rem;
+}
+
+/* Product Tabs elements */
+.product-tabs {
+    display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border-default);
+    margin-bottom: 1.25rem; overflow-x: auto; scrollbar-width: none;
+}
+.product-tabs::-webkit-scrollbar { display: none; }
+.product-tab {
+    background: transparent; border: none; border-bottom: 2px solid transparent;
+    color: var(--text-disabled); font-weight: 700; font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 0.75rem 1rem; white-space: nowrap; cursor: pointer;
+    transition: all var(--duration-fast); position: relative; margin-bottom: -1px;
+}
+.product-tab:hover { color: var(--text-tertiary); }
+.product-tab.active { color: var(--text-primary); border-bottom-color: var(--primary-500); }
+.tab-panel { display: none; animation: fadeIn 0.3s ease; }
+.tab-panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Specifications Table design */
+.specs-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.specs-table tr { transition: background var(--duration-fast); }
+.specs-table tr:hover { background: rgba(255,255,255,0.02); }
+.specs-table td {
+    padding: 0.875rem 1rem; font-size: 0.875rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.specs-table td:first-child { width: 40%; color: var(--text-tertiary); font-weight: 600; }
+.specs-table td:last-child { color: var(--text-secondary); font-weight: 500; }
+
+/* Lightbox Modal structures */
+.lightbox-overlay {
+    position: fixed; inset: 0; background: rgba(2,6,23,0.96);
+    backdrop-filter: blur(12px); z-index: 1070;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden;
+    transition: all var(--duration-slow) var(--ease-out-expo);
+    padding: 2rem;
+}
+.lightbox-overlay.show { opacity: 1; visibility: visible; }
+.lightbox-overlay img {
+    max-width: 90vw; max-height: 85vh; object-fit: contain;
+    border-radius: var(--r-lg); box-shadow: var(--shadow-lg);
+    transform: scale(0.95); transition: transform var(--duration-slow) var(--ease-out-expo);
+    user-select: none;
+}
+.lightbox-overlay.show img { transform: scale(1); }
+.lightbox-close {
+    position: absolute; top: 1.5rem; right: 1.5rem;
+    width: 44px; height: 44px; border-radius: var(--r-full);
+    background: var(--bg-surface-hover); border: 1px solid var(--border-default);
+    color: var(--text-secondary); display: grid; place-items: center;
+    cursor: pointer; font-size: 1.1rem; transition: all var(--duration-fast); z-index: 2;
+}
+.lightbox-close:hover { background: var(--danger-bg); color: var(--danger); border-color: rgba(239,68,68,0.3); transform: rotate(90deg); }
+.lightbox-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 48px; height: 48px; border-radius: var(--r-full);
+    background: rgba(15,23,42,0.8); backdrop-filter: blur(8px);
+    border: 1px solid var(--border-default); color: var(--text-primary);
+    display: grid; place-items: center; cursor: pointer;
+    font-size: 1.25rem; transition: all var(--duration-fast); z-index: 2;
+}
+.lightbox-nav:hover { background: var(--primary-500); border-color: var(--primary-500); transform: translateY(-50%) scale(1.1); }
+.lightbox-nav.prev { left: 1.5rem; }
+.lightbox-nav.next { right: 1.5rem; }
+.lightbox-counter {
+    position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px);
+    border: 1px solid var(--border-default); border-radius: var(--r-full);
+    padding: 0.3rem 0.9rem; font-size: 0.75rem; color: var(--text-tertiary);
+}
+
+/* =========================================================
+   STREAMING_CHUNK: Injecting Carousel and Gallery mechanics ...
+   ========================================================= */
+.product-gallery-swiper {
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-default);
+    background: var(--bg-elevated);
+}
+.product-gallery-swiper .swiper-slide { cursor: grab; }
+.product-gallery-swiper .swiper-slide:active { cursor: grabbing; }
+.product-gallery-swiper .swiper-slide img {
+    width: 100%; height: 100%; object-fit: contain; display: block;
+}
+
+.pg-next, .pg-prev {
+    width: 40px !important;
+    height: 40px !important;
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid var(--border-default) !important;
+    border-radius: var(--r-full) !important;
+    color: var(--text-primary) !important;
+    transition: all var(--duration-fast) !important;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.pg-next:hover, .pg-prev:hover {
+    background: var(--primary-500) !important;
+    border-color: var(--primary-500) !important;
+    transform: translateY(-50%) scale(1.1) !important;
+}
+.pg-next::after, .pg-prev::after {
+    font-family: swiper-icons;
+    font-size: 0.85rem !important;
+    font-weight: 700;
+}
+.pg-next { right: 12px !important; }
+.pg-prev { left: 12px !important; }
+
+.pg-pagination { bottom: 12px !important; }
+.pg-pagination .swiper-pagination-bullet {
+    background: var(--text-disabled) !important;
+    opacity: 0.5 !important;
+    width: 8px !important;
+    height: 8px !important;
+    transition: all var(--duration-fast);
+}
+.pg-pagination .swiper-pagination-bullet-active {
+    background: var(--primary-500) !important;
+    opacity: 1 !important;
+    width: 24px !important;
+    border-radius: var(--r-full) !important;
+}
+
+.product-thumbs-swiper { margin-top: 0.75rem; padding: 2px; }
+.product-thumbs-swiper .swiper-slide {
+    width: 72px !important; height: 72px !important;
+    opacity: 0.6; transition: opacity var(--duration-fast); cursor: pointer;
+}
+.product-thumbs-swiper .swiper-slide-thumb-active { opacity: 1; }
+.product-thumbs-swiper .thumb-btn {
+    width: 100%; height: 100%; border: 2px solid transparent;
+    border-radius: var(--r-md); overflow: hidden; background: var(--bg-elevated);
+    padding: 0; transition: all var(--duration-fast); cursor: pointer;
+}
+.product-thumbs-swiper .swiper-slide-thumb-active .thumb-btn {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px var(--primary-glow-soft);
+    opacity: 1;
+}
+
+/* Mobile thumbnail size adjustment */
+@media (max-width: 576px) {
+    .product-thumbs-swiper .swiper-slide {
+        width: 56px !important;
+        height: 56px !important;
+    }
+    .thumb-btn img {
+        padding: 2px;
+    }
+}
+
+/* =========================================================
+   STREAMING_CHUNK: High Fidelity Card Styles (Related Grid)
+   ========================================================= */
+.related-section { margin-top: 4rem; padding-top: 3rem; border-top: 1px solid var(--border-default); }
+
+.product-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    transition: all var(--duration-base) var(--ease-out-expo);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 100%;
+}
+.product-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+.card-media {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.card-media img {
+    width: 100%; height: 100%; object-fit: contain; padding: 12px;
+    transition: transform var(--duration-slow) var(--ease-out-expo);
+}
+.product-card:hover .card-media img { transform: scale(1.06); }
+
+.card-badges { position: absolute; top: 0.5rem; left: 0.5rem; z-index: 2; }
+.badge-chip { font-size: 0.65rem; font-weight: 800; padding: 0.25rem 0.5rem; border-radius: var(--r-xs); text-transform: uppercase; }
+.badge-sale { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+
+.card-actions {
+    position: absolute; top: 0.5rem; right: 0.5rem;
+    display: flex; flex-direction: column; gap: 0.4rem;
+    transform: translateX(120%); transition: transform var(--duration-base) var(--ease-out-expo);
+    z-index: 2;
+}
+.product-card:hover .card-actions { transform: translateX(0); }
+
+.action-btn {
+    width: 32px; height: 32px; border-radius: var(--r-full);
+    background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);
+    border: 1px solid var(--border-default); color: var(--text-secondary);
+    display: grid; place-items: center; cursor: pointer; transition: all var(--duration-fast);
+}
+.action-btn:hover { background: var(--primary-500); border-color: var(--primary-500); color: var(--text-primary); }
+
+.card-body { padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem; flex-grow: 1; }
+.card-title {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.95rem;
+    color: var(--text-primary); margin: 0; transition: color var(--duration-fast);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-title:hover { color: var(--primary-400); }
+.card-meta { font-size: 0.75rem; color: var(--text-tertiary); margin: 0; }
+.card-footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 0.5rem; }
+.card-price { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem; color: var(--primary-400); }
+
+/* =========================================================
+   LAYANAN UNGGULAN — section tersendiri, full-width,
+   ditampilkan di atas Produk Terkait
+   ========================================================= */
+.services-section {
+    margin-top: 3.5rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--border-default);
+}
+.services-header { text-align: center; margin-bottom: 2rem; }
+.services-header h2 {
+    font-size: 1.5rem;
+    font-family: 'Space Grotesk', sans-serif;
+}
+.services-header p {
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    max-width: 520px;
+    margin: 0.5rem auto 0;
+    line-height: 1.6;
+}
+
+.trust-grid-wide {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+@media (max-width: 767px) {
+    .trust-grid-wide { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+}
+@media (max-width: 575px) {
+    .trust-item { flex-direction: column; text-align: center; gap: 0.5rem; }
+}
+
+.trust-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    padding: 1rem 1.1rem;
+    transition: all var(--duration-base) var(--ease-out-expo);
+}
+.trust-item:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+.trust-icon {
+    width: 42px; height: 42px; border-radius: var(--r-md);
+    display: grid; place-items: center; font-size: 1.1rem;
+    color: var(--text-primary); flex-shrink: 0;
+    transition: transform var(--duration-fast) var(--ease-out-expo);
+}
+.trust-item:hover .trust-icon { transform: scale(1.08); }
+.trust-icon.green  { background: linear-gradient(135deg, var(--success), var(--success)); }
+.trust-icon.blue   { background: linear-gradient(135deg, var(--primary-500), var(--primary-600)); }
+.trust-icon.purple { background: linear-gradient(135deg, var(--primary-400), var(--primary-600)); }
+.trust-icon.orange { background: linear-gradient(135deg, var(--warning), var(--warning)); }
+
+/* =========================================================
+   STREAMING_CHUNK: Credit Wizard & KTP / Face Verification
+   ========================================================= */
+
+.credit-wizard-steps {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.5rem; margin-bottom: 1.5rem;
+}
+.wizard-step {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.75rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-disabled); transition: all var(--duration-fast);
+}
+.wizard-step .step-num {
+    width: 28px; height: 28px; border-radius: var(--r-full);
+    background: var(--bg-surface-hover); border: 1px solid var(--border-default);
+    display: grid; place-items: center; font-size: 0.8rem;
+    transition: all var(--duration-fast);
+}
+.wizard-step.active { color: var(--primary-400); }
+.wizard-step.active .step-num {
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    border-color: var(--primary-500); color: var(--text-primary);
+    box-shadow: 0 0 0 4px var(--primary-glow-soft);
+}
+.wizard-step.completed { color: var(--success); }
+.wizard-step.completed .step-num {
+    background: var(--success); border-color: var(--success); color: var(--text-primary);
+}
+.wizard-step .step-label { display: none; }
+@media (min-width: 576px) { .wizard-step .step-label { display: inline; } }
+
+.wizard-sep {
+    width: 24px; height: 2px; background: var(--border-default); border-radius: var(--r-full);
+    transition: all var(--duration-fast);
+}
+.wizard-sep.active { background: linear-gradient(90deg, var(--primary-500), var(--secondary-500)); }
+
+.credit-step-panel { display: none; animation: fadeIn 0.35s ease; }
+.credit-step-panel.active { display: block; }
+
+/* Upload Dropzones */
+.upload-zone {
+    border: 2px dashed var(--border-strong);
+    border-radius: var(--r-lg);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    background: var(--bg-elevated);
+    position: relative; overflow: hidden;
+}
+.upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--primary-500);
+    background: rgba(99,102,241,0.06);
+}
+.upload-zone.has-file {
+    border-color: var(--success);
+    background: var(--success-bg);
+}
+.upload-zone .upload-icon {
+    font-size: 2rem; color: var(--text-disabled); margin-bottom: 0.5rem;
+    transition: all var(--duration-fast);
+}
+.upload-zone:hover .upload-icon { color: var(--primary-400); transform: scale(1.1); }
+.upload-zone .upload-text { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
+.upload-zone .upload-hint { font-size: 0.7rem; color: var(--text-disabled); margin-top: 0.25rem; }
+
+.upload-preview {
+    width: 100%; max-height: 160px; object-fit: contain; border-radius: var(--r-md);
+    margin-top: 0.75rem; display: none;
+}
+.upload-preview.show { display: block; }
+
+/* Face Verification Camera */
+.face-camera-container {
+    position: relative;
+    width: 100%; aspect-ratio: 4/3;
+    background: var(--bg-base); border-radius: var(--r-lg);
+    overflow: hidden; border: 2px solid var(--border-default);
+}
+.face-camera-container video {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.face-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+}
+.face-oval-guide {
+    width: 200px; height: 260px;
+    border: 3px dashed rgba(255,255,255,0.4);
+    border-radius: 50% 50% 45% 45% / 50% 50% 55% 55%;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+    animation: facePulse 2s ease-in-out infinite;
+}
+@keyframes facePulse {
+    0%, 100% { border-color: rgba(255,255,255,0.3); box-shadow: 0 0 0 9999px rgba(0,0,0,0.55), 0 0 20px rgba(99,102,241,0.2); }
+    50% { border-color: rgba(99,102,241,0.8); box-shadow: 0 0 0 9999px rgba(0,0,0,0.55), 0 0 30px rgba(99,102,241,0.4); }
+}
+.face-capture-btn {
+    position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+    width: 56px; height: 56px; border-radius: var(--r-full);
+    background: white; border: 4px solid var(--primary-500);
+    cursor: pointer; transition: all var(--duration-fast);
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.face-capture-btn::after {
+    content: ''; width: 40px; height: 40px; border-radius: var(--r-full);
+    background: var(--primary-500); transition: all var(--duration-fast);
+}
+.face-capture-btn:hover { transform: translateX(-50%) scale(1.08); }
+.face-capture-btn:hover::after { background: var(--danger); }
+.face-capture-btn:active { transform: translateX(-50%) scale(0.95); }
+
+.face-captured-preview {
+    width: 100%; border-radius: var(--r-lg); border: 2px solid var(--success);
+    display: none;
+}
+.face-captured-preview.show { display: block; }
+.face-status {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.35rem 0.8rem; border-radius: var(--r-full);
+    font-size: 0.75rem; font-weight: 700;
+}
+.face-status.verified { background: var(--success-bg); color: var(--success); border: 1px solid rgba(52,211,153,0.2); }
+.face-status.pending { background: rgba(251,191,36,0.12); color: var(--warning); border: 1px solid rgba(251,191,36,0.2); }
+
+/* Form fields credit */
+.credit-form-group { margin-bottom: 1rem; }
+.credit-form-group label {
+    display: block; font-size: 0.8rem; font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+}
+.credit-form-group input,
+.credit-form-group select,
+.credit-form-group textarea {
+    width: 100%; background: var(--bg-elevated); border: 1px solid var(--border-default);
+    border-radius: var(--r-md); padding: 0.6rem 0.875rem; color: var(--text-primary);
+    font-size: 0.875rem; transition: all var(--duration-fast);
+}
+.credit-form-group input:focus,
+.credit-form-group select:focus,
+.credit-form-group textarea:focus {
+    outline: none; border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px var(--primary-glow-soft);
+}
+.credit-form-group input::placeholder { color: var(--text-disabled); }
+
+.credit-nav-btns {
+    display: flex; justify-content: space-between; gap: 0.75rem;
+    margin-top: 1.25rem; padding-top: 1rem;
+    border-top: 1px solid var(--border-default);
+}
+
+/* Scanning animation */
+.scan-line {
+    position: absolute; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary-500), transparent);
+    animation: scanMove 2.5s ease-in-out infinite;
+    opacity: 0.7;
+}
+@keyframes scanMove {
+    0% { top: 10%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 90%; opacity: 0; }
+}
+
+/* Verification result card */
+.verification-result-card {
+    background: var(--bg-elevated); border: 1px solid var(--border-default);
+    border-radius: var(--r-lg); padding: 1rem;
+    text-align: center;
+}
+.verification-result-card .result-icon {
+    width: 56px; height: 56px; border-radius: var(--r-full);
+    display: grid; place-items: center; margin: 0 auto 0.75rem;
+    font-size: 1.5rem;
+}
+.verification-result-card .result-icon.success {
+    background: var(--success-bg); color: var(--success);
+}
+.verification-result-card .result-icon.warning {
+    background: rgba(251,191,36,0.12); color: var(--warning);
+}
+
+/* Outlined secondary button style for dark mode */
+.btn-outline-secondary {
+    border-color: var(--border-strong);
+    color: var(--text-secondary);
+}
+.btn-outline-secondary:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+}
+
+/* =========================================================
+   TESTIMONI PREMIUM — Layout Kartu & Filter
+   ========================================================= */
+.testimoni-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-default);
+}
+
+.testimoni-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+.testimoni-header h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.testimoni-header .badge-count {
+    background: var(--bg-surface-hover);
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--r-full);
+}
+.testimoni-filters {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+.testimoni-filters button {
+    background: transparent;
+    border: 1px solid var(--border-default);
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.3rem 0.8rem;
+    border-radius: var(--r-full);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+}
+.testimoni-filters button:hover {
+    border-color: var(--border-strong);
+    color: var(--text-secondary);
+}
+.testimoni-filters button.active {
+    background: var(--primary-500);
+    border-color: var(--primary-500);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 3px var(--primary-glow-soft);
+}
+
+/* Kartu Testimoni Premium */
+.testimoni-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+@media (max-width: 576px) {
+    .testimoni-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+.testimoni-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    padding: 1.25rem 1.25rem 1rem;
+    transition: all var(--duration-base) var(--ease-out-expo);
+    position: relative;
+    overflow: hidden;
+}
+.testimoni-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, var(--primary-glow-soft), transparent 70%);
+    opacity: 0;
+    transition: opacity var(--duration-base);
+    pointer-events: none;
+}
+.testimoni-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+}
+.testimoni-card:hover::before {
+    opacity: 1;
+}
+
+.testimoni-card .quote-icon {
+    position: absolute;
+    top: 0.75rem;
+    right: 1rem;
+    font-size: 2.5rem;
+    color: var(--border-subtle);
+    opacity: 0.4;
+    line-height: 1;
+    pointer-events: none;
+}
+
+/* Header kartu: avatar + nama + rating */
+.testimoni-card .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+.testimoni-card .avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--r-full);
+    object-fit: cover;
+    border: 2px solid var(--border-default);
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--bg-surface-hover), var(--bg-elevated));
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-tertiary);
+}
+.testimoni-card .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--r-full);
+}
+.testimoni-card .info {
+    flex: 1;
+    min-width: 0;
+}
+.testimoni-card .name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.testimoni-card .location {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.testimoni-card .rating {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+    font-size: 0.75rem;
+    color: var(--warning);
+    flex-shrink: 0;
+}
+.testimoni-card .rating .star-empty {
+    color: var(--border-strong);
+}
+
+/* Badge verified */
+.testimoni-card .verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--success);
+    background: var(--success-bg);
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--r-full);
+    border: 1px solid rgba(52,211,153,0.2);
+    margin-top: 0.15rem;
+}
+.testimoni-card .verified-badge i {
+    font-size: 0.5rem;
+}
+
+/* Body teks */
+.testimoni-card .body {
+    position: relative;
+    z-index: 1;
+}
+.testimoni-card .body p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.testimoni-card .body .read-more {
+    display: inline-block;
+    margin-top: 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--primary-400);
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+.testimoni-card .body .read-more:hover {
+    text-decoration: underline;
+}
+
+/* Tanggal */
+.testimoni-card .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-subtle);
+    position: relative;
+    z-index: 1;
+}
+.testimoni-card .date {
+    font-size: 0.65rem;
+    color: var(--text-disabled);
+}
+.testimoni-card .like-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    transition: color var(--duration-fast);
+    padding: 0.2rem 0.4rem;
+    border-radius: var(--r-sm);
+}
+.testimoni-card .like-btn:hover {
+    color: var(--danger);
+    background: var(--danger-bg);
+}
+.testimoni-card .like-btn.liked {
+    color: var(--danger);
+}
+
+/* Tombol "Lihat Semua Ulasan" */
+.testimoni-footer-action {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+.testimoni-footer-action a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-full);
+    transition: all var(--duration-fast);
+}
+.testimoni-footer-action a:hover {
+    border-color: var(--primary-500);
+    color: var(--primary-400);
+    background: var(--primary-glow-soft);
+}
+
+/* Empty state */
+.testimoni-empty {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--text-tertiary);
+}
+.testimoni-empty i {
+    font-size: 3rem;
+    color: var(--border-subtle);
+    margin-bottom: 0.75rem;
+    display: block;
+}
+.testimoni-empty p {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* FIX: Pastikan modal-content #creditModal solid & punya stacking context
+   sendiri (isolation: isolate) supaya tidak ada elemen lain -- termasuk
+   backdrop yang salah urutan -- yang bisa "tembus"/terlihat menggelapkan
+   kontennya. */
+
+/* FIX: Add extra safe space at bottom of modal body for mobile devices */
+#creditModal .modal-body { padding-bottom: 2rem; }
+
+html body .modal-backdrop.fade,
+html body .modal-backdrop.show {
+    z-index: 1065 !important;
+}
+
+html body div.modal.show#creditModal,
+html body #creditModal.modal.fade.show {
+    z-index: 1070 !important;
+}
+
+/* FIX: Pastikan modal-content #creditModal solid & punya stacking context
+   sendiri (isolation: isolate) supaya tidak ada elemen lain -- termasuk
+   backdrop yang salah urutan -- yang bisa "tembus"/terlihat menggelapkan
+   kontennya. */
+#creditModal .modal-content {
+    position: relative !important;
+    isolation: isolate !important;
+    z-index: 1 !important;
+    background-color: var(--bg-base, #0b1120) !important;
+    background-image: linear-gradient(180deg, var(--bg-elevated, rgba(30,41,59,0.9)), var(--bg-base, #0b1120)) !important;
+    opacity: 1 !important;
+}
+
+/* =========================================================
+   Mobile responsive adjustments
+   ========================================================= */
+@media (max-width: 767px) {
+    .product-title { font-size: 1.35rem; }
+    .price-main { font-size: 1.4rem; }
+    .spec-grid { grid-template-columns: 1fr; }
+    .dimension-grid { grid-template-columns: repeat(2, 1fr); }
+    .lightbox-nav { width: 40px; height: 40px; font-size: 1rem; }
+    .lightbox-nav.prev { left: 0.5rem; }
+    .lightbox-nav.next { right: 0.5rem; }
+    .pg-next, .pg-prev { width: 32px !important; height: 32px !important; }
+    .pg-next::after, .pg-prev::after { font-size: 0.7rem !important; }
+    .product-thumbs-swiper .swiper-slide { width: 60px !important; height: 60px !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{# ── Data prep ── #}
+{% set images = product.get_images() if product.get_images else [] %}
+{% set has_images = images | length > 0 %}
+{% set discount_pct = ((product.compare_at_price - product.price) / product.compare_at_price * 100) | int
+                      if (product.compare_at_price and product.compare_at_price > product.price) else 0 %}
+{% set whatsapp_number = get_setting('whatsapp_recipient_number', get_setting('store_whatsapp', '6289530052136')) if get_setting else '6289530052136' %}
+{% set wa_text = 'Halo, saya tertarik dengan ' ~ product.name ~ ' (' ~ product.brand ~ ' ' ~ product.model ~ '), harga ' ~ format_price(product.price) ~ '. Apakah masih tersedia?' if format_price else '' %}
+{% set has_dimensions = product.weight or product.width or product.length or product.height %}
+{% set specs_list = [] %}
+{% if product.specifications %}
+  {% if product.specifications is mapping %}
+    {% for k, v in product.specifications.items() %}
+      {% if k and v %}{% set _ = specs_list.append({'key': k, 'value': v}) %}{% endif %}
+    {% endfor %}
+  {% elif product.specifications is iterable and product.specifications is not string %}
+    {% for spec in product.specifications %}
+      {% set k = spec.key | default(spec.get('key','')) %}
+      {% set v = spec.value | default(spec.get('value','')) %}
+      {% if k and v %}{% set _ = specs_list.append({'key': k, 'value': v}) %}{% endif %}
+    {% endfor %}
+  {% endif %}
+{% endif %}
+
+<!-- Breadcrumb Area -->
+<nav class="product-breadcrumb reveal" aria-label="Breadcrumb">
+    <a href="/"><i class="bi bi-house-door-fill"></i> Beranda</a>
+    <span class="sep"><i class="bi bi-chevron-right"></i></span>
+    <a href="/catalog">Katalog</a>
+    <span class="sep"><i class="bi bi-chevron-right"></i></span>
+    {% if product.brand %}
+    <a href="/catalog?brand={{ product.brand }}">{{ product.brand }}</a>
+    <span class="sep"><i class="bi bi-chevron-right"></i></span>
+    {% endif %}
+    <span class="current" title="{{ product.name }}">{{ product.name | truncate(35) }}</span>
+</nav>
+
+<div class="row g-4 g-lg-5">
+
+    <!-- ══ Gallery Viewport ══ -->
+    <div class="col-lg-6 reveal">
+        {% if has_images %}
+        <div class="swiper product-gallery-swiper" id="productGallerySwiper">
+            <div class="swiper-wrapper">
+                {% for img in images %}
+                <div class="swiper-slide">
+                    <div class="product-gallery-main"
+                         onclick="openLightbox({{ loop.index0 }})"
+                         role="button" tabindex="0"
+                         aria-label="Perbesar gambar {{ loop.index }}">
+                        <img src="{{ get_product_image_url(img) if get_product_image_url else img }}"
+                             alt="{{ product.name }} - Gambar {{ loop.index }}"
+                             loading="{% if loop.first %}eager{% else %}lazy{% endif %}">
+                        <div class="gallery-zoom-hint">
+                            <i class="bi bi-zoom-in me-1"></i> Klik untuk zoom
+                        </div>
+                        {% if loop.first %}
+                        <div class="product-badges-overlay">
+                            {% if product.is_featured %}
+                            <span class="badge-featured"><i class="bi bi-star-fill"></i> UNGGULAN</span>
+                            {% endif %}
+                            {% if discount_pct > 0 %}
+                            <span class="badge-discount">HEMAT {{ discount_pct }}%</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if images | length > 1 %}
+            <div class="swiper-button-next pg-next"></div>
+            <div class="swiper-button-prev pg-prev"></div>
+            <div class="swiper-pagination pg-pagination"></div>
+            {% endif %}
+        </div>
+
+        {% if images | length > 1 %}
+        <div class="swiper product-thumbs-swiper" id="productThumbsSwiper">
+            <div class="swiper-wrapper">
+                {% for img in images %}
+                <div class="swiper-slide">
+                    <button class="thumb-btn" onclick="goToSlide({{ loop.index0 }})" aria-label="Lihat gambar {{ loop.index }}">
+                        <img src="{{ get_product_image_url(img) if get_product_image_url else img }}"
+                             alt="Thumbnail {{ loop.index }}" loading="lazy">
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="product-gallery-main" style="cursor: default; min-height: 320px;">
+            <div class="text-center py-5">
+                <i class="bi bi-image" style="font-size: 4rem; color: var(--text-disabled);"></i>
+                <p style="color: var(--text-tertiary); margin-top: 0.75rem;">Tidak ada gambar</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ══ Product Info & Specs ══ -->
+    <div class="col-lg-6 reveal reveal-delay-1">
+        <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
+            <div class="flex-1 min-w-0">
+                <h1 class="product-title">{{ product.name }}</h1>
+                <p class="product-subtitle">{{ product.brand }} {{ product.model }}</p>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <button class="share-btn" onclick="copyLink()" title="Salin link" aria-label="Salin link">
+                    <i class="bi bi-link-45deg"></i>
+                </button>
+                <div class="share-wrapper">
+                    <button class="share-btn" id="shareToggleBtn" onclick="toggleShareDropdown(event)" title="Bagikan" aria-label="Bagikan produk">
+                        <i class="bi bi-share"></i>
+                    </button>
+                    <div class="share-dropdown" id="shareDropdown" role="menu">
+                        <button type="button" onclick="shareProduct('whatsapp')" role="menuitem">
+                            <i class="bi bi-whatsapp" style="color:#25d366;"></i> WhatsApp
+                        </button>
+                        <button type="button" onclick="shareProduct('telegram')" role="menuitem">
+                            <i class="bi bi-telegram" style="color:#2ca5e0;"></i> Telegram
+                        </button>
+                        <button type="button" onclick="shareProduct('facebook')" role="menuitem">
+                            <i class="bi bi-facebook" style="color:#1877f2;"></i> Facebook
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3 flex-wrap mb-4">
+            <div class="rating-stars" aria-label="{{ product.rating | default(0) }} dari 5 bintang">
+                {% set rating = product.rating | default(0) | round | int %}
+                {% for i in range(5) %}
+                <i class="bi bi-star-fill {% if i >= rating %}empty{% endif %}"></i>
+                {% endfor %}
+                <span class="ms-1" style="font-size: 0.8rem; color: var(--text-tertiary);">
+                    ({{ product.review_count | default(0) }} ulasan)
+                </span>
+            </div>
+            <span style="color: var(--border-strong);" aria-hidden="true">|</span>
+            <span style="font-size: 0.8rem; color: var(--text-tertiary); font-family: monospace;">
+                SKU: {{ product.sku | default('N/A') }}
+            </span>
+            {% if product.barcode %}
+            <span style="color: var(--border-strong);" aria-hidden="true">|</span>
+            <span style="font-size: 0.8rem; color: var(--text-tertiary); font-family: monospace;">
+                Barcode: {{ product.barcode }}
+            </span>
+            {% endif %}
+            {% if product.stock > 0 %}
+            <span style="color: var(--border-strong);" aria-hidden="true">|</span>
+            <span class="d-flex align-items-center gap-1" style="font-size: 0.8rem; color: var(--success);">
+                <i class="bi bi-check-circle-fill"></i> Tersedia
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="price-box mb-4">
+            <div class="d-flex align-items-end gap-3 mb-2 flex-wrap">
+                <span class="price-main">{{ format_price(product.price) if format_price else product.price }}</span>
+                {% if discount_pct > 0 %}
+                <span class="price-original">{{ format_price(product.compare_at_price) if format_price else product.compare_at_price }}</span>
+                <span class="price-save">HEMAT {{ format_price(product.compare_at_price - product.price) if format_price else '' }}</span>
+                {% endif %}
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="condition-tag">{{ product.condition }}</span>
+                {% if get_setting and get_setting('openclaw_enabled') == 'true' %}
+                <span class="openclaw-badge"><i class="bi bi-robot"></i> Open Claw</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span style="font-size: 0.8rem; color: var(--text-tertiary);">Stok Tersedia</span>
+                <span class="fw-bold" style="font-size: 0.85rem; color: {% if product.stock == 0 %}var(--danger){% elif product.stock <= 5 %}var(--warning){% else %}var(--success){% endif %};">
+                    {{ product.stock }} unit
+                </span>
+            </div>
+            {% set stock_max = product.low_stock_alert | default(5) * 4 %}
+            <div class="stock-progress-bar" role="progressbar" aria-valuenow="{{ product.stock }}" aria-valuemin="0" aria-valuemax="{{ stock_max }}">
+                <div class="stock-progress-fill" style="width: {{ [product.stock / stock_max * 100, 100] | min | int }}%; background: {% if product.stock == 0 %}var(--danger){% elif product.stock <= product.low_stock_alert | default(5) %}var(--warning){% else %}var(--success){% endif %};"></div>
+            </div>
+            {% if product.stock == 0 %}
+            <p class="mt-2 mb-0" style="font-size: 0.75rem; color: var(--danger);">
+                <i class="bi bi-x-circle-fill me-1"></i>Stok habis
+            </p>
+            {% elif product.stock <= 5 %}
+            <p class="mt-2 mb-0" style="font-size: 0.75rem; color: var(--warning);">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>Stok menipis – segera amankan unit!
+            </p>
+            {% endif %}
+        </div>
+
+        {% if product.short_description %}
+        <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; margin-bottom: 1.25rem;">
+            {{ product.short_description }}
+        </p>
+        {% endif %}
+
+        {% if specs_list | length > 0 %}
+        <div class="mb-4">
+            <h3 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                Spesifikasi Ringkas
+            </h3>
+            <div class="spec-grid">
+                {% for spec in specs_list[:8] %}
+                <div class="spec-item">
+                    <div class="spec-label">{{ spec.key }}</div>
+                    <div class="spec-value">{{ spec.value }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if has_dimensions %}
+        <div class="mb-4">
+            <h3 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                Dimensi & Berat Paket
+            </h3>
+            <div class="dimension-grid">
+                {% if product.weight %}
+                <div class="dim-card">
+                    <div class="dim-icon weight"><i class="bi bi-box-seam"></i></div>
+                    <div class="dim-label">Berat</div>
+                    <div class="dim-value">{{ product.weight }} <span class="dim-unit">kg</span></div>
+                </div>
+                {% endif %}
+                {% if product.width %}
+                <div class="dim-card">
+                    <div class="dim-icon width"><i class="bi bi-arrows"></i></div>
+                    <div class="dim-label">Lebar</div>
+                    <div class="dim-value">{{ product.width }} <span class="dim-unit">cm</span></div>
+                </div>
+                {% endif %}
+                {% if product.length %}
+                <div class="dim-card">
+                    <div class="dim-icon length"><i class="bi bi-arrows-angle-expand"></i></div>
+                    <div class="dim-label">Panjang</div>
+                    <div class="dim-value">{{ product.length }} <span class="dim-unit">cm</span></div>
+                </div>
+                {% endif %}
+                {% if product.height %}
+                <div class="dim-card">
+                    <div class="dim-icon height"><i class="bi bi-bar-chart-line"></i></div>
+                    <div class="dim-label">Tinggi</div>
+                    <div class="dim-value">{{ product.height }} <span class="dim-unit">cm</span></div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tombol Simulasi Kredit — SELALU tampil terlepas dari status stok
+             MAUPUN toggle admin 'credit_enabled', dengan gaya glass/frosted
+             supaya tetap terlihat sebagai aksi sekunder yang berbeda dari
+             tombol keranjang/checkout utama. Modal #creditModal di bawah
+             sudah menangani sendiri state login-required / KYC / kalkulator,
+             jadi tombolnya tidak perlu (dan tidak boleh) disembunyikan oleh
+             setting admin — kalau tidak, user tidak pernah tahu fitur kredit
+             ada sampai admin menyalakannya secara eksplisit. -->
+        <div class="mb-3">
+            <button type="button" class="btn-credit-trigger w-100"
+               data-bs-toggle="modal" data-bs-target="#creditModal"
+               aria-label="Buka simulasi kredit">
+                <i class="bi bi-calculator"></i> Simulasi Kredit
+            </button>
+        </div>
+
+        {% if product.stock > 0 %}
+        <div class="product-action-bar mb-4" id="actionArea">
+            <div class="action-row-top">
+                <div class="qty-stepper" role="group" aria-label="Pilih jumlah">
+                    <button type="button" onclick="updateQty(-1)" aria-label="Kurangi jumlah" id="qtyMinus" disabled>
+                        <i class="bi bi-dash"></i>
+                    </button>
+                    <input type="number" id="qtyInput" value="1" min="1" max="{{ product.stock }}" aria-label="Jumlah" readonly>
+                    <button type="button" onclick="updateQty(1)" aria-label="Tambah jumlah" id="qtyPlus">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+
+                <button type="button" id="cartBtn" onclick="handleAddToCart()" class="btn-cart" aria-label="Tambah ke keranjang">
+                    <i class="bi bi-cart-plus" id="cartBtnIcon"></i>
+                    <span id="cartBtnText">Tambah ke Keranjang</span>
+                </button>
+            </div>
+
+            <button type="button" class="btn-checkout-now" id="checkoutNowBtn" onclick="handleCheckoutNow()" aria-label="Checkout sekarang">
+                <i class="bi bi-lightning-charge-fill" id="checkoutNowIcon"></i>
+                <span id="checkoutNowText">Checkout Sekarang</span>
+            </button>
+        </div>
+        {% else %}
+        <div class="out-of-stock-box mb-4" role="alert">
+            <i class="bi bi-x-circle-fill"></i>
+            Produk ini sedang tidak tersedia.
+            <a href="https://wa.me/{{ whatsapp_number }}?text={{ ('Halo, saya ingin tahu kapan ' ~ product.name ~ ' restock?') | urlencode }}" target="_blank" rel="noopener noreferrer" style="color: var(--danger); font-weight: 800; text-decoration: underline; margin-left: 0.25rem;">
+               Tanyakan restock
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="mt-4 pt-3">
+            <div class="product-tabs" role="tablist">
+                <button class="product-tab active" role="tab" aria-selected="true" aria-controls="tab-description" onclick="switchTab('description', this)">
+                    Deskripsi
+                </button>
+                <button class="product-tab" role="tab" aria-selected="false" aria-controls="tab-specs" onclick="switchTab('specs', this)">
+                    Spesifikasi Lengkap
+                </button>
+                <button class="product-tab" role="tab" aria-selected="false" aria-controls="tab-reviews" onclick="switchTab('reviews', this)">
+                    Testimoni ({{ testimonials|length }})
+                </button>
+            </div>
+
+            <!-- Tab Panels -->
+            <div id="tab-description" class="tab-panel active" role="tabpanel">
+                {% if product.description %}
+                <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.8; white-space: pre-wrap;">{{ product.description }}</div>
+                {% else %}
+                <p style="color: var(--text-tertiary); font-size: 0.9rem;">Tidak ada deskripsi rinci untuk unit ini.</p>
+                {% endif %}
+            </div>
+
+            <div id="tab-specs" class="tab-panel" role="tabpanel">
+                {% if specs_list | length > 0 %}
+                <div class="table-responsive">
+                    <table class="specs-table">
+                        <tbody>
+                            {% for spec in specs_list %}
+                            <tr>
+                                <td>{{ spec.key }}</td>
+                                <td>{{ spec.value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="color: var(--text-tertiary); font-size: 0.9rem;">Tidak ada spesifikasi tambahan yang disematkan.</p>
+                {% endif %}
+            </div>
+
+            <div id="tab-reviews" class="tab-panel" role="tabpanel">
+                {% if testimonials %}
+                <!-- Semua testimoni dirender, tapi JavaScript akan mengacak & menampilkan 10 -->
+                <div class="testimoni-section">
+                    <!-- Header dengan filter -->
+                    <div class="testimoni-header">
+                        <h3>
+                            <i class="bi bi-chat-square-quote" style="color: var(--primary-400);"></i>
+                            Ulasan Pelanggan
+                            <span class="badge-count">{{ testimonials|length }}</span>
+                        </h3>
+                        <div class="testimoni-filters" id="testimoniFilters">
+                            <button class="active" data-filter="all">Semua</button>
+                            <button data-filter="5">★ 5</button>
+                            <button data-filter="4">★ 4</button>
+                            <button data-filter="3">★ 3</button>
+                            <button data-filter="2">★ 2</button>
+                            <button data-filter="1">★ 1</button>
+                        </div>
+                    </div>
+
+                    <!-- Grid Kartu -->
+                    <div class="testimoni-grid" id="testimoniGrid">
+                        {% for t in testimonials %}
+                        <div class="testimoni-card" data-rating="{{ t.rating }}">
+                            <div class="quote-icon"><i class="bi bi-quote"></i></div>
+
+                            <div class="card-header">
+                                <div class="avatar">
+                                    {% if t.image_filename %}
+                                    <img src="{{ get_testimonial_image_url(t.image_filename) if get_testimonial_image_url else t.image_filename }}"
+                                         alt="{{ t.name }}" loading="lazy">
+                                    {% else %}
+                                    {{ t.name|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div class="info">
+                                    <div class="name">{{ t.name }}</div>
+                                    <div class="location">
+                                        <i class="bi bi-geo-alt-fill" style="font-size:0.55rem;"></i>
+                                        {{ t.location }}
+                                        {% if t.verified_purchase %}
+                                        <span class="verified-badge">
+                                            <i class="bi bi-patch-check-fill"></i> Verified
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="rating">
+                                    {% for i in range(t.rating) %}
+                                    <i class="bi bi-star-fill"></i>
+                                    {% endfor %}
+                                    {% for i in range(5 - t.rating) %}
+                                    <i class="bi bi-star star-empty"></i>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="body">
+                                <p>{{ t.text }}</p>
+                                {% if t.text|length > 120 %}
+                                <button class="read-more" onclick="toggleReadMore(this)">Baca selengkapnya</button>
+                                {% endif %}
+                            </div>
+
+                            <div class="footer">
+                                <span class="date">
+                                    <i class="bi bi-clock" style="font-size:0.6rem;"></i>
+                                    {{ t.created_at.strftime('%d %b %Y') if t.created_at else 'Baru saja' }}
+                                </span>
+                                <button class="like-btn" onclick="toggleLike(this)">
+                                    <i class="bi bi-hand-thumbs-up"></i>
+                                    <span class="like-count">{{ t.likes|default(0) }}</span>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Lihat semua -->
+                    <div class="testimoni-footer-action">
+                        <a href="/testimonials">
+                            <i class="bi bi-arrow-right-circle"></i>
+                            Lihat Semua Ulasan
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="testimoni-empty">
+                    <i class="bi bi-chat-square-text"></i>
+                    <p>Belum ada ulasan dari pelanggan.<br>Jadilah yang pertama memberi masukan!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Layanan Unggulan (di atas Produk Terkait) -->
+<section class="services-section reveal" aria-labelledby="services-title">
+    <div class="services-header">
+        <h2 id="services-title">Layanan Unggulan Kami</h2>
+        <p>Keamanan dan kualitas handphone adalah prioritas utama kami</p>
+    </div>
+    <div class="trust-grid-wide">
+        <div class="trust-item">
+            <div class="trust-icon green"><i class="bi bi-shield-check"></i></div>
+            <div>
+                <p class="mb-0 fw-bold" style="font-size: 0.85rem; color: var(--text-primary);">Garansi Toko 7 Hari</p>
+                <p class="mb-0" style="font-size: 0.75rem; color: var(--text-tertiary);">Jaminan retur & uang kembali</p>
+            </div>
+        </div>
+        <div class="trust-item">
+            <div class="trust-icon blue"><i class="bi bi-truck"></i></div>
+            <div>
+                <p class="mb-0 fw-bold" style="font-size: 0.85rem; color: var(--text-primary);">Pengiriman Terproteksi</p>
+                <p class="mb-0" style="font-size: 0.75rem; color: var(--text-tertiary);">Bungkusan kayu & asuransi penuh</p>
+            </div>
+        </div>
+        <div class="trust-item">
+            <div class="trust-icon purple"><i class="bi bi-award"></i></div>
+            <div>
+                <p class="mb-0 fw-bold" style="font-size: 0.85rem; color: var(--text-primary);">QC 30+ Titik Verifikasi</p>
+                <p class="mb-0" style="font-size: 0.75rem; color: var(--text-tertiary);">Lolos uji fisik, layar, & baterai</p>
+            </div>
+        </div>
+        <div class="trust-item">
+            <div class="trust-icon orange"><i class="bi bi-headset"></i></div>
+            <div>
+                <p class="mb-0 fw-bold" style="font-size: 0.85rem; color: var(--text-primary);">Konsultan Layanan 24/7</p>
+                <p class="mb-0" style="font-size: 0.75rem; color: var(--text-tertiary);">Bantuan instan tim Pusat Gadai</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Related Products -->
+{% if related %}
+<section class="related-section reveal" aria-labelledby="related-title">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="section-title" id="related-title" style="font-size: 1.5rem; font-family: 'Space Grotesk', sans-serif;">Produk Terkait</h2>
+        {% if product.brand %}
+        <a href="/catalog?brand={{ product.brand }}" class="btn btn-outline-light btn-sm rounded-pill px-3">
+            Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+        {% endif %}
+    </div>
+    <div class="row g-3">
+        {% for rel in related %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <article class="product-card">
+                <div class="card-media">
+                    {% set rel_discount = ((rel.compare_at_price - rel.price) / rel.compare_at_price * 100) | int
+                                          if (rel.compare_at_price and rel.compare_at_price > rel.price) else 0 %}
+                    {% if rel_discount > 0 %}
+                    <div class="card-badges">
+                        <span class="badge-chip badge-sale">-{{ rel_discount }}%</span>
+                    </div>
+                    {% endif %}
+                    <div class="card-actions">
+                        <button class="action-btn" onclick="location.href='/product/{{ rel.id }}'" title="Lihat Detail">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <a href="/product/{{ rel.id }}">
+                        <img src="{{ get_product_image_url(rel.image_filename) if get_product_image_url else rel.image_filename }}" alt="{{ rel.name }}" onerror="this.src='https://placehold.co/300x300/1e293b/ffffff?text=No+Image'" loading="lazy">
+                    </a>
+                </div>
+                <div class="card-body">
+                    <a href="/product/{{ rel.id }}" class="text-decoration-none">
+                        <h3 class="card-title">{{ rel.name }}</h3>
+                    </a>
+                    <p class="card-meta">{{ rel.brand }} {{ rel.model }} • {{ rel.condition }}</p>
+                    <div class="card-footer-row">
+                        <span class="card-price">{{ format_price(rel.price) if format_price else rel.price }}</span>
+                        <span style="font-size: 0.75rem; color: var(--success);">{{ rel.condition }}</span>
+                    </div>
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Lightbox Modal -->
+<div class="lightbox-overlay" id="lightbox" role="dialog" aria-modal="true" tabindex="-1" aria-label="Galeri Gambar" onclick="closeLightbox()">
+    <button type="button" class="lightbox-close" onclick="closeLightbox(); event.stopPropagation();" aria-label="Tutup">
+        <i class="bi bi-x-lg"></i>
+    </button>
+    <img id="lightboxImage" src="" alt="{{ product.name }}" onclick="event.stopPropagation();" draggable="false">
+
+    {% if has_images and images | length > 1 %}
+    <button type="button" class="lightbox-nav prev" onclick="prevImage(); event.stopPropagation();" aria-label="Sebelumnya">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    <button type="button" class="lightbox-nav next" onclick="nextImage(); event.stopPropagation();" aria-label="Berikutnya">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+    <div class="lightbox-counter" id="lightboxCounter" aria-live="polite">
+        1 / {{ images | length }}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Credit Simulation Modal — SELALU dirender terlepas dari 'credit_enabled',
+     karena tombol pemicunya sekarang juga selalu tampil (lihat komentar di
+     atas). Isi modal sendiri sudah punya percabangan lengkap untuk state
+     login-required, belum-KYC, dan sudah-KYC, jadi aman dirender selalu. -->
+<div class="modal fade" id="creditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: var(--r-lg);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-default); padding: 1rem 1.25rem;">
+                <h5 class="modal-title" style="font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 700;">
+                    <i class="bi bi-calculator" style="color: var(--primary-500);"></i>
+                    <span id="creditModalTitle">Simulasi Kredit</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup" style="filter: invert(0.5);"></button>
+            </div>
+            <div class="modal-body" style="padding: 1.25rem;">
+
+                {% if not current_user.is_authenticated %}
+                <!-- Login Required State -->
+                <div class="text-center py-4">
+                    <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-500), var(--secondary-500)); display: grid; place-items: center; margin: 0 auto 1rem; color: var(--text-primary); font-size: 1.5rem;">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+                    <h6 style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Login Diperlukan</h6>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); max-width: 280px; margin: 0 auto 1rem;">
+                        Silakan masuk ke akun Anda untuk mengajukan kredit.
+                    </p>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="PGI.Modal.open('login-modal')" style="padding: 0.6rem 1.25rem; font-size: 0.85rem; font-weight: 600;">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Masuk Sekarang
+                    </button>
+                </div>
+                {% else %}
+                <!-- Wizard Steps -->
+                <div class="credit-wizard-steps" id="creditWizardSteps">
+                    <div class="wizard-step active" data-step="1">
+                        <span class="step-num">1</span>
+                        <span class="step-label">Simulasi</span>
+                    </div>
+                    <div class="wizard-sep active"></div>
+                    <div class="wizard-step" data-step="2">
+                        <span class="step-num">2</span>
+                        <span class="step-label">Data & KTP</span>
+                    </div>
+                    <div class="wizard-sep"></div>
+                    <div class="wizard-step" data-step="3">
+                        <span class="step-num">3</span>
+                        <span class="step-label">Verifikasi</span>
+                    </div>
+                    <div class="wizard-sep"></div>
+                    <div class="wizard-step" data-step="4">
+                        <span class="step-num">4</span>
+                        <span class="step-label">Kirim</span>
+                    </div>
+                </div>
+
+                <!-- STEP 1: SIMULATION -->
+                <div class="credit-step-panel active" id="step-1">
+                    <div class="d-flex align-items-center gap-3 mb-3 p-3"
+                         style="background: var(--bg-elevated); border-radius: var(--r-md); border: 1px solid var(--border-default);">
+                        <img src="{{ get_product_image_url(product.image_filename) if get_product_image_url and product.image_filename else 'https://placehold.co/60x60/F2F2F7/8E8E93?text=No+Image' }}"
+                             alt="{{ product.name }}" style="width: 52px; height: 52px; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--border-default);">
+                        <div class="min-w-0">
+                            <h6 class="mb-1" style="color: var(--text-primary); font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ product.name }}</h6>
+                            <span style="color: var(--primary-500); font-weight: 700; font-size: 0.9rem;">
+                                {{ format_price(product.price) if format_price else 'Rp ' + '{:,.0f}'.format(product.price) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">Uang Muka (DP)</label>
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" id="dpAmountInput" value="500000" placeholder="Contoh: 500000" oninput="updateCreditCalc()"
+                                   style="display: block; width: 100%; box-sizing: border-box; background: var(--bg-elevated); border: 1px solid var(--border-default); color: var(--text-primary); font-size: 0.85rem; border-radius: var(--r-md); padding: 0.5rem 0.875rem;">
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <span id="dpValue" style="color: var(--primary-500); font-weight: 700; font-size: 0.9rem;">0%</span>
+                                <span id="dpAmount" style="font-size: 0.8rem; color: var(--text-secondary);"></span>
+                            </div>
+                            <div style="font-size: 0.7rem; color: var(--text-disabled); margin-top: 0.2rem;">Masukkan nominal DP dalam Rupiah, minimal Rp 500.000</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">Tenor</label>
+                            <select class="form-select" id="tenorSelect" onchange="updateCreditCalc()"
+                                    style="background: var(--bg-elevated); border-color: var(--border-default); color: var(--text-primary); font-size: 0.85rem; border-radius: var(--r-md); padding: 0.5rem 0.875rem;">
+                                <option value="3">3 Bulan</option>
+                                <option value="6">6 Bulan</option>
+                                <option value="12" selected>12 Bulan</option>
+                                <option value="24">24 Bulan</option>
+                            </select>
+                            <div style="font-size: 0.7rem; color: var(--text-disabled); margin-top: 0.2rem;">Tenor maksimal 24 bulan</div>
+                        </div>
+                    </div>
+
+                    <div id="dpMinWarning" style="display: none; background: var(--danger-bg); border: 1px solid rgba(239,68,68,0.25); border-radius: var(--r-md); font-size: 0.75rem; color: var(--danger); padding: 0.5rem; margin-bottom: 0.75rem;" class="d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span>Nominal DP saat ini di bawah Rp 500.000. Masukkan nominal DP yang lebih besar.</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">Jenis Bunga</label>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm flex-fill credit-type-btn active" id="btnEffective"
+                                    style="border: 1.5px solid var(--primary-500); background: var(--primary-500); color: var(--text-primary); font-weight: 600; font-size: 0.8rem; padding: 0.5rem; border-radius: var(--r-md); cursor: default;" disabled>
+                                <i class="bi bi-graph-down"></i> Efektif
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="creditResult">
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="p-3 text-center" style="background: var(--bg-elevated); border-radius: var(--r-md); border: 1px solid var(--border-default);">
+                                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; margin-bottom: 0.25rem;">Angsuran/Bulan</div>
+                                    <div id="resultMonthly" style="font-family: 'Inter'; font-size: 1.25rem; font-weight: 700; color: var(--primary-500);"></div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 text-center" style="background: var(--bg-elevated); border-radius: var(--r-md); border: 1px solid var(--border-default);">
+                                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; margin-bottom: 0.25rem;">Total Bunga</div>
+                                    <div id="resultInterest" style="font-family: 'Inter'; font-size: 1.25rem; font-weight: 700; color: var(--accent-400);"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 mb-3" style="background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: var(--r-md);">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">Harga Produk</span>
+                                <span id="resultPrice" style="font-size: 0.8rem; color: var(--text-primary); font-weight: 600;"></span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">Uang Muka (DP)</span>
+                                <span id="resultDP" style="font-size: 0.8rem; color: var(--text-primary); font-weight: 600;"></span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">Pokok Hutang</span>
+                                <span id="resultPrincipal" style="font-size: 0.8rem; color: var(--text-primary); font-weight: 600;"></span>
+                            </div>
+                            <div class="d-flex justify-content-between pt-2" style="border-top: 1px solid var(--border-default);">
+                                <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 700;">Total Pembayaran</span>
+                                <span id="resultTotal" style="font-size: 0.85rem; color: var(--primary-500); font-weight: 700;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.kyc_verified %}
+                        <!-- User SUDAH KYC verified — tampilkan data terverifikasi & lompat ke step 4 -->
+                        <div class="p-3 mb-3" style="background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); border-radius: var(--r-md);">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #22c55e, #16a34a); display: grid; place-items: center; color: var(--text-primary); font-size: 1.1rem; flex-shrink: 0;">
+                                    <i class="bi bi-patch-check-fill"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <p class="mb-0 fw-bold" style="color: var(--text-primary); font-size: 0.85rem;">Anda Sudah Terverifikasi KYC</p>
+                                    <p class="mb-0" style="font-size: 0.75rem; color: #22c55e;">
+                                        <i class="bi bi-shield-check me-1"></i>Data diri dan dokumen KTP/selfie yang sudah divalidasi otomatis digunakan untuk pengajuan ini. Tidak perlu isi ulang atau upload dokumen.
+                                    </p>
+                                </div>
+                            </div>
+                            <div style="background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: var(--r-md); padding: 0.75rem 1rem;">
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <div style="font-size: 0.7rem; color: var(--text-disabled); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; margin-bottom: 0.2rem;">Nama Lengkap</div>
+                                        <div style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;">{{ current_user.full_name or '-' }}</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div style="font-size: 0.7rem; color: var(--text-disabled); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; margin-bottom: 0.2rem;">NIK</div>
+                                        <div style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600; font-family: monospace;">{{ current_user.kyc_nik or '-' }}</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div style="font-size: 0.7rem; color: var(--text-disabled); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; margin-bottom: 0.2rem;">No. HP</div>
+                                        <div style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;">{{ current_user.phone or '-' }}</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div style="font-size: 0.7rem; color: var(--text-disabled); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; margin-bottom: 0.2rem;">Alamat KTP</div>
+                                        <div style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;">{{ current_user.address or '-' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}                       <!-- User BELUM KYC verified -->
+                        <div class="d-flex align-items-center gap-3 p-3 mb-3" style="background: var(--warning-bg, rgba(251,191,36,0.12)); border: 1px solid rgba(251,191,36,0.25); border-radius: var(--r-md);">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--warning), var(--warning)); display: grid; place-items: center; color: var(--text-primary); font-size: 1.1rem; flex-shrink: 0;">
+                                <i class="bi bi-shield-exclamation"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-0 fw-bold" style="color: var(--text-primary); font-size: 0.85rem;">Verifikasi Identitas Diperlukan</p>
+                                <p class="mb-0" style="font-size: 0.75rem; color: var(--warning, var(--gold-400));">
+                                    Anda belum menyelesaikan verifikasi KYC. Klik tombol di bawah untuk verifikasi identitas terlebih dahulu.
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+
+                    <div class="credit-nav-btns">
+                        <div></div>
+                        {% if current_user.is_authenticated and not current_user.kyc_verified %}
+                        <button type="button" class="btn" onclick="redirectToKyc()" style="font-size: 0.85rem; font-weight: 700; border-radius: var(--r-md); padding: 0.6rem 1.25rem; background: linear-gradient(135deg, var(--warning), var(--warning)); border: none; color: var(--text-primary);">
+                            <i class="bi bi-shield-lock me-1"></i> Verifikasi KYC Sekarang <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i>
+                        </button>
+                        {% elif current_user.is_authenticated and current_user.kyc_verified %}
+                        <button type="button" class="btn btn-primary" onclick="goToCreditStep(4)" style="font-size: 0.85rem; font-weight: 700; border-radius: var(--r-md); padding: 0.6rem 1.25rem; background: linear-gradient(135deg, #22c55e, #16a34a); border: none; color: var(--text-primary);">
+                            <i class="bi bi-check-circle-fill me-1"></i> Ajukan Cicilan <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-primary" onclick="goToCreditStep(2)" style="font-size: 0.85rem; font-weight: 700; border-radius: var(--r-md); padding: 0.6rem 1.25rem;">
+                            Lanjut <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+
+                    {% if current_user.is_authenticated %}
+                    <!-- INTEGRASI: installment_apply.html — halaman pengajuan cicilan versi
+                         full-page (mendukung kalkulator + form lengkap dalam satu halaman,
+                         berguna untuk user yang lebih nyaman tidak mengisi lewat modal, mis.
+                         layar kecil atau kamera modal bermasalah). Produk saat ini otomatis
+                         dikirim lewat product_id supaya kalkulator & ringkasan produk di
+                         halaman itu langsung terisi, tanpa mengubah alur modal yang sudah ada. -->
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('installment_apply', product_id=product.id) }}" target="_blank" rel="noopener"
+                           style="font-size: 0.78rem; color: var(--text-tertiary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;"
+                           onmouseover="this.style.color='var(--primary-500)'" onmouseout="this.style.color='var(--text-tertiary)'">
+                            <i class="bi bi-arrows-fullscreen"></i> Isi di halaman penuh <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- STEP 2: KTP & DATA DIRI -->
+                <div class="credit-step-panel" id="step-2">
+                    <h6 style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem;">
+                        <i class="bi bi-person-vcard me-1"></i> Data Identitas & KTP
+                    </h6>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 credit-form-group mb-0">
+                            <label>Nama Lengkap (sesuai KTP)</label>
+                            <input type="text" id="ktpName" placeholder="Contoh: Budi Santoso" value="{{ current_user.full_name }}">
+                        </div>
+                        <div class="col-md-6 credit-form-group mb-0">
+                            <label>NIK KTP</label>
+                            <input type="text" id="ktpNik" placeholder="3175xxxxxxxxxxxx" maxlength="16" inputmode="numeric">
+                        </div>
+                    </div>
+
+                    <div class="credit-form-group">
+                        <label>Alamat Lengkap (sesuai KTP)</label>
+                        <textarea id="ktpAddress" rows="2" placeholder="Jl. Mawar No. 12, Kelurahan..."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 credit-form-group mb-0">
+                            <label>Status Pekerjaan</label>
+                            <select id="employmentStatus">
+                                <option value="">Pilih...</option>
+                                <option value="karyawan_swasta">Karyawan Swasta</option>
+                                <option value="pns">PNS / BUMN</option>
+                                <option value="wiraswasta">Wiraswasta</option>
+                                <option value="freelance">Freelance</option>
+                                <option value="mahasiswa">Mahasiswa</option>
+                                <option value="lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 credit-form-group mb-0">
+                            <label>Penghasilan Bulanan (Rp)</label>
+                            <input type="number" id="monthlyIncome" placeholder="5000000" min="0">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 credit-form-group mb-0">
+                            <label>Nama Kontak Darurat</label>
+                            <input type="text" id="emergencyName" placeholder="Nama keluarga/dekat">
+                        </div>
+                        <div class="col-md-6 credit-form-group mb-0">
+                            <label>No. HP Kontak Darurat</label>
+                            <input type="tel" id="emergencyPhone" placeholder="08xxxxxxxxxx">
+                        </div>
+                    </div>
+
+                    <div class="credit-form-group mb-2">
+                        <label>Upload Foto KTP</label>
+                        <div class="upload-zone" id="ktpUploadZone" onclick="document.getElementById('ktpInput').click()">
+                            <div class="upload-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+                            <div class="upload-text">Klik atau seret foto KTP ke sini</div>
+                            <div class="upload-hint">JPG, PNG, WEBP (maks. 5MB)</div>
+                            <img id="ktpPreview" class="upload-preview" alt="Preview KTP">
+                        </div>
+                        <input type="file" id="ktpInput" accept="image/*" style="display: none;" onchange="handleKtpUpload(this)">
+                    </div>
+
+                    <div class="credit-nav-btns">
+                        <button type="button" class="btn btn-outline-secondary" onclick="goToCreditStep(1)" style="font-size: 0.85rem; font-weight: 600; border-radius: var(--r-md);">
+                            <i class="bi bi-arrow-left me-1"></i> Kembali
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="goToCreditStep(3)" style="font-size: 0.85rem; font-weight: 700; border-radius: var(--r-md); padding: 0.6rem 1.25rem;">
+                            Lanjut <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: FACE VERIFICATION -->
+                <div class="credit-step-panel" id="step-3">
+                    <h6 style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem;">
+                        <i class="bi bi-camera me-1"></i> Verifikasi Wajah
+                    </h6>
+
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        Pastikan wajah terlihat jelas dan berada di dalam oval panduan. Klik tombol shutter untuk mengambil foto.
+                    </p>
+
+                    <!-- Camera Live -->
+                    <div class="face-camera-container" id="faceCameraContainer">
+                        <video id="faceVideo" autoplay playsinline muted></video>
+                        <div class="face-overlay">
+                            <div class="face-oval-guide"></div>
+                        </div>
+                        <div class="scan-line" id="faceScanLine" style="display: none;"></div>
+                        <button type="button" class="face-capture-btn" id="faceCaptureBtn" onclick="captureSelfie()" title="Ambil Foto"></button>
+                    </div>
+
+                    <!-- Captured Preview -->
+                    <img id="selfiePreview" class="face-captured-preview mt-3" alt="Selfie Preview">
+
+                    <div class="d-flex align-items-center justify-content-between mt-3">
+                        <div class="face-status pending" id="faceStatusBadge">
+                            <i class="bi bi-shield-exclamation"></i> Belum Terverifikasi
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="retakeSelfieBtn" onclick="retakeSelfie()" style="display: none; font-size: 0.8rem;">
+                            <i class="bi bi-arrow-counterclockwise"></i> Ulangi
+                        </button>
+                    </div>
+
+                    <div class="credit-nav-btns">
+                        <button type="button" class="btn btn-outline-secondary" onclick="goToCreditStep(2)" style="font-size: 0.85rem; font-weight: 600; border-radius: var(--r-md);">
+                            <i class="bi bi-arrow-left me-1"></i> Kembali
+                        </button>
+                        <button type="button" class="btn btn-primary" id="btnStep3Next" onclick="goToCreditStep(4)" disabled style="font-size: 0.85rem; font-weight: 700; border-radius: var(--r-md); padding: 0.6rem 1.25rem;">
+                            Lanjut <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: REVIEW & SUBMIT -->
+                <div class="credit-step-panel" id="step-4">
+                    <h6 style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem;">
+                        <i class="bi bi-check-circle me-1"></i> Konfirmasi Pengajuan
+                    </h6>
+
+                    <div class="verification-result-card mb-3" id="reviewCard">
+                        <div class="result-icon warning" id="reviewIcon">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <h6 style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Review Pengajuan</h6>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0;">
+                            Pastikan semua data telah benar sebelum dikirim ke sistem.
+                        </p>
+                    </div>
+
+                    {% if current_user.is_authenticated and current_user.kyc_verified %}
+                    <!-- IDENTITAS TERVERIFIKASI: user sudah KYC verified, jadi tidak perlu
+                         mengisi ulang identitas — data diambil langsung dari sesi KYC yang
+                         sudah divalidasi admin / data user di database. Semua field di kartu
+                         ini read-only, tidak bisa diedit dari sini. -->
+                    <div class="mb-3" style="display:flex;gap:0.9rem;align-items:flex-start;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:var(--r-md);padding:1.1rem 1.25rem;">
+                        <i class="bi bi-patch-check-fill" style="color:#22c55e;font-size:1.4rem;line-height:1;"></i>
+                        <div>
+                            <p class="mb-1 fw-bold" style="color: var(--text-primary);">IDENTITAS TERVERIFIKASI</p>
+                            <p class="mb-0" style="font-size: 0.75rem; font-weight: 700; color: #22c55e; text-transform: uppercase; letter-spacing: 0.05em;">✓ KYC Verified</p>
+                        </div>
+                    </div>
+                    <div class="p-3 mb-3" style="background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: var(--r-md); font-size: 0.85rem;">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span style="color: var(--text-secondary);">Nama</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">{{ (verified_kyc_session.ktp_name if verified_kyc_session else '') or current_user.full_name or '-' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span style="color: var(--text-secondary);">NIK</span>
+                            <span style="color: var(--text-primary); font-weight: 600; font-family: monospace;">{{ (verified_kyc_session.ktp_nik if verified_kyc_session else '') or current_user.kyc_nik or '-' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span style="color: var(--text-secondary);">Nomor HP</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">{{ current_user.phone or '-' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span style="color: var(--text-secondary);">Alamat</span>
+                            <span style="color: var(--text-primary); font-weight: 600; text-align: right; max-width: 60%;">{{ (verified_kyc_session.ktp_address if verified_kyc_session else '') or current_user.address or '-' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span style="color: var(--text-secondary);">Tanggal Verifikasi</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">{{ current_user.kyc_verified_at.strftime('%d %B %Y') if current_user.kyc_verified_at else '-' }}</span>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: -0.5rem; margin-bottom: 1rem;">
+                        <i class="bi bi-info-circle me-1"></i> Menggunakan Data KYC Terverifikasi. Semua field di atas tidak dapat diubah dari sini.
+                    </p>
+                    {% endif %}
+
+                    <div class="p-3 mb-3" style="background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: var(--r-md); font-size: 0.85rem;">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span style="color: var(--text-secondary);">Produk</span>
+                            <span style="color: var(--text-primary); font-weight: 600; text-align: right; max-width: 60%;">{{ product.name }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span style="color: var(--text-secondary);">Angsuran</span>
+                            <span id="reviewMonthly" style="color: var(--primary-500); font-weight: 700;"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span style="color: var(--text-secondary);">Tenor</span>
+                            <span id="reviewTenor" style="color: var(--text-primary); font-weight: 600;"></span>
+                        </div>
+                        {% if not (current_user.is_authenticated and current_user.kyc_verified) %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span style="color: var(--text-secondary);">Nama</span>
+                            <span id="reviewName" style="color: var(--text-primary); font-weight: 600;"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span style="color: var(--text-secondary);">NIK</span>
+                            <span id="reviewNik" style="color: var(--text-primary); font-weight: 600; font-family: monospace;"></span>
+                        </div>
+                        {% endif %}
+                        <div class="d-flex justify-content-between pt-2" style="border-top: 1px solid var(--border-default);">
+                            <span style="color: var(--text-primary); font-weight: 700;">Total Pembayaran</span>
+                            <span id="reviewTotal" style="color: var(--primary-500); font-weight: 700;"></span>
+                        </div>
+                    </div>
+
+                    <div class="credit-nav-btns">
+                        <button type="button" class="btn btn-outline-secondary" onclick="goToCreditStep(usingExistingKyc ? 1 : 3)" style="font-size: 0.85rem; font-weight: 600; border-radius: var(--r-md);">
+                            <i class="bi bi-arrow-left me-1"></i> Kembali
+                        </button>
+                        <button type="button" class="btn btn-primary" id="btnApplyCredit" onclick="applyForCredit()"
+                                style="background: linear-gradient(135deg, var(--primary-500), var(--secondary-500)); border: none; font-size: 0.85rem; font-weight: 700; border-radius: var(--r-md); padding: 0.6rem 1.25rem;">
+                            <i class="bi bi-file-earmark-text me-1"></i> Ajukan Kredit
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Swiper Bundle JS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<script>
+/* ─── DATA DEKLARASI GALERI ─── */
+const productImages = [
+    {% for img in images %}
+    "{{ get_product_image_url(img) if get_product_image_url else img }}"{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+const totalImages = productImages.length;
+let currentImageIndex = 0;
+let lightboxIsOpen = false;
+let productGallerySwiper = null;
+let productThumbsSwiper = null;
+
+/* ─── SWIPER INSTANTIATION ─── */
+function initProductGallery() {
+    if (totalImages <= 1) return;
+
+    if (productThumbsSwiper) { productThumbsSwiper.destroy(true, true); }
+    if (productGallerySwiper) { productGallerySwiper.destroy(true, true); }
+
+    productThumbsSwiper = new Swiper('#productThumbsSwiper', {
+        spaceBetween: 10,
+        slidesPerView: 'auto',
+        freeMode: true,
+        watchSlidesProgress: true,
+        slideToClickedSlide: true,
+        breakpoints: {
+            320: { spaceBetween: 8, slidesPerView: 4 },
+            576: { spaceBetween: 10, slidesPerView: 5 },
+            768: { spaceBetween: 10, slidesPerView: 6 },
+        },
+    });
+
+    productGallerySwiper = new Swiper('#productGallerySwiper', {
+        spaceBetween: 0,
+        loop: totalImages > 1,
+        grabCursor: true,
+        keyboard: { enabled: true, onlyInViewport: true },
+        autoplay: totalImages > 1 ? {
+            delay: 4500,
+            pauseOnMouseEnter: true,
+            disableOnInteraction: false,
+        } : false,
+        pagination: {
+            el: '.pg-pagination',
+            clickable: true,
+            dynamicBullets: totalImages > 5,
+        },
+        navigation: {
+            nextEl: '.pg-next',
+            prevEl: '.pg-prev',
+        },
+        thumbs: { swiper: productThumbsSwiper },
+        on: {
+            slideChange: function () {
+                currentImageIndex = this.realIndex;
+                updateLightboxCounter();
+            }
+        },
+    });
+
+    if (productGallerySwiper) {
+        productGallerySwiper.on('click', function() {
+            if (Math.abs(this.touches.diff) < 10) {
+                openLightbox(this.activeIndex);
+            }
+        });
+    }
+}
+
+function goToSlide(index) {
+    if (productGallerySwiper) {
+        productGallerySwiper.slideTo(index, 300, false);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initProductGallery);
+
+/* ─── FULLSCREEN LIGHTBOX CONTROLLER ─── */
+function openLightbox(index) {
+    if (!totalImages) return;
+    if (typeof index === 'number') currentImageIndex = index;
+
+    const lb  = document.getElementById('lightbox');
+    const img = document.getElementById('lightboxImage');
+    if (!lb || !img) return;
+
+    if (productGallerySwiper && productGallerySwiper.autoplay) {
+        productGallerySwiper.autoplay.stop();
+    }
+
+    img.onload = () => { img.style.opacity = '1'; };
+    img.src = productImages[currentImageIndex];
+    img.style.opacity = '0.8';
+
+    updateLightboxCounter();
+    lb.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    lightboxIsOpen = true;
+
+    lb.setAttribute('tabindex', '-1');
+    const closeBtn = lb.querySelector('.lightbox-close');
+    if (closeBtn) {
+        setTimeout(() => closeBtn.focus(), 50);
+    }
+}
+
+function closeLightbox() {
+    const lb = document.getElementById('lightbox');
+    if (!lb) return;
+    lb.classList.remove('show');
+    document.body.style.overflow = '';
+    lightboxIsOpen = false;
+
+    if (productGallerySwiper && productGallerySwiper.autoplay) {
+        productGallerySwiper.autoplay.start();
+    }
+}
+
+function nextImage() {
+    if (totalImages <= 1) return;
+    currentImageIndex = (currentImageIndex + 1) % totalImages;
+    _syncLightbox();
+}
+
+function prevImage() {
+    if (totalImages <= 1) return;
+    currentImageIndex = (currentImageIndex - 1 + totalImages) % totalImages;
+    _syncLightbox();
+}
+
+function _syncLightbox() {
+    const img = document.getElementById('lightboxImage');
+    if (img) {
+        img.style.opacity = '0.6';
+        img.onload = () => { img.style.opacity = '1'; };
+        img.src = productImages[currentImageIndex];
+    }
+    updateLightboxCounter();
+
+    if (productGallerySwiper) {
+        productGallerySwiper.slideTo(currentImageIndex, 0, false);
+    }
+    if (productThumbsSwiper) {
+        productThumbsSwiper.slideTo(currentImageIndex, 0, false);
+    }
+}
+
+function updateLightboxCounter() {
+    const counter = document.getElementById('lightboxCounter');
+    if (counter && totalImages > 1) {
+        counter.textContent = (currentImageIndex + 1) + ' / ' + totalImages;
+    }
+}
+
+/* ─── KEYBOARD & SWIPE LIGHTBOX MECHANICS ─── */
+document.addEventListener('keydown', (e) => {
+    if (!lightboxIsOpen) return;
+    if (e.key === 'Escape') {
+        closeLightbox();
+    } else if (e.key === 'ArrowLeft') {
+        prevImage();
+    } else if (e.key === 'ArrowRight') {
+        nextImage();
+    }
+});
+
+let touchStartX = 0;
+let touchStartY = 0;
+const lightboxEl = document.getElementById('lightbox');
+if (lightboxEl) {
+    lightboxEl.addEventListener('touchstart', (e) => {
+        if (!lightboxIsOpen || e.touches.length !== 1) return;
+        touchStartX = e.touches[0].screenX;
+        touchStartY = e.touches[0].screenY;
+    }, { passive: true });
+
+    lightboxEl.addEventListener('touchend', (e) => {
+        if (!lightboxIsOpen || e.changedTouches.length !== 1) return;
+        const touchEndX = e.changedTouches[0].screenX;
+        const touchEndY = e.changedTouches[0].screenY;
+        const diffX = touchStartX - touchEndX;
+        const diffY = Math.abs(touchStartY - touchEndY);
+
+        if (Math.abs(diffX) > 50 && diffY < 100) {
+            diffX > 0 ? nextImage() : prevImage();
+        }
+    }, { passive: true });
+}
+
+/* ─── TAB SWITCHING CONTROLLER ─── */
+function switchTab(tabName, btn) {
+    document.querySelectorAll('.product-tab').forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+
+    const panel = document.getElementById('tab-' + tabName);
+    if (panel) panel.classList.add('active');
+}
+
+/* ─── STEPPER KUANTITAS UNIT ─── */
+function updateQty(delta) {
+    const input = document.getElementById('qtyInput');
+    const minus = document.getElementById('qtyMinus');
+    const plus  = document.getElementById('qtyPlus');
+    if (!input) return;
+
+    const max = parseInt(input.max) || 99;
+    const min = parseInt(input.min) || 1;
+    let val = parseInt(input.value || 1) + delta;
+    val = Math.max(min, Math.min(max, val));
+    input.value = val;
+
+    if (minus) minus.disabled = (val <= min);
+    if (plus)  plus.disabled  = (val >= max);
+}
+
+/* ─── CART AJAX HANDLER ─── */
+function handleAddToCart() {
+    const btn     = document.getElementById('cartBtn');
+    const btnText = document.getElementById('cartBtnText');
+    const btnIcon = document.getElementById('cartBtnIcon');
+    const qtyEl   = document.getElementById('qtyInput');
+    if (!btn || !btnText) return;
+
+    const qty = parseInt(qtyEl ? qtyEl.value : 1) || 1;
+    const originalText = btnText.textContent;
+    const originalIcon = btnIcon ? btnIcon.className : '';
+
+    btn.disabled = true;
+    btnText.textContent = 'Menambahkan...';
+    if (btnIcon) btnIcon.className = 'bi bi-arrow-repeat spin';
+
+    const formData = new FormData();
+    formData.append('product_id', '{{ product.id }}');
+    formData.append('quantity', qty);
+    formData.append('csrf_token', '{{ csrf_token() }}');
+
+    fetch('/api/add_to_cart', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: formData,
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+    })
+    .then(data => {
+        if (data.success) {
+            btnText.textContent = '✓ Ditambahkan!';
+            if (btnIcon) btnIcon.className = 'bi bi-check-circle-fill';
+            btn.style.background = 'linear-gradient(135deg,var(--success),var(--success))';
+
+            if (typeof updateCartBadge === 'function') {
+                updateCartBadge(data.cart_count);
+            }
+
+            const fab = document.querySelector('.fab-primary');
+            if (fab) {
+                fab.style.transform = 'scale(1.25)';
+                setTimeout(() => { fab.style.transform = ''; }, 300);
+            }
+            if (typeof showToast === 'function') {
+                showToast('Produk ditambahkan ke keranjang 🛒', 'success');
+            }
+            setTimeout(() => {
+                btnText.textContent = originalText;
+                if (btnIcon) btnIcon.className = originalIcon;
+                btn.style.background = '';
+                btn.disabled = false;
+            }, 2000);
+        } else {
+            throw new Error(data.message || 'Gagal menambahkan ke keranjang');
+        }
+    })
+    .catch(err => {
+        btnText.textContent = originalText;
+        if (btnIcon) btnIcon.className = originalIcon;
+        btn.style.background = '';
+        btn.disabled = false;
+        console.error('Cart Error:', err);
+        if (typeof showToast === 'function') showToast(err.message || 'Kesalahan koneksi', 'error');
+    });
+}
+
+function handleCheckoutNow() {
+    const btn = document.getElementById('checkoutNowBtn');
+    const icon = document.getElementById('checkoutNowIcon');
+    const text = document.getElementById('checkoutNowText');
+    const qtyEl = document.getElementById('qtyInput');
+    if (!btn || !text) return;
+
+    const qty = parseInt(qtyEl ? qtyEl.value : 1) || 1;
+    const originalText = text.textContent;
+    const originalIcon = icon ? icon.className : '';
+
+    btn.disabled = true;
+    text.textContent = 'Memproses...';
+    if (icon) icon.className = 'bi bi-arrow-repeat spin';
+
+    const formData = new FormData();
+    formData.append('product_id', '{{ product.id }}');
+    formData.append('quantity', qty);
+    formData.append('mode', 'set');
+    formData.append('csrf_token', '{{ csrf_token() }}');
+
+    fetch('/api/add_to_cart', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: formData,
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+    })
+    .then(data => {
+        if (data.success) {
+            window.location.href = '{{ url_for("checkout") }}';
+        } else {
+            throw new Error(data.message || 'Gagal menambahkan ke keranjang');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        text.textContent = originalText;
+        if (icon) icon.className = originalIcon;
+        console.error('Checkout Now Error:', err);
+        if (typeof showToast === 'function') showToast(err.message || 'Kesalahan koneksi', 'error');
+    });
+}
+
+/* ─── LINK SHARING DRAWER ─── */
+function toggleShareDropdown(e) {
+    if (e) e.stopPropagation();
+    const dd = document.getElementById('shareDropdown');
+    if (dd) dd.classList.toggle('show');
+}
+
+document.addEventListener('click', (e) => {
+    const dd = document.getElementById('shareDropdown');
+    const btn = document.getElementById('shareToggleBtn');
+    if (dd && !dd.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+        dd.classList.remove('show');
+    }
+});
+
+function copyLink() {
+    const url = window.location.href;
+    const done = () => {
+        if (typeof showToast === 'function') showToast('Tautan disalin ke papan klip!', 'success');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done).catch(() => _fallbackCopy(url, done));
+    } else {
+        _fallbackCopy(url, done);
+    }
+}
+
+function _fallbackCopy(text, callback) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-999px;left:-999px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+        document.execCommand('copy');
+        if (callback) callback();
+    } catch {
+        prompt('Salin tautan berikut:', text);
+    }
+    document.body.removeChild(ta);
+}
+
+function shareProduct(platform) {
+    const title = "{{ product.name }} - {{ product.brand }} {{ product.model }}";
+    const url   = encodeURIComponent(window.location.href);
+    const text  = encodeURIComponent('Cek rekomendasi produk premium ini: ' + title);
+    const dd = document.getElementById('shareDropdown');
+    if (dd) dd.classList.remove('show');
+
+    const targets = {
+        whatsapp: `https://wa.me/?text=${text}%0A${url}`,
+        telegram: `https://t.me/share/url?url=${url}&text=${text}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+    };
+    if (targets[platform]) {
+        window.open(targets[platform], '_blank', 'noopener,noreferrer');
+    }
+}
+
+/* ─── JAGA AI CONTEXTUAL PAYLOAD ─── */
+window.aiPageContext = {
+    page: 'product_detail',
+    product_name: "{{ product.name }}",
+    brand: "{{ product.brand }}",
+    model: "{{ product.model }}",
+    price: "{{ product.price }}",
+    condition: "{{ product.condition }}",
+    prompt: `Anda adalah asisten virtual di Pusat Gadai Indonesia. Bantu calon pembeli menganalisis spesifikasi dan keunggulan unit: {{ product.brand }} {{ product.model }} dengan grade kondisi {{ product.condition }}. Berikan penekanan pada jaminan kualitas fisik 30+ tahapan verifikasi kami.`
+};
+
+/* ─── CREDIT WIZARD SYSTEM ─── */
+let currentCreditStep = 1;
+let currentInterestType = 'effective';
+let currentSimulation = null;
+let isApplyingCredit = false;
+let ktpFile = null;
+let selfieBlob = null;
+let faceStream = null;
+
+/* Status KYC user saat ini & produk yang sedang dilihat — dipakai untuk
+   mengarahkan tombol "Lanjut" ke halaman /kyc-verification (kyc.html) bila
+   user belum terverifikasi KYC, sesuai pengecekan wajib di backend
+   (/api/credit/apply menolak pengajuan jika current_user.kyc_verified masih false). */
+const KYC_VERIFIED = {{ 'true' if current_user.is_authenticated and current_user.kyc_verified else 'false' }};
+const PRODUCT_ID_FOR_KYC = {{ product.id }};
+// Data dokumen KYC yang sudah diverifikasi admin — dipakai supaya user tidak
+// perlu upload ulang KTP/selfie yang sama untuk setiap pengajuan kredit.
+const EXISTING_KYC_DATA = {{ ({
+    'name': verified_kyc_session.ktp_name,
+    'nik': verified_kyc_session.ktp_nik,
+    'address': verified_kyc_session.ktp_address
+} if verified_kyc_session else None) | tojson }};
+let usingExistingKyc = false;
+
+/* ─── REDIRECT KE KYC VERIFICATION ─── */
+function redirectToKyc() {
+    const redirectBack = window.location.pathname + window.location.search;
+    const kycUrl = '/kyc-verification?product_id=' + PRODUCT_ID_FOR_KYC +
+        '&redirect=' + encodeURIComponent(redirectBack);
+
+    // Buka KYC di tab baru supaya user tidak kehilangan halaman produk
+    // Setelah verifikasi selesai, user bisa kembali ke tab produk
+    const kycWindow = window.open(kycUrl, '_blank');
+
+    if (!kycWindow || kycWindow.closed || typeof kycWindow.closed === 'undefined') {
+        // Popup blocker — fallback ke redirect biasa
+        window.location.href = kycUrl;
+    } else {
+        // Tutup modal credit supaya tidak mengganggu
+        const modalEl = document.getElementById('creditModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+        if (typeof showToast === 'function') {
+            showToast('Halaman verifikasi KYC dibuka di tab baru. Selesaikan verifikasi lalu kembali ke tab ini.', 'info');
+        }
+    }
+}
+
+
+function goToCreditStep(step) {
+    // Validasi per step
+    if (step === 2) {
+        // Safety check: kalau somehow user belum verified tapi masuk ke sini
+        if (!KYC_VERIFIED) {
+            redirectToKyc();
+            return;
+        }
+        if (!currentSimulation) updateCreditCalc();
+        if (currentSimulation && currentSimulation.down_payment < MIN_DP_NOMINAL) {
+            showToast('Uang muka (DP) minimum adalah Rp 500.000. Masukkan nominal DP yang lebih besar.', 'warning');
+            return;
+        }
+
+        // FITUR: user yang sudah KYC verified sudah punya KTP+selfie
+        // tervalidasi di sistem — langsung lompat ke step Review (4) pakai
+        // data itu, tanpa memaksa dia mengisi ulang & upload ulang di step 2/3.
+        if (EXISTING_KYC_DATA) {
+            usingExistingKyc = true;
+            document.getElementById('ktpName').value = EXISTING_KYC_DATA.name || '';
+            document.getElementById('ktpNik').value = EXISTING_KYC_DATA.nik || '';
+            document.getElementById('ktpAddress').value = EXISTING_KYC_DATA.address || '';
+            ktpFile = 'existing';   // sentinel: dokumen dari sesi KYC, bukan file baru
+            selfieBlob = 'existing';
+            goToCreditStep(4);
+            return;
+        }
+    }
+    if (step === 3) {
+        if (usingExistingKyc) { goToCreditStep(4); return; }
+        const ktpName = document.getElementById('ktpName').value.trim();
+        const ktpNik = document.getElementById('ktpNik').value.trim();
+        const ktpAddress = document.getElementById('ktpAddress').value.trim();
+        if (!ktpName || !ktpNik || !ktpAddress) {
+            showToast('Lengkapi nama, NIK, dan alamat KTP terlebih dahulu', 'warning');
+            return;
+        }
+        if (ktpNik.length !== 16) {
+            showToast('NIK harus 16 digit', 'warning');
+            return;
+        }
+        if (!ktpFile) {
+            showToast('Upload foto KTP terlebih dahulu', 'warning');
+            return;
+        }
+        // BUGFIX: hanya nyalakan kamera jika belum ada selfie yang tercapture.
+        if (!selfieBlob) {
+            startFaceCamera();
+        }
+    }
+    if (step === 4) {
+        // Jika lompat langsung dari step 1 (user KYC verified), pastikan simulasi sudah dihitung
+        if (!currentSimulation) {
+            updateCreditCalc();
+        }
+        if (currentSimulation && currentSimulation.down_payment < MIN_DP_NOMINAL) {
+            showToast('Uang muka (DP) minimum adalah Rp 500.000. Masukkan nominal DP yang lebih besar.', 'warning');
+            return;
+        }
+        // Untuk user KYC verified, pre-fill data dan set sentinel
+        if (KYC_VERIFIED && EXISTING_KYC_DATA) {
+            usingExistingKyc = true;
+            document.getElementById('ktpName').value = EXISTING_KYC_DATA.name || '';
+            document.getElementById('ktpNik').value = EXISTING_KYC_DATA.nik || '';
+            document.getElementById('ktpAddress').value = EXISTING_KYC_DATA.address || '';
+            ktpFile = 'existing';
+            selfieBlob = 'existing';
+        }
+        // BUGFIX: sebelumnya, kalau KYC_VERIFIED true tapi EXISTING_KYC_DATA
+        // kosong (mis. sesi KYC yang tersimpan sudah expired atau belum ada
+        // record KYCVerificationSession berstatus 'verified'), tombol
+        // "Ajukan Cicilan" di step 1 melompat LANGSUNG ke step 4 lalu macet
+        // permanen di sini: toast "Ambil foto selfie..." terus muncul,
+        // padahal kamera selfie (step 3) tidak pernah ditampilkan sama
+        // sekali sehingga user tidak mungkin bisa memenuhi syarat itu.
+        // Sekarang: kalau data existing tidak tersedia, alihkan otomatis ke
+        // step KTP (step 2) supaya user bisa isi ulang data & ambil selfie
+        // lewat alur normal, bukan berhenti di jalan buntu.
+        if (!selfieBlob || !ktpFile) {
+            showToast('Sesi verifikasi KYC Anda perlu diperbarui. Silakan lengkapi data KTP & selfie berikut.', 'info');
+            goToCreditStep(2);
+            return;
+        }
+        updateReviewData();
+    }
+
+    // Update UI steps
+    document.querySelectorAll('.credit-step-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('step-' + step).classList.add('active');
+
+    document.querySelectorAll('.wizard-step').forEach(s => {
+        const sNum = parseInt(s.dataset.step);
+        s.classList.remove('active', 'completed');
+        if (sNum === step) s.classList.add('active');
+        else if (sNum < step) s.classList.add('completed');
+    });
+
+    document.querySelectorAll('.wizard-sep').forEach((sep, idx) => {
+        sep.classList.toggle('active', idx < step - 1);
+    });
+
+    currentCreditStep = step;
+
+    const titles = {
+        1: 'Simulasi Kredit',
+        2: 'Data Identitas & KTP',
+        3: 'Verifikasi Wajah',
+        4: 'Konfirmasi Pengajuan'
+    };
+    document.getElementById('creditModalTitle').textContent = titles[step];
+}
+
+/* ─── KTP UPLOAD HANDLER ─── */
+function handleKtpUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('Ukuran file maksimal 5MB', 'error');
+        input.value = '';
+        return;
+    }
+
+    ktpFile = file;
+    const zone = document.getElementById('ktpUploadZone');
+    const preview = document.getElementById('ktpPreview');
+
+    zone.classList.add('has-file');
+    zone.querySelector('.upload-text').textContent = file.name;
+    zone.querySelector('.upload-hint').textContent = 'Klik untuk ganti file';
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        preview.src = e.target.result;
+        preview.classList.add('show');
+    };
+    reader.readAsDataURL(file);
+}
+
+/* Drag & Drop KTP */
+const ktpZone = document.getElementById('ktpUploadZone');
+if (ktpZone) {
+    ['dragenter','dragover','dragleave','drop'].forEach(evt => {
+        ktpZone.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); });
+    });
+    ['dragenter','dragover'].forEach(evt => {
+        ktpZone.addEventListener(evt, () => ktpZone.classList.add('dragover'));
+    });
+    ['dragleave','drop'].forEach(evt => {
+        ktpZone.addEventListener(evt, () => ktpZone.classList.remove('dragover'));
+    });
+    ktpZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length) {
+            document.getElementById('ktpInput').files = files;
+            handleKtpUpload(document.getElementById('ktpInput'));
+        }
+    });
+}
+
+/* ─── FACE CAMERA & CAPTURE ─── */
+async function startFaceCamera() {
+    const video = document.getElementById('faceVideo');
+    const container = document.getElementById('faceCameraContainer');
+
+    try {
+        faceStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+        video.srcObject = faceStream;
+        container.style.display = 'block';
+        document.getElementById('faceCaptureBtn').style.display = 'grid';
+        document.getElementById('faceScanLine').style.display = 'block';
+    } catch (err) {
+        console.error('Camera error:', err);
+        showToast('Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.', 'error');
+    }
+}
+
+function stopFaceCamera() {
+    if (faceStream) {
+        faceStream.getTracks().forEach(t => t.stop());
+        faceStream = null;
+    }
+}
+
+function captureSelfie() {
+    const video = document.getElementById('faceVideo');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+        selfieBlob = blob;
+        const preview = document.getElementById('selfiePreview');
+        preview.src = URL.createObjectURL(blob);
+        preview.classList.add('show');
+
+        document.getElementById('faceCameraContainer').style.display = 'none';
+        document.getElementById('retakeSelfieBtn').style.display = 'inline-flex';
+        document.getElementById('btnStep3Next').disabled = false;
+
+        const badge = document.getElementById('faceStatusBadge');
+        badge.className = 'face-status verified';
+        badge.innerHTML = '<i class="bi bi-shield-check"></i> Selfie Tercapture';
+
+        stopFaceCamera();
+    }, 'image/jpeg', 0.9);
+}
+
+function retakeSelfie() {
+    selfieBlob = null;
+    document.getElementById('selfiePreview').classList.remove('show');
+    document.getElementById('retakeSelfieBtn').style.display = 'none';
+    document.getElementById('btnStep3Next').disabled = true;
+
+    const badge = document.getElementById('faceStatusBadge');
+    badge.className = 'face-status pending';
+    badge.innerHTML = '<i class="bi bi-shield-exclamation"></i> Belum Terverifikasi';
+
+    startFaceCamera();
+}
+
+/* Cleanup camera on modal close
+   BUGFIX: sebelumnya listener ini langsung memanggil getElementById tanpa cek
+   null. Elemen-elemen wizard (step-1, ktpPreview, faceCameraContainer, dst)
+   hanya dirender saat current_user.is_authenticated (lihat blok Jinja
+   {% if not current_user.is_authenticated %}...{% else %}...{% endif %}),
+   jadi untuk guest yang membuka lalu menutup modal ini akan selalu throw
+   TypeError di tengah listener dan modal gagal ter-reset dengan bersih.
+   #creditModal sendiri sekarang SELALU dirender di halaman (tombol trigger-nya
+   juga selalu tampil, tidak lagi digate oleh setting admin 'credit_enabled'),
+   tapi null-check ini tetap dipertahankan sebagai pengaman kalau suatu saat
+   markup modal dipindah/di-lazy-load. */
+const creditModalEl = document.getElementById('creditModal');
+if (creditModalEl) {
+    // FITUR: user yang sudah verifikasi KYC tidak perlu melalui wizard step
+    // 1-3 secara manual (simulasi, isi data KTP, verifikasi wajah) satu per
+    // satu -- begitu modal dibuka, langsung diarahkan ke step terakhir
+    // (Review & Kirim) memakai DP/tenor default dan data KYC yang sudah
+    // tervalidasi. goToCreditStep(4) sendiri yang menghitung simulasi default
+    // dan mengisi data KTP dari EXISTING_KYC_DATA bila belum ada. User tetap
+    // bisa klik "Kembali" di step 4 untuk mengubah DP/tenor di step 1.
+    creditModalEl.addEventListener('shown.bs.modal', () => {
+        if (KYC_VERIFIED && document.getElementById('step-1')) {
+            goToCreditStep(4);
+        }
+    });
+
+    creditModalEl.addEventListener('hidden.bs.modal', () => {
+    stopFaceCamera();
+    currentCreditStep = 1;
+
+    const step1El = document.getElementById('step-1');
+    if (!step1El) return; // guest / belum login: tidak ada wizard untuk direset
+
+    // Reset wizard
+    document.querySelectorAll('.credit-step-panel').forEach(p => p.classList.remove('active'));
+    step1El.classList.add('active');
+    document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active','completed'));
+    document.querySelector('.wizard-step[data-step="1"]')?.classList.add('active');
+    document.querySelectorAll('.wizard-sep').forEach(s => s.classList.remove('active'));
+
+    // Reset form
+    ktpFile = null;
+    selfieBlob = null;
+    document.getElementById('ktpPreview')?.classList.remove('show');
+    document.getElementById('ktpUploadZone')?.classList.remove('has-file');
+    const ktpZoneEl = document.getElementById('ktpUploadZone');
+    ktpZoneEl?.querySelector('.upload-text') && (ktpZoneEl.querySelector('.upload-text').textContent = 'Klik atau seret foto KTP ke sini');
+    ktpZoneEl?.querySelector('.upload-hint') && (ktpZoneEl.querySelector('.upload-hint').textContent = 'JPG, PNG, WEBP (maks. 5MB)');
+    document.getElementById('selfiePreview')?.classList.remove('show');
+    const faceCameraEl = document.getElementById('faceCameraContainer');
+    if (faceCameraEl) faceCameraEl.style.display = 'block';
+    const retakeBtnEl = document.getElementById('retakeSelfieBtn');
+    if (retakeBtnEl) retakeBtnEl.style.display = 'none';
+    const step3NextEl = document.getElementById('btnStep3Next');
+    if (step3NextEl) step3NextEl.disabled = true;
+    const faceBadgeEl = document.getElementById('faceStatusBadge');
+    if (faceBadgeEl) {
+        faceBadgeEl.className = 'face-status pending';
+        faceBadgeEl.innerHTML = '<i class="bi bi-shield-exclamation"></i> Belum Terverifikasi';
+    }
+    });
+}
+
+/* ─── SIMULATION (existing, updated) ─── */
+function setInterestType(type) {
+    currentInterestType = type;
+    document.querySelectorAll('.credit-type-btn').forEach(btn => {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--text-secondary)';
+        btn.style.borderColor = 'var(--border-default)';
+    });
+    const activeBtn = document.getElementById('btn' + type.charAt(0).toUpperCase() + type.slice(1));
+    if (activeBtn) {
+        activeBtn.style.background = 'var(--primary-500)';
+        activeBtn.style.color = 'white';
+        activeBtn.style.borderColor = 'var(--primary-500)';
+    }
+    updateCreditCalc();
+}
+
+/* ─── FORMAT RUPIAH YANG BENAR ─── */
+function formatRupiah(num) {
+    if (num === undefined || num === null || isNaN(num)) return 'Rp 0';
+    // num sudah dalam rupiah, format dengan pemisah ribuan
+    return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+}
+
+/* BUGFIX: format_price() dipanggil di banyak tempat di kalkulator kredit
+   (dpAmount, resultPrice/DP/Principal/Total, review step) tapi sebelumnya
+   TIDAK PERNAH didefinisikan di JS — format_price yang ada hanya fungsi Python
+   di backend, dipakai lewat {{ '{{' }} format_price(...) {{ '}}' }} saat render template, dan
+   itu tidak otomatis tersedia di browser. Akibatnya setiap panggilan
+   format_price(...) di JS melempar ReferenceError, yang diam-diam menghentikan
+   updateCreditCalc() di tengah jalan — makanya kotak hasil (Harga Produk/DP/
+   Pokok Hutang/Total) tidak pernah terisi, dan tombol "Lanjut" tampak tidak
+   berfungsi karena goToCreditStep() ikut berhenti saat error itu terjadi.
+   format_price(cents) di sini menerima nilai dalam SEN (konsisten dengan
+   semua pemanggilnya) lalu format seperti formatRupiah(). */
+function format_price(cents) {
+    return formatRupiah((Number(cents) || 0) / 100);
+}
+
+/* ─── SIMULASI KREDIT YANG BENAR ─── */
+// Sinkron dengan MIN_DP_NOMINAL di backend (app.py, /api/credit/apply):
+// DP minimum Rp 500.000, terlepas dari berapa pun persentase yang dipilih.
+const MIN_DP_NOMINAL = 500000;
+
+function updateCreditCalc() {
+    const tenor = parseInt(document.getElementById('tenorSelect').value);
+
+    // Harga dari backend dalam SEN, konversi ke rupiah
+    const priceInCents = {{ product.price | default(0) }};
+    const price = priceInCents / 100;  // <-- KONVERSI SEN → RUPIAH
+
+    // DP kini diisi manual dalam Rupiah lewat input teks (bukan persentase dari slider).
+    const dpInput = document.getElementById('dpAmountInput');
+    const digitsOnly = (dpInput.value || '').replace(/[^0-9]/g, '');
+    if (digitsOnly !== dpInput.value) dpInput.value = digitsOnly;
+    let dpAmount = parseInt(digitsOnly || '0', 10);
+    if (isNaN(dpAmount) || dpAmount < 0) dpAmount = 0;
+    // DP tidak boleh melebihi harga produk.
+    if (price > 0 && dpAmount > price) {
+        dpAmount = Math.round(price);
+        dpInput.value = dpAmount;
+    }
+    const dpPct = price > 0 ? dpAmount / price : 0;
+
+    // Tampilkan nilai DP dalam persentase & rupiah (untuk info, bukan input)
+    document.getElementById('dpValue').textContent = (dpPct * 100).toFixed(0) + '%';
+    document.getElementById('dpAmount').textContent = format_price(dpAmount * 100);
+
+    const principal = price - dpAmount;
+
+    // Tampilkan peringatan bila nominal DP di bawah Rp 500.000, sesuai
+    // validasi keras di server (mencegah user mengisi KTP+selfie lalu
+    // ditolak baru di step submit terakhir).
+    const dpWarning = document.getElementById('dpMinWarning');
+    if (dpWarning) {
+        dpWarning.style.display = dpAmount < MIN_DP_NOMINAL ? 'flex' : 'none';
+    }
+
+    // Rate bulanan sesuai tenor (dari backend CreditCalculator.RATES)
+    const rates = {
+        'flat': {3: 0.015, 6: 0.018, 12: 0.020, 24: 0.022},
+        'effective': {3: 0.012, 6: 0.015, 12: 0.018, 24: 0.020}
+    };
+    const rate = (rates[currentInterestType] || rates['flat'])[tenor] || 0.02;
+
+    let monthly, totalInterest, totalPayment;
+
+    if (currentInterestType === 'flat') {
+        // Bunga flat: bunga = pokok × rate per bulan × tenor
+        totalInterest = Math.round(principal * rate * tenor);
+        totalPayment = principal + totalInterest;
+        monthly = Math.round(totalPayment / tenor);
+    } else {
+        // Bunga efektif (annuitas)
+        const monthlyRate = rate;
+        if (monthlyRate === 0) {
+            monthly = Math.round(principal / tenor);
+        } else {
+            const factor = (monthlyRate * Math.pow(1 + monthlyRate, tenor)) /
+                          (Math.pow(1 + monthlyRate, tenor) - 1);
+            monthly = Math.round(principal * factor);
+        }
+        totalPayment = monthly * tenor;
+        totalInterest = totalPayment - principal;
+    }
+
+    currentSimulation = {
+        product_price: price,
+        down_payment: dpAmount,
+        principal: principal,
+        tenor: tenor,
+        interest_type: currentInterestType,
+        interest_rate_monthly: rate,
+        interest_rate_annual: rate * 12,
+        monthly_installment: monthly,
+        total_interest: totalInterest,
+        total_payment: totalPayment,
+        total_cost: totalPayment + dpAmount
+    };
+
+    // Tampilkan hasil (semua dalam rupiah → dikonversi ke sen untuk format_price)
+    document.getElementById('creditResult').style.display = 'block';
+    document.getElementById('resultMonthly').textContent = format_price(monthly * 100);
+    document.getElementById('resultInterest').textContent = format_price(totalInterest * 100);
+    document.getElementById('resultPrice').textContent = format_price(price * 100);
+    document.getElementById('resultDP').textContent = format_price(dpAmount * 100);
+    document.getElementById('resultPrincipal').textContent = format_price(principal * 100);
+    document.getElementById('resultTotal').textContent = format_price(totalPayment * 100);
+}
+
+/* ─── ISI DATA REVIEW SEBELUM STEP 4 ─── */
+function updateReviewData() {
+    if (!currentSimulation) {
+        updateCreditCalc();
+    }
+
+    const ktpName = document.getElementById('ktpName').value.trim();
+    const ktpNik = document.getElementById('ktpNik').value.trim();
+
+    document.getElementById('reviewMonthly').textContent = format_price(currentSimulation.monthly_installment * 100);
+    document.getElementById('reviewTenor').textContent = currentSimulation.tenor + ' Bulan';
+    // reviewName/reviewNik hanya ada di markup untuk user yang BELUM KYC verified
+    // (user yang sudah verified melihat kartu "IDENTITAS TERVERIFIKASI" read-only
+    // sebagai gantinya) — cek dulu elemennya ada sebelum diisi.
+    const reviewNameEl = document.getElementById('reviewName');
+    const reviewNikEl = document.getElementById('reviewNik');
+    if (reviewNameEl) reviewNameEl.textContent = ktpName || '-';
+    if (reviewNikEl) reviewNikEl.textContent = ktpNik || '-';
+    document.getElementById('reviewTotal').textContent = format_price(currentSimulation.total_payment * 100);
+
+    // Pastikan review card kembali ke status default setiap kali step 4 dibuka
+    // (mencegah sisa tampilan "Pengajuan Berhasil!" dari percobaan sebelumnya)
+    const card = document.getElementById('reviewCard');
+    const icon = document.getElementById('reviewIcon');
+    if (card && icon) {
+        icon.className = 'result-icon warning';
+        icon.innerHTML = '<i class="bi bi-file-earmark-text"></i>';
+        card.querySelector('h6').textContent = 'Review Pengajuan';
+        card.querySelector('p').textContent = 'Pastikan semua data telah benar sebelum dikirim ke sistem.';
+    }
+
+    const btn = document.getElementById('btnApplyCredit');
+    if (btn) {
+        btn.disabled = false;
+        btn.style.background = '';
+        btn.innerHTML = '<i class="bi bi-file-earmark-text me-1"></i> Ajukan Kredit';
+    }
+}
+
+/* ─── SUBMIT CREDIT APPLICATION ─── */
+async function applyForCredit() {
+    if (!currentSimulation || (!usingExistingKyc && (!ktpFile || !selfieBlob))) {
+        showToast('Lengkapi semua data terlebih dahulu', 'warning');
+        return;
+    }
+
+    if (currentSimulation.down_payment < MIN_DP_NOMINAL) {
+        showToast('Uang muka (DP) minimum adalah Rp 500.000. Masukkan nominal DP yang lebih besar.', 'warning');
+        return;
+    }
+
+    if (isApplyingCredit) return;
+    isApplyingCredit = true;
+
+    const btn = document.getElementById('btnApplyCredit');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim...';
+
+    try {
+        const formData = new FormData();
+        formData.append('product_id', {{ product.id }});
+        formData.append('down_payment_pct', currentSimulation.down_payment / currentSimulation.product_price);
+        formData.append('tenor', parseInt(document.getElementById('tenorSelect').value));
+        formData.append('interest_type', currentInterestType);
+        formData.append('ktp_name', document.getElementById('ktpName').value.trim());
+        formData.append('ktp_nik', document.getElementById('ktpNik').value.trim());
+        formData.append('ktp_address', document.getElementById('ktpAddress').value.trim());
+        formData.append('employment_status', document.getElementById('employmentStatus').value);
+        formData.append('monthly_income', document.getElementById('monthlyIncome').value || 0);
+        formData.append('emergency_contact_name', document.getElementById('emergencyName').value.trim());
+        formData.append('emergency_contact_phone', document.getElementById('emergencyPhone').value.trim());
+        if (usingExistingKyc) {
+            formData.append('use_existing_kyc', '1');
+        } else {
+            formData.append('ktp_photo', ktpFile);
+            formData.append('selfie_photo', selfieBlob, 'selfie.jpg');
+        }
+
+        const csrfToken = '{{ csrf_token() }}';
+
+        const res = await fetch('/api/credit/apply', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+            credentials: 'same-origin',
+            body: formData
+        });
+
+        const data = await res.json();
+
+        if (res.status === 401) {
+            showToast('Sesi Anda telah berakhir. Silakan login kembali.', 'error');
+            return;
+        }
+
+        // Jaring pengaman: jika backend menolak karena KYC belum selesai
+        // (mis. endpoint dipanggil langsung tanpa lewat tombol "Lanjut" di
+        // step 1), ikuti URL redirect yang dikirim backend ke kyc.html.
+        if (res.status === 403 && data.redirect) {
+            showToast(data.message || 'Verifikasi KYC diperlukan.', 'warning');
+            window.location.href = data.redirect;
+            return;
+        }
+
+        if (data.success) {
+            // Update review card to success
+            const card = document.getElementById('reviewCard');
+            const icon = document.getElementById('reviewIcon');
+            icon.className = 'result-icon success';
+            icon.innerHTML = '<i class="bi bi-check-lg"></i>';
+            card.querySelector('h6').textContent = 'Pengajuan Berhasil!';
+            card.querySelector('p').textContent = data.message;
+
+            btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Terkirim';
+            btn.style.background = 'linear-gradient(135deg, var(--success), var(--success))';
+
+            setTimeout(() => {
+                const modalEl = document.getElementById('creditModal');
+                // Fix: pastikan modal instance ditemukan
+                let modal = bootstrap.Modal.getInstance(modalEl);
+                if (!modal) modal = new bootstrap.Modal(modalEl);
+                modal.hide();
+                // Reset
+                ktpFile = null;
+                selfieBlob = null;
+                currentCreditStep = 1;
+                btn.innerHTML = originalHTML;
+                btn.style.background = '';
+                btn.disabled = false;
+            }, 2500);
+        } else {
+            showToast(data.message || 'Gagal mengajukan kredit', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    } catch (err) {
+        console.error('Credit apply error:', err);
+        showToast('Gagal terhubung ke server. Periksa koneksi Anda.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    } finally {
+        isApplyingCredit = false;
+    }
+}
+
+// Init calculation on load
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('dpAmountInput')) {
+        updateCreditCalc();
+    }
+});
+
+/* ─── TESTIMONI: ACAK & TAMPILKAN 10 DENGAN JS ─── */
+document.addEventListener('DOMContentLoaded', function() {
+    const grid = document.getElementById('testimoniGrid');
+    if (!grid) return;
+
+    // Ambil semua kartu testimoni
+    const allCards = Array.from(grid.querySelectorAll('.testimoni-card'));
+
+    // Fungsi pengacak Fisher-Yates
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // Acak urutan kartu
+    shuffleArray(allCards);
+
+    // Hanya tampilkan 10 pertama, sembunyikan sisanya
+    let visibleCards = [];
+    allCards.forEach((card, index) => {
+        if (index < 10) {
+            card.style.display = '';
+            card.dataset.visible = 'true';
+            visibleCards.push(card);
+        } else {
+            card.style.display = 'none';
+            card.dataset.visible = 'false';
+        }
+        // Susun ulang DOM sesuai urutan acak
+        grid.appendChild(card);
+    });
+
+    // Inisialisasi filter (hanya berlaku untuk 10 kartu yang terlihat)
+    const filterBtns = document.querySelectorAll('#testimoniFilters button');
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const filter = this.dataset.filter;
+            visibleCards.forEach(card => {
+                const rating = parseInt(card.dataset.rating);
+                if (filter === 'all' || rating === parseInt(filter)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Read more toggle (tetap berfungsi)
+    window.toggleReadMore = function(btn) {
+        const p = btn.previousElementSibling;
+        if (p.style.webkitLineClamp === '4' || !p.style.webkitLineClamp) {
+            p.style.webkitLineClamp = 'unset';
+            p.style.overflow = 'visible';
+            btn.textContent = 'Tutup';
+        } else {
+            p.style.webkitLineClamp = '4';
+            p.style.overflow = 'hidden';
+            btn.textContent = 'Baca selengkapnya';
+        }
+    };
+
+    // Like toggle (simulasi)
+    window.toggleLike = function(btn) {
+        const countSpan = btn.querySelector('.like-count');
+        let count = parseInt(countSpan.textContent) || 0;
+        if (btn.classList.toggle('liked')) {
+            count++;
+            btn.querySelector('i').className = 'bi bi-hand-thumbs-up-fill';
+        } else {
+            count--;
+            btn.querySelector('i').className = 'bi bi-hand-thumbs-up';
+        }
+        countSpan.textContent = count;
+    };
+});
+
+/* FIX: Pastikan #creditModal selalu jadi anak langsung <body>, supaya
+   posisi fixed-nya tidak "terjebak" di dalam ancestor manapun yang punya
+   CSS transform (mis. animasi scroll ".reveal" yang dipakai di halaman
+   ini). Transform pada ancestor — termasuk translateY(0) — membuat elemen
+   fixed di dalamnya jadi relatif terhadap ancestor itu, bukan viewport,
+   sehingga modal & backdrop-nya salah posisi/stacking dan terlihat
+   menutupi seluruh layar. */
+document.addEventListener('DOMContentLoaded', function () {
+    var creditModalEl = document.getElementById('creditModal');
+    if (creditModalEl && creditModalEl.parentElement !== document.body) {
+        document.body.appendChild(creditModalEl);
+    }
+
+    // Jaring pengaman tambahan: bersihkan backdrop "yatim" yang mungkin
+    // tertinggal dari percobaan buka-tutup modal sebelumnya (mis. akibat
+    // error JS di tengah alur wizard yang menghentikan proses hide()
+    // sebelum backdrop sempat dihapus Bootstrap).
+    function cleanupOrphanBackdrops() {
+        var anyModalOpen = document.querySelector('.modal.show');
+        if (!anyModalOpen) {
+            document.querySelectorAll('.modal-backdrop').forEach(function (bd) {
+                bd.remove();
+            });
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+        }
+    }
+    // Jalankan sekali saat load (menyapu backdrop dari muatan sebelumnya)
+    cleanupOrphanBackdrops();
+    // Jalankan lagi tiap kali sebuah modal selesai ditutup, sebagai jaring pengaman
+    document.addEventListener('hidden.bs.modal', cleanupOrphanBackdrops);
+});
+</script>
+{% endblock %}

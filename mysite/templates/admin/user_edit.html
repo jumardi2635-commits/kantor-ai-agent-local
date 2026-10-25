@@ -1,0 +1,970 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}Edit Pengguna{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ─── User Edit Page Styles ─── */
+    .user-edit-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 0, 0, 0.02);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .user-edit-card:hover {
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.8);
+    }
+    .user-edit-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+    }
+    .user-avatar-header {
+        width: 72px; height: 72px; border-radius: 50%;
+        background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+        display: grid; place-items: center; font-size: 1.75rem; font-weight: 700; color: white;
+        box-shadow: 0 8px 24px rgba(30, 58, 138, 0.25);
+        flex-shrink: 0;
+    }
+    .form-section {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.3));
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    .form-section-title {
+        font-family: 'Inter', 'Plus Jakarta Sans', sans-serif;
+        font-size: 0.9rem; font-weight: 700; color: #1f2937;
+        margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;
+        text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .form-label-custom {
+        font-size: 0.8rem; font-weight: 600; color: #4b5563;
+        margin-bottom: 0.5rem; display: block;
+    }
+    .form-input-custom {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid #e5e7eb;
+        color: #1f2937;
+        border-radius: 0.875rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        width: 100%;
+    }
+    .form-input-custom:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        background: white;
+    }
+    .form-input-custom:disabled {
+        opacity: 0.6; cursor: not-allowed; background: #f3f4f6;
+    }
+    .input-icon-wrap {
+        position: relative;
+    }
+    .input-icon-wrap .form-input-custom {
+        padding-left: 2.75rem;
+    }
+    .input-icon {
+        position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+        color: #9ca3af; font-size: 1rem; pointer-events: none;
+    }
+    .status-toggle-wrap {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 1rem 0;
+    }
+    .status-toggle-info h6 {
+        font-size: 0.95rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;
+    }
+    .status-toggle-info p {
+        font-size: 0.8rem; color: #6b7280; margin: 0;
+    }
+    .btn-premium {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.625rem 1.25rem; border-radius: 0.875rem;
+        font-size: 0.875rem; font-weight: 600; letter-spacing: 0.01em;
+        transition: all 0.2s ease;
+        border: none; cursor: pointer; text-decoration: none;
+    }
+    .btn-premium-primary {
+        background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+        color: white; box-shadow: 0 4px 6px -1px rgba(30, 58, 138, 0.2);
+    }
+    .btn-premium-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.3);
+        background: linear-gradient(135deg, #0f2a6f, #2563eb);
+    }
+    .btn-premium-secondary {
+        background: rgba(255, 255, 255, 0.8); color: #4b5563;
+        border: 1px solid #e5e7eb;
+    }
+    .btn-premium-secondary:hover {
+        background: white; color: #1f2937; border-color: #d1d5db;
+        transform: translateY(-1px);
+    }
+    .btn-premium-danger {
+        background: rgba(239, 68, 68, 0.1); color: #dc2626;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    .btn-premium-danger:hover {
+        background: rgba(239, 68, 68, 0.15);
+        transform: translateY(-1px);
+    }
+    .btn-premium-success {
+        background: linear-gradient(135deg, #10b981, #059669); color: white;
+        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+    }
+    .btn-premium-success:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+    }
+    .password-strength-bar {
+        height: 4px; border-radius: 2px; background: #e5e7eb;
+        overflow: hidden; margin-top: 0.5rem;
+    }
+    .password-strength-fill {
+        height: 100%; border-radius: 2px; transition: all 0.3s ease;
+    }
+    .orders-table-wrap {
+        overflow-x: auto; border-radius: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.5);
+    }
+    .orders-table {
+        width: 100%; border-collapse: separate; border-spacing: 0;
+    }
+    .orders-table th {
+        text-align: left; padding: 1rem 1.25rem;
+        font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
+        font-weight: 700; color: #6b7280;
+        border-bottom: 1px solid #e5e7eb;
+        background: rgba(255, 255, 255, 0.8); white-space: nowrap;
+    }
+    .orders-table td {
+        padding: 1rem 1.25rem; border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle; font-size: 0.85rem; color: #4b5563;
+    }
+    .orders-table tbody tr { transition: all 0.2s ease; }
+    .orders-table tbody tr:hover { background: rgba(59, 130, 246, 0.03); }
+    .orders-table tbody tr:last-child td { border-bottom: none; }
+    .status-pill {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.35rem 0.75rem; border-radius: 9999px;
+        font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em;
+        border: 1px solid transparent;
+    }
+    .status-pill::before {
+        content: ''; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    .sp-pending    { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .sp-pending::before    { background: #f59e0b; }
+    .sp-paid       { background: #dbeafe; color: #1e40af; border-color: #a5b4fc; }
+    .sp-paid::before       { background: #3b82f6; }
+    .sp-processing { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+    .sp-processing::before { background: #8b5cf6; }
+    .sp-shipped    { background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; }
+    .sp-shipped::before    { background: #6366f1; }
+    .sp-completed  { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .sp-completed::before  { background: #10b981; }
+    .sp-cancelled  { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .sp-cancelled::before  { background: #ef4444; }
+    .toast-container-custom {
+        position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999;
+        display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .toast-custom {
+        padding: 1rem 1.25rem; border-radius: 1rem; min-width: 300px; max-width: 400px;
+        display: flex; align-items: center; gap: 0.75rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        animation: toastSlide 0.3s ease forwards;
+        font-size: 0.875rem; font-weight: 600;
+    }
+    @keyframes toastSlide {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    .toast-success { background: #10b981; color: white; }
+    .toast-error { background: #ef4444; color: white; }
+    .toast-info { background: #3b82f6; color: white; }
+    .username-check-icon {
+        position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+        font-size: 1rem; transition: all 0.2s;
+    }
+    .username-check-icon.checking { color: #9ca3af; }
+    .username-check-icon.available { color: #10b981; }
+    .username-check-icon.taken { color: #ef4444; }
+    .modal-custom {
+        position: fixed; inset: 0; z-index: 1050; display: none;
+        align-items: center; justify-content: center;
+        background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px);
+    }
+    .modal-custom.show { display: flex; }
+    .modal-content-custom {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 1.5rem;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15); max-width: 450px; width: 90%;
+        padding: 2rem; animation: modalSlide 0.3s ease forwards;
+    }
+    @keyframes modalSlide {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-icon-danger {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: rgba(239, 68, 68, 0.1); display: grid; place-items: center;
+        font-size: 1.5rem; color: #dc2626; margin-bottom: 1rem;
+    }
+    .nav-tab-custom {
+        padding: 0.75rem 1.25rem; font-size: 0.875rem; font-weight: 600;
+        color: #6b7280; border: none; background: transparent;
+        border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .nav-tab-custom:hover { color: #4b5563; }
+    .nav-tab-custom.active {
+        color: #1e3a8a; border-bottom-color: #3b82f6;
+    }
+    .tab-content-custom { display: none; }
+    .tab-content-custom.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .empty-state {
+        text-align: center; padding: 3rem 2rem;
+    }
+    .empty-state-icon {
+        width: 64px; height: 64px; border-radius: 1.25rem;
+        background: rgba(59, 130, 246, 0.1); display: grid; place-items: center;
+        margin: 0 auto 1rem; font-size: 1.5rem; color: #3b82f6;
+    }
+    .copy-btn {
+        width: 32px; height: 32px; border-radius: 0.5rem;
+        border: 1px solid #e5e7eb; background: rgba(255, 255, 255, 0.8);
+        color: #3b82f6; display: grid; place-items: center;
+        cursor: pointer; transition: all 0.2s; font-size: 0.85rem;
+    }
+    .copy-btn:hover { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; }
+    .copy-btn.copied { background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: #10b981; }
+    .section-header-glow {
+        position: relative;
+    }
+    .section-header-glow::after {
+        content: '';
+        position: absolute;
+        bottom: -8px; left: 0;
+        width: 40px; height: 3px;
+        background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+        border-radius: 9999px;
+    }
+    .info-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.4));
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 1rem;
+        padding: 1rem 1.25rem;
+        display: flex; align-items: center; gap: 0.75rem;
+    }
+    .info-card-icon {
+        width: 40px; height: 40px; border-radius: 0.75rem;
+        display: grid; place-items: center; font-size: 1rem; flex-shrink: 0;
+    }
+    .info-card-icon.blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+    .info-card-icon.green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .info-card-icon.purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+    .info-card-icon.orange { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .form-switch-custom {
+        position: relative;
+        display: inline-block;
+        width: 2.75rem; height: 1.5rem;
+    }
+    .form-switch-custom input {
+        opacity: 0; width: 0; height: 0;
+    }
+    .form-switch-slider {
+        position: absolute; cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #e5e7eb;
+        transition: .3s;
+        border-radius: 9999px;
+    }
+    .form-switch-slider:before {
+        position: absolute; content: "";
+        height: 1.15rem; width: 1.15rem;
+        left: 0.2rem; bottom: 0.175rem;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-switch-custom input:checked + .form-switch-slider {
+        background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+    }
+    .form-switch-custom input:checked + .form-switch-slider:before {
+        transform: translateX(1.2rem);
+    }
+    .form-switch-custom input:focus + .form-switch-slider {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto" x-data="userEditApp()" x-init="init()">
+
+    <!-- Toast Container -->
+    <div class="toast-container-custom" id="toastContainer"></div>
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div class="flex items-center gap-4">
+            <div class="user-avatar-header">
+                {{ user.full_name[0]|upper if user.full_name else '?' }}
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    Edit Profil Pengguna
+                    {% if user.is_active %}
+                        <span class="badge badge-success" style="font-size: 0.65rem;">Aktif</span>
+                    {% else %}
+                        <span class="badge badge-danger" style="font-size: 0.65rem;">Nonaktif</span>
+                    {% endif %}
+                </h1>
+                <p class="text-sm text-gray-400">
+                    ID: <span class="font-mono text-blue-600 font-semibold">{{ user.id }}</span> •
+                    Bergabung: {{ user.created_at | format_date if user.created_at else '-' }}
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('admin_users') }}" class="btn-premium btn-premium-secondary">
+                <i class="fas fa-arrow-left"></i> Kembali
+            </a>
+            <button @click="openDeleteModal()" class="btn-premium btn-premium-danger">
+                <i class="fas fa-trash"></i> Hapus
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex gap-1 mb-6" style="border-bottom: 1px solid #e5e7eb;">
+        <button class="nav-tab-custom active" data-tab="tab-profile" onclick="switchTab('tab-profile')">
+            <i class="fas fa-id-card me-1"></i> Profil
+        </button>
+        <button class="nav-tab-custom" data-tab="tab-orders" onclick="switchTab('tab-orders')">
+            <i class="fas fa-shopping-bag me-1"></i> Pesanan (<span id="orderCountBadge">0</span>)
+        </button>
+        <button class="nav-tab-custom" data-tab="tab-security" onclick="switchTab('tab-security')">
+            <i class="fas fa-shield-alt me-1"></i> Keamanan
+        </button>
+    </div>
+
+    <!-- TAB: PROFILE -->
+    <div id="tab-profile" class="tab-content-custom active">
+        <div class="user-edit-card p-6 sm:p-8">
+
+            <!-- Form Edit Profil -->
+            <form id="userEditForm" method="POST" action="{{ url_for('admin_user_edit', user_id=user.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Informasi Pribadi -->
+                <div class="form-section">
+                    <h3 class="form-section-title section-header-glow">
+                        <i class="fas fa-user text-blue-600"></i>
+                        Informasi Pribadi
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Nama Lengkap -->
+                        <div>
+                            <label class="form-label-custom">
+                                Nama Lengkap <span class="text-red-500">*</span>
+                            </label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" name="full_name"
+                                       value="{{ user.full_name|escape }}"
+                                       class="form-input-custom"
+                                       placeholder="Masukkan nama lengkap"
+                                       required maxlength="150">
+                            </div>
+                        </div>
+
+                        <!-- Email (Read-only) -->
+                        <div>
+                            <label class="form-label-custom">Alamat Email</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-envelope input-icon"></i>
+                                <input type="email" value="{{ user.email|escape }}"
+                                       class="form-input-custom" disabled
+                                       style="padding-right: 2.75rem;">
+                                <i class="fas fa-lock" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 0.9rem;"></i>
+                            </div>
+                            <p class="mt-1 mb-0 text-xs text-gray-400">
+                                <i class="fas fa-info-circle text-blue-500 me-1"></i>
+                                Email digunakan sebagai login, tidak dapat diubah.
+                            </p>
+                        </div>
+
+                        <!-- Username -->
+                        <div>
+                            <label class="form-label-custom">Username (Opsional)</label>
+                            <div class="input-icon-wrap" style="position: relative;">
+                                <i class="fas fa-at input-icon"></i>
+                                <input type="text" name="username"
+                                       value="{{ user.username|default('', true)|escape }}"
+                                       class="form-input-custom"
+                                       placeholder="username_pengguna"
+                                       x-model="formData.username"
+                                       @input="checkUsername()"
+                                       style="padding-right: 2.5rem;">
+                                <span class="username-check-icon"
+                                      :class="usernameCheckState"
+                                      x-show="usernameCheckState !== 'idle'">
+                                    <i class="fas" :class="usernameCheckIcon"></i>
+                                </span>
+                            </div>
+                            <p class="mt-1 mb-0 text-xs"
+                               :class="usernameAvailable === true ? 'text-green-600' : (usernameAvailable === false ? 'text-red-500' : 'text-gray-400')"
+                               x-show="usernameFeedback" x-text="usernameFeedback"></p>
+                        </div>
+
+                        <!-- Telepon -->
+                        <div>
+                            <label class="form-label-custom">Nomor Telepon / WhatsApp</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input type="tel" name="phone"
+                                       value="{{ user.phone|default('', true)|escape }}"
+                                       class="form-input-custom"
+                                       placeholder="0812xxxxxxx">
+                            </div>
+                        </div>
+
+                        <!-- Alamat -->
+                        <div class="md:col-span-2">
+                            <label class="form-label-custom">Alamat Lengkap</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-map-marker-alt input-icon" style="top: 1.25rem; transform: none;"></i>
+                                <textarea name="address" rows="3" class="form-input-custom"
+                                          placeholder="Alamat lengkap pengguna..."
+                                          style="padding-left: 2.75rem;">{{ user.address|default('', true)|escape }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Akun -->
+                <div class="form-section">
+                    <h3 class="form-section-title section-header-glow">
+                        <i class="fas fa-user-shield text-blue-600"></i>
+                        Status Akun
+                    </h3>
+                    <div class="status-toggle-wrap" style="border-bottom: 1px solid #f3f4f6; padding-bottom: 1rem;">
+                        <div class="status-toggle-info">
+                            <h6>Status Aktif</h6>
+                            <p>Nonaktifkan untuk menonaktifkan akun sementara. Pengguna tidak akan dapat login.</p>
+                        </div>
+                        <label class="form-switch-custom">
+                            <input type="checkbox"
+                                   id="userIsActive"
+                                   {% if user.is_active %}checked{% endif %}
+                                   @change="toggleUserStatus($event.target.checked)">
+                            <span class="form-switch-slider"></span>
+                        </label>
+                    </div>
+                    <div class="mt-3 p-3 rounded-xl bg-blue-50/50 border border-blue-100">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-info-circle text-blue-500 text-lg"></i>
+                            <div>
+                                <p class="mb-0 text-sm text-gray-600">
+                                    Status saat ini: <strong class="text-gray-800">{% if user.is_active %}Aktif{% else %}Nonaktif{% endif %}</strong> •
+                                    Terakhir update: {{ user.updated_at | format_datetime if user.updated_at else '-' }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4">
+                    <a href="{{ url_for('admin_users') }}" class="btn-premium btn-premium-secondary justify-center">
+                        Batal
+                    </a>
+                    <button type="submit" class="btn-premium btn-premium-primary" id="saveProfileBtn">
+                        <i class="fas fa-save"></i> Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TAB: ORDERS -->
+    <div id="tab-orders" class="tab-content-custom">
+        <div class="user-edit-card p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="form-section-title section-header-glow mb-0">
+                    <i class="fas fa-box text-blue-600"></i>
+                    Riwayat Pesanan
+                </h3>
+                <span class="badge badge-info" id="ordersCountPill">
+                    <i class="fas fa-shopping-bag me-1"></i> <span id="ordersCountText">Memuat...</span>
+                </span>
+            </div>
+
+            <div id="ordersContainer">
+                <div class="text-center py-5">
+                    <i class="fas fa-circle-notch fa-spin text-blue-500 text-2xl"></i>
+                    <p class="mt-2 text-gray-400 text-sm">Memuat data pesanan...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: SECURITY -->
+    <div id="tab-security" class="tab-content-custom">
+        <div class="user-edit-card p-6 sm:p-8">
+
+            <!-- Reset Password -->
+            <div class="form-section">
+                <h3 class="form-section-title section-header-glow">
+                    <i class="fas fa-key text-amber-500"></i>
+                    Reset Kata Sandi
+                </h3>
+                <p class="mb-4 text-sm text-gray-400">
+                    Generate kata sandi baru untuk pengguna. Kata sandi akan ditampilkan sekali, pastikan untuk menyimpannya atau memberitahu pengguna.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                    <div class="md:col-span-8">
+                        <label class="form-label-custom">Kata Sandi Baru (Auto-generate atau Manual)</label>
+                        <div class="flex">
+                            <input type="text" id="newPasswordField" class="form-input-custom"
+                                   placeholder="Klik generate untuk membuat password..." readonly
+                                   style="border-radius: 0.875rem 0 0 0.875rem; border-right: none;">
+                            <button type="button" class="btn-premium btn-premium-secondary"
+                                    onclick="generatePassword()" style="border-radius: 0; border-left: none; border-right: none;">
+                                <i class="fas fa-random"></i> Generate
+                            </button>
+                            <button type="button" class="btn-premium btn-premium-primary"
+                                    onclick="copyPassword()" id="copyPwBtn" disabled
+                                    style="border-radius: 0 0.875rem 0.875rem 0;">
+                                <i class="fas fa-copy"></i> Salin
+                            </button>
+                        </div>
+                    </div>
+                    <div class="md:col-span-4">
+                        <button type="button" class="btn-premium btn-premium-success w-full"
+                                id="resetPwBtn" onclick="resetPassword()" disabled>
+                            <i class="fas fa-check-circle"></i> Simpan Password Baru
+                        </button>
+                    </div>
+                </div>
+
+                <div id="resetPwResult" class="mt-3 p-3 rounded-xl hidden bg-green-50 border border-green-200">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check-circle text-green-500"></i>
+                        <span class="text-green-700 text-sm font-semibold">
+                            Password berhasil diperbarui! Password baru: <span class="font-mono text-gray-800 font-bold" id="displayNewPw"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Password Strength Info -->
+            <div class="form-section" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(245, 158, 11, 0.02)); border-color: rgba(245, 158, 11, 0.1);">
+                <h3 class="form-section-title section-header-glow">
+                    <i class="fas fa-shield-alt text-amber-500"></i>
+                    Informasi Keamanan
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="info-card">
+                        <div class="info-card-icon blue">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400">Terdaftar Sejak</div>
+                            <div class="text-sm font-semibold text-gray-800">
+                                {{ user.created_at | format_date if user.created_at else '-' }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-icon green">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400">Update Terakhir</div>
+                            <div class="text-sm font-semibold text-gray-800">
+                                {{ user.updated_at | format_datetime if user.updated_at else '-' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal-custom" id="deleteModal" @click.away="closeDeleteModal()">
+        <div class="modal-content-custom">
+            <div class="modal-icon-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h4 class="text-gray-800 font-bold mb-2 text-lg">Hapus Pengguna</h4>
+            <p class="mb-4 text-sm text-gray-600 leading-relaxed">
+                Apakah Anda yakin ingin menghapus pengguna <strong class="text-gray-800">{{ user.full_name|escape }}</strong>?<br>
+                Data pengguna akan dihapus permanen, namun riwayat pesanannya akan tetap tersimpan.
+            </p>
+            <div class="flex gap-3 justify-end">
+                <button @click="closeDeleteModal()" class="btn-premium btn-premium-secondary">
+                    Batal
+                </button>
+                <button @click="confirmDelete()" class="btn-premium btn-premium-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Hapus Permanen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ─── Alpine.js App ───────────────────────────────────────────────────────
+function userEditApp() {
+    return {
+        formData: {
+            username: '{{ user.username|default("", true)|escape }}',
+        },
+        usernameCheckState: 'idle',
+        usernameCheckIcon: '',
+        usernameAvailable: null,
+        usernameFeedback: '',
+        usernameTimeout: null,
+
+        init() {
+            this.loadUserOrders();
+        },
+
+        // ─── Username Availability Check ───
+        checkUsername() {
+            clearTimeout(this.usernameTimeout);
+            const username = this.formData.username.trim();
+
+            if (username.length < 3) {
+                this.usernameCheckState = 'idle';
+                this.usernameAvailable = null;
+                this.usernameFeedback = '';
+                return;
+            }
+
+            this.usernameCheckState = 'checking';
+            this.usernameCheckIcon = 'fa-spinner fa-spin';
+
+            this.usernameTimeout = setTimeout(() => {
+                fetch(`/admin/check-username?username=${encodeURIComponent(username)}&exclude_id={{ user.id }}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        this.usernameCheckState = data.available ? 'available' : 'taken';
+                        this.usernameCheckIcon = data.available ? 'fa-check-circle' : 'fa-times-circle';
+                        this.usernameAvailable = data.available;
+                        this.usernameFeedback = data.available ? 'Username tersedia' : 'Username sudah digunakan';
+                    })
+                    .catch(() => {
+                        this.usernameCheckState = 'idle';
+                        this.usernameAvailable = null;
+                        this.usernameFeedback = '';
+                    });
+            }, 500);
+        },
+
+        // ─── Toggle User Status ───
+        toggleUserStatus(isActive) {
+            const btn = document.getElementById('userIsActive');
+
+            fetch(`/admin/user/{{ user.id }}/toggle-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message || 'Status berhasil diperbarui', 'success');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    btn.checked = !isActive;
+                    showToast(data.message || 'Gagal memperbarui status', 'error');
+                }
+            })
+            .catch(err => {
+                btn.checked = !isActive;
+                showToast('Terjadi kesalahan koneksi', 'error');
+            });
+        },
+
+        // ─── Delete Modal ───
+        openDeleteModal() {
+            document.getElementById('deleteModal').classList.add('show');
+        },
+        closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+        },
+        confirmDelete() {
+            const btn = document.getElementById('confirmDeleteBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menghapus...';
+
+            fetch(`/admin/user/{{ user.id }}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Pengguna berhasil dihapus', 'success');
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('admin_users') }}";
+                    }, 1000);
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-trash me-1"></i> Hapus Permanen';
+                    showToast(data.message || 'Gagal menghapus pengguna', 'error');
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-trash me-1"></i> Hapus Permanen';
+                showToast('Terjadi kesalahan koneksi', 'error');
+            });
+        },
+
+        // ─── Load User Orders ───
+        loadUserOrders() {
+            fetch(`/api/admin/user/{{ user.id }}/orders`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderOrders(data.orders);
+                    } else {
+                        renderOrders([]);
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('ordersContainer').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="fas fa-wifi"></i></div>
+                            <h6 class="text-gray-800">Gagal Memuat</h6>
+                            <p class="text-gray-400 text-sm">Terjadi kesalahan saat memuat data pesanan.</p>
+                        </div>`;
+                });
+        }
+    };
+}
+
+// ─── Tab Switching ───────────────────────────────────────────────────────
+function switchTab(tabId) {
+    document.querySelectorAll('.nav-tab-custom').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content-custom').forEach(t => t.classList.remove('active'));
+
+    document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+}
+
+// ─── Toast System ──────────────────────────────────────────────────────
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast-custom toast-${type}`;
+
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-times-circle',
+        info: 'fa-info-circle'
+    };
+
+    toast.innerHTML = `<i class="fas ${icons[type]}"></i><span>${message}</span>`;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'toastSlide 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// ─── Password Generator ────────────────────────────────────────────────
+function generatePassword() {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    document.getElementById('newPasswordField').value = password;
+    document.getElementById('copyPwBtn').disabled = false;
+    document.getElementById('resetPwBtn').disabled = false;
+    document.getElementById('resetPwResult').classList.add('hidden');
+}
+
+function copyPassword() {
+    const field = document.getElementById('newPasswordField');
+    navigator.clipboard.writeText(field.value).then(() => {
+        const btn = document.getElementById('copyPwBtn');
+        btn.innerHTML = '<i class="fas fa-check"></i> Tersalin';
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-copy"></i> Salin';
+            btn.classList.remove('copied');
+        }, 2000);
+    });
+}
+
+function resetPassword() {
+    const password = document.getElementById('newPasswordField').value;
+    if (!password) return;
+
+    const btn = document.getElementById('resetPwBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...';
+
+    fetch(`/admin/user/{{ user.id }}/reset-password`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ password: password })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Simpan Password Baru';
+
+        if (data.success) {
+            document.getElementById('displayNewPw').textContent = password;
+            document.getElementById('resetPwResult').classList.remove('hidden');
+            showToast('Password berhasil direset!', 'success');
+            document.getElementById('newPasswordField').value = '';
+            document.getElementById('copyPwBtn').disabled = true;
+            document.getElementById('resetPwBtn').disabled = true;
+        } else {
+            showToast(data.message || 'Gagal mereset password', 'error');
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Simpan Password Baru';
+        showToast('Terjadi kesalahan koneksi', 'error');
+    });
+}
+
+// ─── Render Orders ─────────────────────────────────────────────────────
+function renderOrders(orders) {
+    const container = document.getElementById('ordersContainer');
+    const countBadge = document.getElementById('orderCountBadge');
+    const countPill = document.getElementById('ordersCountText');
+
+    countBadge.textContent = orders.length;
+    countPill.textContent = `${orders.length} pesanan`;
+
+    if (!orders.length) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
+                <h6 class="text-gray-800">Belum Ada Pesanan</h6>
+                <p class="text-gray-400 text-sm">Pengguna ini belum melakukan pemesanan.</p>
+            </div>`;
+        return;
+    }
+
+    const statusMap = {
+        'Pending': { class: 'sp-pending', label: 'Menunggu' },
+        'Paid': { class: 'sp-paid', label: 'Lunas' },
+        'Processing': { class: 'sp-processing', label: 'Diproses' },
+        'Ready_to_Ship': { class: 'sp-processing', label: 'Siap Kirim' },
+        'Shipped': { class: 'sp-shipped', label: 'Dikirim' },
+        'Out_for_Delivery': { class: 'sp-shipped', label: 'Diantar' },
+        'Completed': { class: 'sp-completed', label: 'Selesai' },
+        'Cancelled': { class: 'sp-cancelled', label: 'Dibatalkan' },
+        'Returned': { class: 'sp-cancelled', label: 'Dikembalikan' }
+    };
+
+    container.innerHTML = `
+        <div class="orders-table-wrap">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>No. Order</th>
+                        <th>Tanggal</th>
+                        <th>Status</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Metode</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${orders.map(o => {
+                        const s = statusMap[o.status] || { class: 'sp-pending', label: o.status };
+                        return `<tr>
+                            <td><span class="font-mono font-bold text-blue-600">${o.order_number}</span></td>
+                            <td>${o.created_at}</td>
+                            <td><span class="status-pill ${s.class}">${s.label}</span></td>
+                            <td>${o.items_count} item</td>
+                            <td class="font-bold">${o.total_formatted}</td>
+                            <td>${o.payment_method || '-'}</td>
+                            <td>
+                                <a href="/invoice/${o.id}" target="_blank" class="btn-premium btn-premium-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.75rem;">
+                                    <i class="fas fa-file-invoice"></i> Invoice
+                                </a>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>`;
+}
+
+// ─── Form Validation ─────────────────────────────────────────────────
+document.getElementById('userEditForm').addEventListener('submit', function(e) {
+    const fullName = this.querySelector('[name="full_name"]').value.trim();
+    if (!fullName) {
+        e.preventDefault();
+        showToast('Nama lengkap wajib diisi', 'error');
+        return false;
+    }
+
+    const btn = document.getElementById('saveProfileBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...';
+});
+
+// ─── Close modal on backdrop click ───────────────────────────────────
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('show');
+});
+
+// ─── Keyboard shortcuts ────────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.getElementById('deleteModal').classList.remove('show');
+    }
+});
+</script>
+{% endblock %}

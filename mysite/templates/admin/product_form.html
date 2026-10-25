@@ -1,0 +1,991 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}{{ 'Edit' if product else 'Tambah' }} Produk{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-form-container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+    .product-form-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+    @media (min-width: 1280px) { .product-form-grid { grid-template-columns: 1fr 380px; } }
+    .product-form-sidebar { position: relative; height: fit-content; }
+    @media (min-width: 1280px) {
+        .product-form-sidebar { position: sticky; top: 1.5rem; max-height: calc(100vh - 3rem); overflow-y: auto; scrollbar-width: thin; }
+    }
+    .product-form-sidebar::-webkit-scrollbar { width: 6px; }
+    .product-form-sidebar::-webkit-scrollbar-track { background: transparent; }
+    .product-form-sidebar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+    .product-form-main { min-width: 0; }
+    body, .admin-content { overflow-x: hidden; }
+
+    .img-slot { position: relative; cursor: pointer; aspect-ratio: 1/1; }
+    .img-slot .img-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; border-radius: 0.75rem; }
+    .img-slot .img-del { position: absolute; top: 6px; right: 6px; z-index: 10; background: #ef4444; color: #fff; border: none; border-radius: 6px; width: 28px; height: 28px; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 11px; transition: background .15s; }
+    .img-slot:hover .img-del { display: flex; }
+    .img-del:hover { background: #b91c1c !important; }
+
+    button[class*="bg-amber-600"], a[class*="bg-amber-600"] {
+    background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%) !important;
+    color: white !important;
+}
+
+.img-slot .img-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity .2s;
+    border-radius: 0.75rem;
+    pointer-events: none;  /* ← tambahkan ini */
+}
+.img-slot:hover .img-overlay {
+    opacity: 1;
+    pointer-events: auto;  /* ← tambahkan ini */
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div x-data="productForm()" x-init="init()" class="product-form-container">
+
+    <!-- Toast -->
+    <div class="fixed top-6 right-6 z-50 space-y-3 pointer-events-none" style="min-width:320px;">
+        <template x-for="t in toasts" :key="t.id">
+            <div x-show="t.show"
+                 x-transition:enter="transform ease-out duration-300 transition"
+                 x-transition:enter-start="translate-y-2 opacity-0 sm:translate-x-4"
+                 x-transition:enter-end="translate-y-0 opacity-100 sm:translate-x-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                 class="pointer-events-auto w-full bg-white rounded-xl shadow-2xl border-l-4 flex items-start p-4 gap-3"
+                 :class="{'border-green-500':t.type==='success','border-red-500':t.type==='error','border-yellow-500':t.type==='warning','border-blue-500':t.type==='info'}">
+                <i class="fas flex-shrink-0 text-lg mt-0.5"
+                   :class="{'fa-check-circle text-green-500':t.type==='success','fa-exclamation-circle text-red-500':t.type==='error','fa-exclamation-triangle text-yellow-500':t.type==='warning','fa-info-circle text-blue-500':t.type==='info'}"></i>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-white" x-text="t.title"></p>
+                    <p class="text-sm text-gray-400 mt-0.5" x-text="t.msg"></p>
+                </div>
+                <button @click="removeToast(t.id)"
+                        class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition flex-shrink-0 cursor-pointer"
+                        aria-label="Tutup notifikasi">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </template>
+    </div>
+
+    <!-- Unsaved Modal -->
+    <div x-show="showUnsavedModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none;">
+        <div class="absolute inset-0 bg-black/50" @click="showUnsavedModal=false"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 z-10">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-yellow-600 text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-white">Perubahan Belum Disimpan</h3>
+                    <p class="text-sm text-gray-400 mt-1">Ada perubahan yang belum disimpan. Yakin ingin meninggalkan halaman?</p>
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end mt-6">
+                <button @click="showUnsavedModal=false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-dark-800/50 transition">Tetap di Halaman</button>
+                <button @click="confirmLeave()" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition">Tinggalkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-8">
+        <nav class="flex mb-4">
+            <ol class="inline-flex items-center space-x-2 text-sm">
+                <li><a href="{{ url_for('admin_dashboard') }}" class="text-gray-400 hover:text-blue-600 transition"><i class="fas fa-home mr-1"></i>Dashboard</a></li>
+                <li><i class="fas fa-chevron-right text-gray-300 text-xs"></i></li>
+                <li><a href="{{ url_for('admin_products') }}" class="text-gray-400 hover:text-blue-600 transition">Produk</a></li>
+                <li><i class="fas fa-chevron-right text-gray-300 text-xs"></i></li>
+                <li class="text-gray-700 font-medium">{{ 'Edit' if product else 'Tambah' }} Produk</li>
+            </ol>
+        </nav>
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+                        <i class="fas fa-box text-white text-xl"></i>
+                    </div>
+                    {{ 'Edit' if product else 'Tambah' }} Produk
+                </h1>
+                <p class="mt-2 text-sm text-gray-400">Kelola informasi produk, inventori, dan pengaturan penjualan.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ url_for('admin_products') }}" data-allow-leave
+                   class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-700/50 text-gray-700 text-sm font-medium rounded-xl hover:bg-dark-800/50 transition shadow-sm">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="POST"
+          action="{{ url_for('admin_product_edit', id=product.id) if product else url_for('admin_product_new') }}"
+          enctype="multipart/form-data"
+          id="productForm"
+          @submit="handleSubmit($event)">
+
+        <!-- Hidden inputs (TANPA price hidden inputs — langsung dari input text) -->
+        <input type="hidden" name="specifications" :value="specsJson">
+        <input type="hidden" name="tags" :value="formData.tags.join(',')">
+        <input type="hidden" name="remove_image_main" :value="removeFlags.main ? '1' : '0'">
+        <input type="hidden" name="remove_image_1" :value="removeFlags[1] ? '1' : '0'">
+        <input type="hidden" name="remove_image_2" :value="removeFlags[2] ? '1' : '0'">
+        <input type="hidden" name="remove_image_3" :value="removeFlags[3] ? '1' : '0'">
+
+        <div class="product-form-grid">
+
+            <!-- KOLOM UTAMA -->
+            <div class="product-form-main space-y-6">
+
+                <!-- Status Bar -->
+                <div class="admin-card border-gray-700/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Status Produk</label>
+                            <select x-model="formData.status" name="status"
+                                    class="block pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                <option value="published">🟢 Dipublikasikan</option>
+                                <option value="draft">🟠 Draft</option>
+                                <option value="archived">⚪ Diarsipkan</option>
+                            </select>
+                        </div>
+                        {% if product %}
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">ID Produk</label>
+                            <span class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-mono font-medium bg-gray-100 text-gray-700 border border-gray-700/50">#{{ product.id }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span x-show="hasUnsavedChanges" class="text-xs text-amber-600 font-medium flex items-center gap-1" style="display:none;">
+                            <i class="fas fa-circle text-[8px] animate-pulse"></i> Belum disimpan
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Informasi Dasar -->
+                <div class="admin-card border-gray-700/50 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-dark-800/50/50 flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="fas fa-info-circle text-blue-600"></i> Informasi Dasar
+                        </h2>
+                        <span class="text-xs text-gray-400">Wajib diisi *</span>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Produk <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i class="fas fa-tag absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" name="name"
+                                       x-model="formData.name" @input="generateSlug()" required
+                                       class="block w-full pl-11 pr-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all"
+                                       placeholder="Masukkan nama produk"
+                                       value="{{ product.name if product else '' }}">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Slug URL</label>
+                            <div class="flex rounded-xl shadow-sm">
+                                <span class="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-gray-700/50 bg-gray-100 text-gray-400 text-sm font-mono">/produk/</span>
+                                <input type="text" name="slug"
+                                       x-model="formData.slug"
+                                       class="flex-1 min-w-0 px-4 py-3 rounded-none rounded-r-xl bg-dark-800/50 border border-gray-700/50 text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all font-mono"
+                                       placeholder="nama-produk"
+                                       value="{{ product.slug if product else '' }}">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Brand <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <i class="fas fa-copyright absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" name="brand"
+                                           x-model="formData.brand" list="brandList" required
+                                           class="block w-full pl-11 pr-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all"
+                                           placeholder="Apple, Samsung, dll"
+                                           value="{{ product.brand if product else '' }}">
+                                    <datalist id="brandList">
+                                        <option value="Apple"><option value="Samsung"><option value="Xiaomi">
+                                        <option value="Oppo"><option value="Vivo"><option value="Realme">
+                                        <option value="OnePlus"><option value="Google"><option value="Sony"><option value="Huawei">
+                                    </datalist>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Model</label>
+                                <div class="relative">
+                                    <i class="fas fa-mobile-alt absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" name="model"
+                                           x-model="formData.model"
+                                           class="block w-full pl-11 pr-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all"
+                                           placeholder="iPhone 14 Pro Max"
+                                           value="{{ product.model if product else '' }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Kategori</label>
+                                <input type="text" name="category"
+                                       class="block w-full px-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all"
+                                       placeholder="Contoh: Smartphone"
+                                       value="{{ product.category if product else '' }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Subkategori</label>
+                                <input type="text" name="subcategory"
+                                       class="block w-full px-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all"
+                                       placeholder="Contoh: Android"
+                                       value="{{ product.subcategory if product else '' }}">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Tag Produk</label>
+                            <div class="border border-gray-700/50 rounded-xl bg-dark-800/50 p-3 focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500 focus-within:bg-white transition-all">
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                    <template x-for="(tag, idx) in formData.tags" :key="idx">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium badge badge-info border border-blue-200">
+                                            <span x-text="tag"></span>
+                                            <button type="button" @click="removeTag(idx)" class="ml-1.5 w-5 h-5 inline-flex items-center justify-center rounded text-blue-600 hover:text-blue-900 hover:bg-blue-200/50 focus:outline-none transition cursor-pointer"
+                                                aria-label="Hapus tag">
+                                                <i class="fas fa-times text-xs"></i>
+                                            </button>
+                                        </span>
+                                    </template>
+                                </div>
+                                <input type="text" id="tagInput"
+                                       @keydown.enter.prevent="addTag($event)"
+                                       @keydown.188.prevent="addTag($event)"
+                                       class="block w-full bg-transparent border-0 p-0 text-sm focus:ring-0 placeholder-gray-400"
+                                       placeholder="Ketik tag lalu Enter…">
+                            </div>
+                            <p class="mt-1 text-xs text-gray-400">Tekan Enter atau koma untuk tambah tag.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Harga -->
+                <div class="admin-card border-gray-700/50 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-dark-800/50/50">
+                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="fas fa-tags text-green-600"></i> Harga
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <!-- FIX format price: input teks di bawah ini HANYA untuk tampilan
+                             (diformat "1.500.000"), dan sengaja TIDAK punya atribut `name`
+                             sehingga tidak pernah ikut ter-submit oleh browser.
+                             Nilai mentah (angka murni, tanpa titik) dikirim lewat hidden
+                             input terpisah yang disinkronkan Alpine dari formData.* —
+                             jadi backend selalu menerima angka bersih, tidak perlu lagi
+                             menebak-nebak apakah titik itu pemisah ribuan atau desimal. -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Harga Jual (Rp) <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">Rp</span>
+                                    <input type="text" inputmode="numeric" autocomplete="off"
+                                           :value="priceDisplay"
+                                           @input="onPriceInput($event, 'price')"
+                                           @blur="priceDisplay = fmt(formData.price)"
+                                           required
+                                           class="block w-full pl-12 pr-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all font-mono"
+                                           placeholder="0">
+                                    <input type="hidden" name="price" :value="formData.price !== null && formData.price !== '' ? formData.price : ''">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Harga Coret (Rp)</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">Rp</span>
+                                    <input type="text" inputmode="numeric" autocomplete="off"
+                                           :value="compareAtPriceDisplay"
+                                           @input="onPriceInput($event, 'compare_at_price')"
+                                           @blur="compareAtPriceDisplay = fmt(formData.compare_at_price)"
+                                           class="block w-full pl-12 pr-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all font-mono"
+                                           placeholder="0">
+                                    <input type="hidden" name="compare_at_price" :value="formData.compare_at_price !== null && formData.compare_at_price !== '' ? formData.compare_at_price : ''">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Harga Modal (Rp)</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">Rp</span>
+                                    <input type="text" inputmode="numeric" autocomplete="off"
+                                           :value="costPriceDisplay"
+                                           @input="onPriceInput($event, 'cost_price')"
+                                           @blur="costPriceDisplay = fmt(formData.cost_price)"
+                                           class="block w-full pl-12 pr-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all font-mono"
+                                           placeholder="0">
+                                    <input type="hidden" name="cost_price" :value="formData.cost_price !== null && formData.cost_price !== '' ? formData.cost_price : ''">
+                                </div>
+                            </div>
+                        </div>
+                        <div x-show="formData.price > 0 && formData.cost_price > 0"
+                             class="mt-4 p-4 bg-green-50 border border-green-100 rounded-xl" style="display:none;">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-green-800 flex items-center gap-2">
+                                    <i class="fas fa-chart-line text-green-600"></i> Profit Margin:
+                                </span>
+                                <span class="text-lg font-bold text-green-700 font-mono" x-text="calcMargin()"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventori -->
+                <div class="admin-card border-gray-700/50 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-dark-800/50/50">
+                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="fas fa-warehouse text-amber-600"></i> Inventori
+                        </h2>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">SKU</label>
+                                <div class="relative">
+                                    <i class="fas fa-barcode absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" name="sku"
+                                           class="block w-full pl-11 pr-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all font-mono uppercase"
+                                           placeholder="SKU-001"
+                                           value="{{ product.sku if product else '' }}">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Barcode</label>
+                                <div class="relative">
+                                    <i class="fas fa-barcode absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" name="barcode"
+                                           class="block w-full pl-11 pr-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all font-mono"
+                                           placeholder="123456789012"
+                                           value="{{ product.barcode if product else '' }}">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Stok <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <i class="fas fa-cubes absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="number" name="stock" min="0"
+                                           x-model="formData.stock"
+                                           class="block w-full pl-11 pr-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all font-mono"
+                                           placeholder="0"
+                                           value="{{ product.stock if product else '1' }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Kondisi Produk</label>
+                                <div class="relative">
+                                    <i class="fas fa-star absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <select name="condition"
+                                            class="block w-full pl-11 pr-10 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all appearance-none">
+                                        {% set cond = product.condition if product else 'Like New' %}
+                                        <option value="Baru" {{ 'selected' if cond == 'Baru' }}>🆕 Baru (New)</option>
+                                        <option value="Like New" {{ 'selected' if cond == 'Like New' }}>✨ Like New</option>
+                                        <option value="Excellent" {{ 'selected' if cond == 'Excellent' }}>⭐ Excellent</option>
+                                        <option value="Very Good" {{ 'selected' if cond == 'Very Good' }}>👍 Very Good</option>
+                                        <option value="Good" {{ 'selected' if cond == 'Good' }}>👌 Good</option>
+                                        <option value="Fair" {{ 'selected' if cond == 'Fair' }}>⚠️ Fair</option>
+                                        <option value="Poor" {{ 'selected' if cond == 'Poor' }}>🔴 Poor</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Peringatan Stok Rendah</label>
+                                <div class="relative">
+                                    <i class="fas fa-bell absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="number" name="low_stock_alert" min="0"
+                                           class="block w-full pl-11 pr-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all font-mono"
+                                           placeholder="5"
+                                           value="{{ product.low_stock_alert if product else '5' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deskripsi -->
+                <div class="admin-card border-gray-700/50 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-dark-800/50/50">
+                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="fas fa-align-left text-blue-600"></i> Deskripsi
+                        </h2>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Deskripsi Singkat</label>
+                            <textarea name="short_description" rows="2" maxlength="300"
+                                      class="block w-full px-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all resize-none"
+                                      placeholder="Ringkasan singkat produk (maks. 300 karakter)">{{ product.short_description if product else '' }}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Deskripsi Lengkap</label>
+                            <textarea name="description" rows="8"
+                                      class="block w-full px-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all resize-y"
+                                      placeholder="Jelaskan detail produk, spesifikasi, kondisi, dan keunggulannya…">{{ product.description if product else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Spesifikasi -->
+                <div class="admin-card border-gray-700/50 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-dark-800/50/50 flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="fas fa-list-alt text-blue-600"></i> Spesifikasi Teknis
+                        </h2>
+                        <button type="button" @click="addSpec()"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition">
+                            <i class="fas fa-plus text-xs"></i> Tambah
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3" id="specList">
+                            <template x-for="(spec, idx) in formData.specifications" :key="idx">
+                                <div class="flex items-start gap-3 p-3 bg-dark-800/50 rounded-xl border border-gray-100 group hover:border-blue-200 transition">
+                                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <input type="text" x-model="spec.key"
+                                               class="block w-full px-3 py-2 bg-white border border-gray-700/50 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition"
+                                               placeholder="Nama (contoh: RAM)">
+                                        <input type="text" x-model="spec.value"
+                                               class="block w-full px-3 py-2 bg-white border border-gray-700/50 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition"
+                                               placeholder="Nilai (contoh: 8GB)">
+                                    </div>
+                                    <button type="button" @click="removeSpec(idx)"
+                                            class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                                            aria-label="Hapus spesifikasi">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                        <div x-show="formData.specifications.length === 0" class="text-center py-8 text-gray-400" style="display:none;">
+                            <i class="fas fa-clipboard-list text-4xl mb-3 opacity-30"></i>
+                            <p class="text-sm">Belum ada spesifikasi.</p>
+                        </div>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="text-xs text-gray-400 py-1">Preset:</span>
+                            <button type="button" @click="applyPreset('smartphone')" class="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition">📱 Smartphone</button>
+                            <button type="button" @click="applyPreset('laptop')" class="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition">💻 Laptop</button>
+                            <button type="button" @click="applyPreset('tablet')" class="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition">📟 Tablet</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO -->
+                <div class="admin-card border-gray-700/50 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-dark-800/50/50 flex items-center justify-between cursor-pointer select-none"
+                         @click="showSeo=!showSeo">
+                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="fas fa-search text-orange-600"></i> SEO & Meta
+                        </h2>
+                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300" :class="showSeo ? 'rotate-180' : ''"></i>
+                    </div>
+                    <div x-show="showSeo"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                         class="p-6 space-y-5" style="display:none;">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Meta Title</label>
+                            <input type="text" name="meta_title" maxlength="70"
+                                   class="block w-full px-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all"
+                                   placeholder="Judul untuk mesin pencari"
+                                   value="{{ product.meta_title if product else '' }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Meta Description</label>
+                            <textarea name="meta_description" rows="3" maxlength="160"
+                                      class="block w-full px-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all resize-none"
+                                      placeholder="Deskripsi untuk hasil pencarian…">{{ product.meta_description if product else '' }}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Keywords</label>
+                            <input type="text" name="meta_keywords"
+                                   class="block w-full px-4 py-3 bg-dark-800/50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all"
+                                   placeholder="iphone, apple, bekas (pisahkan koma)"
+                                   value="{{ product.meta_keywords if product else '' }}">
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /kolom utama -->
+
+            <!-- SIDEBAR -->
+            <div class="product-form-sidebar space-y-6">
+
+                <!-- Aksi / Publish -->
+                <div class="admin-card border-gray-700/50 overflow-hidden sticky top-6">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-dark-800/50/50">
+                        <h2 class="text-lg font-semibold text-white">Aksi</h2>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                                    <i class="fas fa-star text-amber-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800">Produk Unggulan</p>
+                                    <p class="text-xs text-gray-400">Tampil di halaman utama</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="is_featured" x-model="formData.is_featured" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                                    <i class="fas fa-eye text-blue-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800">Produk Aktif</p>
+                                    <p class="text-xs text-gray-400">Tampil di katalog publik</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="is_active" x-model="formData.is_active" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                            </label>
+                        </div>
+
+                        <hr class="border-gray-100">
+                        <div class="space-y-3">
+                            <button type="submit" :disabled="loading"
+                                    class="w-full inline-flex justify-center items-center px-6 py-3 text-sm font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 transition-all transform hover:-translate-y-0.5 disabled:opacity-60 disabled:transform-none">
+                                <i class="fas fa-spinner fa-spin mr-2" x-show="loading"></i>
+                                <i class="fas fa-save mr-2" x-show="!loading"></i>
+                                <span x-text="loading ? 'Menyimpan…' : (productId ? 'Simpan Perubahan' : 'Tambah Produk')"></span>
+                            </button>
+                            <a href="{{ url_for('admin_products') }}" data-allow-leave
+                               class="w-full inline-flex justify-center items-center px-6 py-3 border border-gray-700/50 text-sm font-medium rounded-xl text-gray-400 bg-white hover:bg-dark-800/50 hover:text-gray-700 transition-all">
+                                Batal
+                            </a>
+                        </div>
+
+                        {% if product %}
+                        <hr class="border-gray-100">
+                        <div class="space-y-2 text-sm">
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Informasi</p>
+                            <div class="flex justify-between"><span class="text-gray-400">Dibuat</span><span class="text-gray-700 font-medium">{{ product.created_at.strftime('%d %b %Y, %H:%M') if product.created_at else '-' }}</span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">Diperbarui</span><span class="text-gray-700 font-medium">{{ product.updated_at.strftime('%d %b %Y, %H:%M') if product.updated_at else '-' }}</span></div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Galeri Gambar -->
+                <div class="admin-card border-gray-700/50 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-dark-800/50/50">
+                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="fas fa-images text-pink-600"></i> Galeri Gambar
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="mb-5">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Gambar Utama
+                                <span x-show="imagePreviews.main || existingImages.main"
+                                      class="ml-2 text-xs text-green-600 font-normal" style="display:none;">
+                                    ✓ Terpilih
+                                </span>
+                            </label>
+                            <div class="img-slot rounded-xl border-2 border-dashed border-gray-300 bg-dark-800/50 overflow-hidden hover:border-blue-400 hover:bg-blue-50/30 transition-all"
+                                 @click="$refs.imgMain.click()">
+                                <div x-show="!imagePreviews.main && !existingImages.main"
+                                     class="flex flex-col items-center justify-center h-full min-h-[180px]">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-300 mb-2"></i>
+                                    <p class="text-sm text-gray-400 font-medium">Klik untuk pilih gambar</p>
+                                    <p class="text-xs text-gray-400 mt-1">JPG, PNG, WebP — maks. 5MB</p>
+                                </div>
+                                <img x-show="imagePreviews.main"
+                                     :src="imagePreviews.main"
+                                     class="w-full h-48 object-cover" style="display:none;" alt="Preview">
+                                <img x-show="!imagePreviews.main && existingImages.main"
+                                     :src="existingImages.main"
+                                     class="w-full h-48 object-cover" style="display:none;" alt="Existing">
+                                <div class="img-overlay" x-show="imagePreviews.main || existingImages.main" style="display:none;">
+                                    <span class="text-white text-sm font-medium"><i class="fas fa-pencil-alt mr-1"></i>Ganti Gambar</span>
+                                </div>
+                                <button type="button" class="img-del"
+                                        @click.stop="removeImage('main')"
+                                        x-show="imagePreviews.main || existingImages.main" style="display:none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <input type="file" name="image" accept="image/*"
+                                   x-ref="imgMain"
+                                   @change="handleFile($event, 'main')"
+                                   class="hidden">
+                        </div>
+
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Gambar Tambahan</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="img-slot rounded-xl border-2 border-dashed border-gray-700/50 bg-dark-800/50 overflow-hidden hover:border-blue-400 hover:bg-blue-50/30 transition-all"
+                                 @click="$refs.imgSlot1.click()">
+                                <div x-show="!imagePreviews[1] && !existingImages[1]"
+                                     class="flex flex-col items-center justify-center h-full min-h-[80px]">
+                                    <i class="fas fa-plus text-gray-300 text-xl"></i>
+                                </div>
+                                <img x-show="imagePreviews[1]" :src="imagePreviews[1]"
+                                     class="w-full h-24 object-cover" style="display:none;" alt="">
+                                <img x-show="!imagePreviews[1] && existingImages[1]" :src="existingImages[1]"
+                                     class="w-full h-24 object-cover" style="display:none;" alt="">
+                                <div class="img-overlay" x-show="imagePreviews[1] || existingImages[1]" style="display:none;">
+                                    <i class="fas fa-pencil-alt text-white"></i>
+                                </div>
+                                <button type="button" class="img-del" @click.stop="removeImage(1)"
+                                        x-show="imagePreviews[1] || existingImages[1]" style="display:none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="img-slot rounded-xl border-2 border-dashed border-gray-700/50 bg-dark-800/50 overflow-hidden hover:border-blue-400 hover:bg-blue-50/30 transition-all"
+                                 @click="$refs.imgSlot2.click()">
+                                <div x-show="!imagePreviews[2] && !existingImages[2]"
+                                     class="flex flex-col items-center justify-center h-full min-h-[80px]">
+                                    <i class="fas fa-plus text-gray-300 text-xl"></i>
+                                </div>
+                                <img x-show="imagePreviews[2]" :src="imagePreviews[2]"
+                                     class="w-full h-24 object-cover" style="display:none;" alt="">
+                                <img x-show="!imagePreviews[2] && existingImages[2]" :src="existingImages[2]"
+                                     class="w-full h-24 object-cover" style="display:none;" alt="">
+                                <div class="img-overlay" x-show="imagePreviews[2] || existingImages[2]" style="display:none;">
+                                    <i class="fas fa-pencil-alt text-white"></i>
+                                </div>
+                                <button type="button" class="img-del" @click.stop="removeImage(2)"
+                                        x-show="imagePreviews[2] || existingImages[2]" style="display:none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="img-slot rounded-xl border-2 border-dashed border-gray-700/50 bg-dark-800/50 overflow-hidden hover:border-blue-400 hover:bg-blue-50/30 transition-all"
+                                 @click="$refs.imgSlot3.click()">
+                                <div x-show="!imagePreviews[3] && !existingImages[3]"
+                                     class="flex flex-col items-center justify-center h-full min-h-[80px]">
+                                    <i class="fas fa-plus text-gray-300 text-xl"></i>
+                                </div>
+                                <img x-show="imagePreviews[3]" :src="imagePreviews[3]"
+                                     class="w-full h-24 object-cover" style="display:none;" alt="">
+                                <img x-show="!imagePreviews[3] && existingImages[3]" :src="existingImages[3]"
+                                     class="w-full h-24 object-cover" style="display:none;" alt="">
+                                <div class="img-overlay" x-show="imagePreviews[3] || existingImages[3]" style="display:none;">
+                                    <i class="fas fa-pencil-alt text-white"></i>
+                                </div>
+                                <button type="button" class="img-del" @click.stop="removeImage(3)"
+                                        x-show="imagePreviews[3] || existingImages[3]" style="display:none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <input type="file" name="image2" accept="image/*" x-ref="imgSlot1" @change="handleFile($event, 1)" class="hidden">
+                        <input type="file" name="image3" accept="image/*" x-ref="imgSlot2" @change="handleFile($event, 2)" class="hidden">
+                        <input type="file" name="image4" accept="image/*" x-ref="imgSlot3" @change="handleFile($event, 3)" class="hidden">
+
+                        <p class="mt-3 text-xs text-gray-400">Maksimal 4 gambar. Format: JPG, PNG, WebP, GIF.</p>
+                    </div>
+                </div>
+
+                <!-- Dimensi -->
+                <div class="admin-card border-gray-700/50 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-dark-800/50/50">
+                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="fas fa-ruler-combined text-teal-600"></i> Dimensi & Berat
+                        </h2>
+                    </div>
+                    <div class="p-5">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1">Berat (kg)</label>
+                                <input type="number" step="0.01" name="weight"
+                                       class="block w-full px-3 py-2 bg-dark-800/50 border border-gray-700/50 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition font-mono"
+                                       placeholder="0.00"
+                                       value="{{ product.weight if product and product.weight else '' }}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1">Lebar (cm)</label>
+                                <input type="number" step="0.1" name="width"
+                                       class="block w-full px-3 py-2 bg-dark-800/50 border border-gray-700/50 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition font-mono"
+                                       placeholder="0.0"
+                                       value="{{ product.width if product and product.width else '' }}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1">Panjang (cm)</label>
+                                <input type="number" step="0.1" name="length"
+                                       class="block w-full px-3 py-2 bg-dark-800/50 border border-gray-700/50 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition font-mono"
+                                       placeholder="0.0"
+                                       value="{{ product.length if product and product.length else '' }}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1">Tinggi (cm)</label>
+                                <input type="number" step="0.1" name="height"
+                                       class="block w-full px-3 py-2 bg-dark-800/50 border border-gray-700/50 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition font-mono"
+                                       placeholder="0.0"
+                                       value="{{ product.height if product and product.height else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /sidebar -->
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function productForm() {
+    return {
+        loading: false,
+        showSeo: false,
+        showUnsavedModal: false,
+        hasUnsavedChanges: false,
+        pendingLeaveUrl: null,
+        toasts: [],
+        _toastId: 0,
+
+        productId: {{ product.id if product else 'null' }},
+
+        /* State form */
+        formData: {
+            name:    {{ (product.name if product else "")|tojson }},
+            slug:    {{ (product.slug if product else "")|tojson }},
+            brand:   {{ (product.brand if product else "")|tojson }},
+            model:   {{ (product.model if product else "")|tojson }},
+            // FIX: Gunakan // 100 untuk konversi sen→rupiah, tapi handle 0 dengan benar
+            price:   {{ (product.price // 100) if product and product.price is not none else 'null' }},
+            compare_at_price: {{ (product.compare_at_price // 100) if product and product.compare_at_price is not none else 'null' }},
+            cost_price:       {{ (product.cost_price // 100) if product and product.cost_price is not none else 'null' }},
+            stock:   {{ product.stock if product else 1 }},
+            is_featured: {{ 'true' if product and product.is_featured else 'false' }},
+            is_active:   {{ 'true' if product and product.is_active else 'true' }},
+            status:  '{{ product.status if product and product.status else "published" }}',
+            tags:    {{ (product.tags or '').split(',')|map('trim')|reject('equalto', '')|list|tojson if product else '[]' }},
+            specifications: {% if product and product.specifications %}{% if product.specifications is string and product.specifications.startswith('[') %}{{ product.specifications|safe }}{% else %}{{ product.specifications|tojson }}{% endif %}{% else %}[]{% endif %},
+        },
+
+        /* Tampilan harga dengan pemisah ribuan */
+        priceDisplay: '{{ "{:,}".format((product.price // 100) if product and product.price is not none else 0).replace(",", ".") if product and product.price is not none else "" }}',
+        compareAtPriceDisplay: '{{ "{:,}".format((product.compare_at_price // 100) if product and product.compare_at_price is not none else 0).replace(",", ".") if product and product.compare_at_price is not none else "" }}',
+        costPriceDisplay: '{{ "{:,}".format((product.cost_price // 100) if product and product.cost_price is not none else 0).replace(",", ".") if product and product.cost_price is not none else "" }}',
+
+        /* HAPUS computed priceCents — tidak lagi dipakai */
+
+        /* Format helpers */
+        fmt(num) {
+            if (num === null || num === undefined || num === '') return '';
+            const n = parseFloat(num);
+            if (isNaN(n)) return '';
+            return n.toLocaleString('id-ID');
+        },
+
+        onPriceInput(event, field) {
+            let val = event.target.value.replace(/[^\d]/g, '');
+            this.formData[field] = val ? parseInt(val) : null;
+
+            // Update display variable (Alpine sync via :value)
+            const map = {
+                price: 'priceDisplay',
+                compare_at_price: 'compareAtPriceDisplay',
+                cost_price: 'costPriceDisplay'
+            };
+            this[map[field]] = val ? parseInt(val).toLocaleString('id-ID') : '';
+        },
+
+        /* Computed untuk hidden inputs */
+        get specsJson() {
+            const valid = this.formData.specifications.filter(s => s.key && s.key.trim());
+            return valid.length ? JSON.stringify(valid) : '';
+        },
+
+        /* Gambar */
+        imagePreviews: { main: null, 1: null, 2: null, 3: null },
+        existingImages: {
+            main: {% if product and product.image_filename %}'{{ url_for("uploaded_product_file", filename=product.image_filename) }}'{% else %}null{% endif %},
+            1:    {% if product and product.image_filename2 %}'{{ url_for("uploaded_product_file", filename=product.image_filename2) }}'{% else %}null{% endif %},
+            2:    {% if product and product.image_filename3 %}'{{ url_for("uploaded_product_file", filename=product.image_filename3) }}'{% else %}null{% endif %},
+            3:    {% if product and product.image_filename4 %}'{{ url_for("uploaded_product_file", filename=product.image_filename4) }}'{% else %}null{% endif %}
+        },
+        removeFlags: { main: false, 1: false, 2: false, 3: false },
+
+        /* Init */
+        init() {
+            const initialData = JSON.stringify(this.formData);
+            this.$watch('formData', () => {
+                this.hasUnsavedChanges = JSON.stringify(this.formData) !== initialData;
+            }, { deep: true });
+
+            this.$watch('imagePreviews', () => {
+                this.hasUnsavedChanges = true;
+            }, { deep: true });
+
+            window.addEventListener('beforeunload', (e) => {
+                if (this.hasUnsavedChanges) { e.preventDefault(); e.returnValue = ''; }
+            });
+
+            document.querySelectorAll('a[href]').forEach(link => {
+                if (link.hasAttribute('data-allow-leave')) return;
+                const href = link.getAttribute('href') || '';
+                if (href.startsWith('#') || href.startsWith('javascript:')) return;
+                link.addEventListener('click', (e) => {
+                    if (this.hasUnsavedChanges) {
+                        e.preventDefault();
+                        this.pendingLeaveUrl = link.href;
+                        this.showUnsavedModal = true;
+                    }
+                });
+            });
+
+            if ('{{ product.meta_title if product else "" }}') this.showSeo = true;
+        },
+
+        confirmLeave() {
+            this.hasUnsavedChanges = false;
+            if (this.pendingLeaveUrl) window.location.href = this.pendingLeaveUrl;
+        },
+
+        /* Toast */
+        addToast(title, msg, type = 'success') {
+            const id = ++this._toastId;
+            this.toasts.push({ id, title, msg, type, show: true });
+            setTimeout(() => this.removeToast(id), 5000);
+        },
+        removeToast(id) {
+            const t = this.toasts.find(x => x.id === id);
+            if (t) t.show = false;
+            setTimeout(() => { this.toasts = this.toasts.filter(x => x.id !== id); }, 300);
+        },
+
+        /* Gambar */
+        handleFile(event, slot) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) {
+                this.addToast('Ukuran terlalu besar', 'Maksimal 5MB per gambar', 'error');
+                event.target.value = '';
+                return;
+            }
+            const allowed = ['image/jpeg','image/png','image/webp','image/gif'];
+            if (!allowed.includes(file.type)) {
+                this.addToast('Format tidak didukung', 'Gunakan JPG, PNG, WebP, atau GIF', 'error');
+                event.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => { this.imagePreviews[slot] = e.target.result; };
+            reader.readAsDataURL(file);
+            this.removeFlags[slot] = false;
+            this.hasUnsavedChanges = true;
+        },
+        removeImage(slot) {
+            this.imagePreviews[slot] = null;
+            this.existingImages[slot] = null;
+            this.removeFlags[slot] = true;
+            const refMap = { main:'imgMain', 1:'imgSlot1', 2:'imgSlot2', 3:'imgSlot3' };
+            const ref = this.$refs[refMap[slot]];
+            if (ref) ref.value = '';
+            this.hasUnsavedChanges = true;
+        },
+
+        /* Slug */
+        generateSlug() {
+            if (this.productId) return;
+            this.formData.slug = this.slugify(this.formData.name);
+        },
+        slugify(text) {
+            return String(text).toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^\w\-]+/g, '')
+                .replace(/\-\-+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        },
+
+        /* Tags */
+        addTag(event) {
+            const val = event.target.value.trim().replace(/,/g, '');
+            if (val && !this.formData.tags.includes(val)) this.formData.tags.push(val);
+            event.target.value = '';
+        },
+        removeTag(idx) { this.formData.tags.splice(idx, 1); },
+
+        /* Spesifikasi */
+        addSpec() { this.formData.specifications.push({ key: '', value: '' }); },
+        removeSpec(idx) { this.formData.specifications.splice(idx, 1); },
+        applyPreset(type) {
+            const p = {
+                smartphone: [
+                    {key:'Layar',value:''},{key:'Processor',value:''},{key:'RAM',value:''},
+                    {key:'Penyimpanan',value:''},{key:'Kamera Belakang',value:''},{key:'Kamera Depan',value:''},
+                    {key:'Baterai',value:''},{key:'Sistem Operasi',value:''}
+                ],
+                laptop: [
+                    {key:'Layar',value:''},{key:'Processor',value:''},{key:'RAM',value:''},
+                    {key:'Storage',value:''},{key:'VGA',value:''},{key:'Sistem Operasi',value:''},{key:'Port',value:''}
+                ],
+                tablet: [
+                    {key:'Layar',value:''},{key:'Processor',value:''},{key:'RAM',value:''},
+                    {key:'Penyimpanan',value:''},{key:'Kamera',value:''},{key:'Baterai',value:''}
+                ]
+            };
+            this.formData.specifications = p[type] || [];
+        },
+
+        /* Margin */
+        calcMargin() {
+            const p = parseFloat(this.formData.price) || 0;
+            const c = parseFloat(this.formData.cost_price) || 0;
+            if (p <= 0) return '0%';
+            return ((p - c) / p * 100).toFixed(1) + '%';
+        },
+
+        /* Submit form */
+        handleSubmit(event) {
+            if (!this.formData.name || !this.formData.name.trim()) {
+                this.addToast('Validasi Gagal', 'Nama produk wajib diisi', 'error');
+                event.preventDefault(); return;
+            }
+            const price = parseFloat(this.formData.price);
+            if (!price || price <= 0) {
+                this.addToast('Validasi Gagal', 'Harga harus lebih dari 0', 'error');
+                event.preventDefault(); return;
+            }
+            if (!this.formData.slug || !this.formData.slug.trim()) {
+                this.formData.slug = this.slugify(this.formData.name);
+                event.preventDefault();
+                this.$nextTick(() => {
+                    document.getElementById('productForm').submit();
+                });
+                return;
+            }
+            /* Format display sebelum submit */
+            this.priceDisplay = this.fmt(this.formData.price);
+            this.compareAtPriceDisplay = this.fmt(this.formData.compare_at_price);
+            this.costPriceDisplay = this.fmt(this.formData.cost_price);
+            this.$nextTick(() => {
+                this.loading = true;
+                this.hasUnsavedChanges = false;
+            });
+        }
+    }
+}
+</script>
+{% endblock %}

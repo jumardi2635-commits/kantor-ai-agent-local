@@ -1,0 +1,835 @@
+{% extends "base.html" %}
+
+{% block title %}Ajukan Cicilan — {{ global_settings.site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════════════════
+   INSTALLMENT APPLICATION PAGE — PREMIUM DARK THEME + 3D GLASS
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── 3D Glass Tokens ── */
+:root {
+    --g-glass-40: rgba(255, 255, 255, 0.05);
+    --g-glass-50: rgba(255, 255, 255, 0.07);
+    --g-glass-60: rgba(255, 255, 255, 0.09);
+    --g-glass-border: rgba(255, 255, 255, 0.12);
+    --g-glass-highlight: rgba(255, 255, 255, 0.07);
+    --g-glass-depth: rgba(0, 0, 0, 0.15);
+    --g-shadow-glass: 0 10px 40px rgba(0, 0, 0, 0.25), 0 30px 80px rgba(0, 0, 0, 0.30);
+}
+
+/* ── Tilt Card Base ── */
+.tilt-card {
+    position: relative;
+    background: linear-gradient(145deg, var(--g-glass-40), var(--g-glass-50));
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid var(--g-glass-border);
+    border-radius: var(--r-xl);
+    box-shadow: var(--g-shadow-glass), inset 0 1px 0 var(--g-glass-highlight), inset 0 -1px 0 var(--g-glass-depth);
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    overflow: hidden;
+}
+.tilt-card::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: linear-gradient(135deg, transparent 40%, var(--g-glass-highlight) 50%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    z-index: 2;
+}
+.tilt-card:hover::after { opacity: 1; }
+.tilt-card::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: inherit;
+    border: 1px solid rgba(255,255,255,0.08);
+    pointer-events: none;
+    z-index: 1;
+}
+.tilt-card > * { position: relative; z-index: 3; }
+.tilt-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35), inset 0 1px 0 var(--g-glass-highlight), inset 0 -1px 0 var(--g-glass-depth);
+    border-color: rgba(99,102,241,0.2);
+}
+
+/* ── Original Styles (dari kode awal) ── */
+.installment-hero {
+    text-align: center;
+    padding: 3rem 1.5rem 2rem;
+    position: relative;
+}
+.installment-hero .hero-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    border-radius: var(--r-xl);
+    display: inline-grid; place-items: center;
+    color: var(--text-primary); font-size: 2rem;
+    box-shadow: 0 12px 40px var(--primary-glow-soft);
+    margin-bottom: 1.25rem;
+    position: relative;
+}
+.installment-hero .hero-icon::after {
+    content: ''; position: absolute; inset: -6px;
+    border-radius: inherit;
+    background: inherit; opacity: 0.25;
+    animation: fab-pulse 3s ease-out infinite;
+    z-index: -1;
+}
+.installment-hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+.installment-hero p {
+    color: var(--text-tertiary);
+    font-size: 0.95rem;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* ── Calculator Card ── */
+.calc-card {
+    background: linear-gradient(180deg, rgba(15,23,42,0.9), rgba(15,23,42,0.7));
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    backdrop-filter: blur(16px);
+}
+.calc-card .calc-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem; font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 0.75rem;
+}
+.calc-card .calc-title i {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    border-radius: var(--r-md);
+    display: grid; place-items: center;
+    color: var(--text-primary); font-size: 1rem;
+}
+
+/* ── Plan Cards ── */
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+.plan-card {
+    background: var(--bg-elevated);
+    border: 2px solid var(--border-default);
+    border-radius: var(--r-lg);
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out-expo);
+    position: relative;
+    overflow: hidden;
+}
+.plan-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.plan-card.selected {
+    border-color: var(--primary-500);
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.04));
+    box-shadow: 0 0 20px var(--primary-glow-soft);
+}
+.plan-card .plan-tenor {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem; font-weight: 800;
+    color: var(--text-primary);
+}
+.plan-card .plan-tenor span { font-size: 0.85rem; font-weight: 600; color: var(--text-tertiary); }
+.plan-card .plan-rate {
+    font-size: 0.8rem; color: var(--text-tertiary);
+    margin: 0.25rem 0 0.75rem;
+}
+.plan-card .plan-badge {
+    position: absolute; top: 0.75rem; right: 0.75rem;
+    font-size: 0.65rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 0.2rem 0.5rem; border-radius: var(--r-xs);
+}
+.plan-card .plan-badge.promo { background: var(--success-bg); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+.plan-card .plan-badge.standard { background: var(--bg-surface-hover); color: var(--text-tertiary); border: 1px solid var(--border-default); }
+
+/* ── DP Manual Input ── */
+.dp-slider-wrap { margin: 1.5rem 0; }
+.dp-slider-wrap label {
+    font-size: 0.8rem; font-weight: 700; color: var(--text-tertiary);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    display: flex; justify-content: space-between; margin-bottom: 0.5rem;
+}
+.dp-slider-wrap input[type="text"] {
+    width: 100%; box-sizing: border-box;
+    padding: 0.65rem 0.9rem; border-radius: var(--r-md);
+    background: var(--bg-elevated); border: 1px solid var(--border-default);
+    color: var(--text-primary); font-size: 0.95rem;
+    outline: none;
+}
+.dp-slider-wrap .dp-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem; font-weight: 700; color: var(--primary-400);
+    text-align: center; margin-top: 0.5rem;
+}
+.dp-min-hint {
+    font-size: 0.7rem; color: var(--text-disabled); margin-top: 0.35rem;
+}
+.dp-min-warning {
+    display: none;
+    align-items: center; gap: 0.5rem;
+    background: var(--danger-bg); border: 1px solid rgba(239,68,68,0.25);
+    border-radius: var(--r-md); font-size: 0.75rem; color: var(--danger);
+    padding: 0.5rem 0.75rem; margin-top: 0.5rem;
+}
+
+/* ── Result Box ── */
+.result-box {
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.04));
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: var(--r-lg);
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+.result-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.5rem 0; font-size: 0.9rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.result-row:last-child { border-bottom: none; }
+.result-row .label { color: var(--text-tertiary); }
+.result-row .value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; color: var(--text-primary);
+}
+.result-row.highlight {
+    padding: 0.75rem 0; margin-top: 0.5rem;
+    border-top: 2px solid var(--primary-500);
+    border-bottom: none;
+}
+.result-row.highlight .label { font-size: 1rem; color: var(--text-primary); }
+.result-row.highlight .value {
+    font-size: 1.35rem;
+    background: linear-gradient(135deg, var(--primary-400), var(--accent-400));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* ── Form Steps ── */
+.form-step { display: none; }
+.form-step.active { display: block; animation: fadeInUp 0.4s ease; }
+.step-indicator {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-bottom: 2rem;
+}
+.step-dot {
+    width: 36px; height: 36px; border-radius: var(--r-full);
+    background: var(--bg-elevated); border: 2px solid var(--border-default);
+    display: grid; place-items: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 0.85rem; color: var(--text-disabled);
+    transition: all 0.3s;
+}
+.step-dot.completed { background: var(--success); border-color: var(--success); color: var(--text-primary); }
+.step-dot.active { background: linear-gradient(135deg, var(--primary-500), var(--secondary-500)); border-color: transparent; color: var(--text-primary); }
+.step-line { width: 40px; height: 2px; background: var(--border-default); }
+.step-line.completed { background: linear-gradient(90deg, var(--success), var(--primary-500)); }
+
+/* ── Document Upload ── */
+.doc-upload-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+.doc-upload-item {
+    border: 2px dashed var(--border-default);
+    border-radius: var(--r-lg);
+    padding: 1.25rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    position: relative;
+}
+.doc-upload-item:hover { border-color: var(--primary-500); background: rgba(99,102,241,0.04); }
+.doc-upload-item.uploaded { border-color: var(--success); border-style: solid; background: var(--success-bg); }
+.doc-upload-item i { font-size: 1.5rem; color: var(--text-disabled); margin-bottom: 0.5rem; display: block; }
+.doc-upload-item.uploaded i { color: var(--success); }
+.doc-upload-item .doc-label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); }
+.doc-upload-item input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* ── Responsive ── */
+@media (max-width: 576px) {
+    .plan-grid { grid-template-columns: 1fr 1fr; }
+    .calc-card { padding: 1.25rem; }
+    .doc-upload-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Hero -->
+    <div class="installment-hero reveal">
+        <div class="hero-icon"><i class="bi bi-credit-card-fill"></i></div>
+        <h1>Cicilan Tanpa Kartu Kredit</h1>
+        <p>Miliki HP premium bekas impian Anda dengan cicilan fleksibel. Proses cepat, bunga kompetitif, tanpa ribet.</p>
+    </div>
+
+    <!-- Step 1: Calculator -->
+    <div class="row justify-content-center mb-5" id="step1">
+        <div class="col-lg-8">
+            <div class="calc-card tilt-card reveal">
+                <div class="calc-title">
+                    <i class="bi bi-calculator"></i>
+                    <span>Simulasi Cicilan</span>
+                </div>
+
+                {% if product %}
+                <div class="d-flex align-items-center gap-3 p-3 mb-3" style="background:var(--bg-elevated);border-radius:var(--r-md);">
+                    <img src="{{ get_product_image_url(product.image_filename) }}" alt="{{ product.name }}" style="width:60px;height:60px;object-fit:contain;border-radius:var(--r-sm);">
+                    <div>
+                        <p class="mb-0 fw-bold" style="color:var(--text-primary);font-size:0.9rem;">{{ product.name }}</p>
+                        <p class="mb-0" style="color:var(--primary-400);font-family:'Space Grotesk';font-weight:700;">{{ format_price(product.price) }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="mb-3">
+                    <label class="form-label-premium mb-2">Jumlah Pembiayaan yang Diinginkan <span class="required">*</span></label>
+                    <input type="number" id="manualProductAmount" class="form-control" min="500000" step="10000"
+                           placeholder="Contoh: 5000000" oninput="handleManualAmountChange()">
+                    <div class="dp-min-hint">Masukkan nominal dalam Rupiah (tanpa titik/koma)</div>
+                </div>
+                {% endif %}
+
+                <label class="form-label-premium mb-2">Pilih Tenor Cicilan</label>
+                <div class="plan-grid mb-4" id="planGrid"></div>
+
+                <div class="dp-slider-wrap">
+                    <label>
+                        <span>Uang Muka (DP)</span>
+                        <span id="dpPercentLabel">0%</span>
+                    </label>
+                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="dpAmountInput" class="form-control" value="500000"
+                           placeholder="Contoh: 500000" oninput="updateCalculation()">
+                    <div class="dp-value" id="dpAmountLabel">Rp 500.000</div>
+                    <div class="dp-min-hint">Masukkan nominal DP dalam Rupiah, minimal Rp 500.000</div>
+                    <div class="dp-min-warning" id="dpMinWarning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span>Nominal DP saat ini di bawah Rp 500.000. Masukkan nominal DP yang lebih besar.</span>
+                    </div>
+                </div>
+
+                <div class="result-box tilt-card" id="resultBox" style="display:none;">
+                    <div class="result-row">
+                        <span class="label">Harga Produk</span>
+                        <span class="value" id="resProductAmount">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="label">Uang Muka</span>
+                        <span class="value" id="resDP">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="label">Pokok Pinjaman</span>
+                        <span class="value" id="resLoan">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="label">Bunga Total</span>
+                        <span class="value" id="resInterest">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="label">Biaya Admin</span>
+                        <span class="value" id="resFee">-</span>
+                    </div>
+                    <div class="result-row highlight">
+                        <span class="label">Cicilan / Bulan</span>
+                        <span class="value" id="resMonthly">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="label">Total Pembayaran</span>
+                        <span class="value" id="resTotal">-</span>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-checkout w-100 mt-4" id="btnContinue" onclick="goToStep(2)">
+                    Lanjutkan Pengajuan <i class="bi bi-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Application Form -->
+    <div class="row justify-content-center" id="step2" style="display:none;">
+        <div class="col-lg-8">
+            <div class="calc-card tilt-card reveal">
+                <div class="step-indicator mb-4">
+                    <div class="step-dot completed" id="dot1">1</div>
+                    <div class="step-line completed"></div>
+                    <div class="step-dot active" id="dot2">2</div>
+                    <div class="step-line"></div>
+                    <div class="step-dot" id="dot3">3</div>
+                </div>
+
+                <h3 class="mb-4" style="font-family:'Space Grotesk';font-weight:700;color:var(--text-primary);">
+                    {% if kyc_verified %}Konfirmasi Pengajuan{% else %}Data Diri & Dokumen{% endif %}
+                </h3>
+
+                <form id="installmentForm" onsubmit="submitApplication(event)">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="plan_id" id="formPlanId">
+                    <input type="hidden" name="product_amount" id="formProductAmount" value="{{ product.price if product else 0 }}">
+                    <input type="hidden" name="dp_amount" id="formDPAmount">
+
+                    {% if kyc_verified %}
+                    <input type="hidden" name="use_existing_kyc" value="1">
+                    <input type="hidden" name="full_name" value="{{ (verified_kyc_session.ktp_name if verified_kyc_session else '') or current_user.full_name or '' }}">
+                    <input type="hidden" name="nik" value="{{ (verified_kyc_session.ktp_nik if verified_kyc_session else '') or current_user.kyc_nik or '' }}">
+                    <input type="hidden" name="phone" value="{{ current_user.phone or '' }}">
+                    <input type="hidden" name="email" value="{{ current_user.email or '' }}">
+                    <input type="hidden" name="address_ktp" value="{{ (verified_kyc_session.ktp_address if verified_kyc_session else '') or current_user.address or '' }}">
+
+                    <div class="kyc-verified-notice mb-4" style="display:flex;gap:0.9rem;align-items:flex-start;background:var(--success-bg);border:1px solid rgba(16,185,129,0.25);border-radius:var(--r-lg);padding:1.1rem 1.25rem;">
+                        <i class="bi bi-patch-check-fill" style="color:var(--success);font-size:1.4rem;line-height:1;"></i>
+                        <div>
+                            <p class="mb-1 fw-bold" style="color:var(--text-primary);">Anda sudah terverifikasi KYC</p>
+                            <p class="mb-0" style="color:var(--text-tertiary);font-size:0.85rem;">Data diri dan dokumen KTP/selfie yang sudah divalidasi otomatis digunakan untuk pengajuan ini. Tidak perlu isi ulang atau upload dokumen.</p>
+                        </div>
+                    </div>
+
+                    <div class="kyc-summary-grid" style="background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--r-lg);padding:1.1rem 1.25rem;">
+                        <div class="info-row d-flex justify-content-between py-1">
+                            <span style="color:var(--text-tertiary);font-size:0.85rem;">Nama Lengkap</span>
+                            <span style="color:var(--text-primary);font-weight:600;">{{ (verified_kyc_session.ktp_name if verified_kyc_session else '') or current_user.full_name or '-' }}</span>
+                        </div>
+                        <div class="info-row d-flex justify-content-between py-1">
+                            <span style="color:var(--text-tertiary);font-size:0.85rem;">NIK</span>
+                            <span style="color:var(--text-primary);font-weight:600;">{{ (verified_kyc_session.ktp_nik if verified_kyc_session else '') or current_user.kyc_nik or '-' }}</span>
+                        </div>
+                        <div class="info-row d-flex justify-content-between py-1">
+                            <span style="color:var(--text-tertiary);font-size:0.85rem;">No. HP</span>
+                            <span style="color:var(--text-primary);font-weight:600;">{{ current_user.phone or '-' }}</span>
+                        </div>
+                        <div class="info-row d-flex justify-content-between py-1">
+                            <span style="color:var(--text-tertiary);font-size:0.85rem;">Alamat KTP</span>
+                            <span style="color:var(--text-primary);font-weight:600;text-align:right;max-width:60%;">{{ (verified_kyc_session.ktp_address if verified_kyc_session else '') or current_user.address or '-' }}</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Nama Lengkap <span class="required">*</span></label>
+                            <input type="text" name="full_name" class="form-control" required value="{{ current_user.full_name if user_logged_in else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">NIK (16 digit) <span class="required">*</span></label>
+                            <input type="text" name="nik" class="form-control" maxlength="16" pattern="[0-9]{16}" required placeholder="3201xxxxxxxxxxxx">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">No. HP <span class="required">*</span></label>
+                            <input type="tel" name="phone" class="form-control" required value="{{ current_user.phone if user_logged_in else '' }}" placeholder="628xxxxxxxxxx">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ current_user.email if user_logged_in else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Tempat Lahir</label>
+                            <input type="text" name="birth_place" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Tanggal Lahir</label>
+                            <input type="date" name="birth_date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Jenis Kelamin</label>
+                            <select name="gender" class="form-select">
+                                <option value="">-- Pilih --</option>
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Status Pernikahan</label>
+                            <select name="marital_status" class="form-select">
+                                <option value="">-- Pilih --</option>
+                                <option value="single">Belum Menikah</option>
+                                <option value="married">Menikah</option>
+                                <option value="divorced">Cerai</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label-premium">Alamat KTP <span class="required">*</span></label>
+                        <textarea name="address_ktp" class="form-control" rows="3" required></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label-premium">Pekerjaan & Penghasilan</label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <select name="employment_type" class="form-select">
+                                    <option value="">-- Jenis Pekerjaan --</option>
+                                    <option value="karyawan">Karyawan Swasta</option>
+                                    <option value="pns">PNS / BUMN</option>
+                                    <option value="wiraswasta">Wiraswasta</option>
+                                    <option value="profesional">Profesional</option>
+                                    <option value="lainnya">Lainnya</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" name="company_name" class="form-control" placeholder="Nama Perusahaan">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" name="job_title" class="form-control" placeholder="Jabatan">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="number" name="monthly_income" class="form-control" placeholder="Penghasilan per Bulan (Rp)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="form-label-premium">Upload Dokumen <span class="required">*</span></label>
+                    <div class="doc-upload-grid mb-4">
+                        <div class="doc-upload-item tilt-card" id="doc-ktp">
+                            <i class="bi bi-person-vcard"></i>
+                            <span class="doc-label">KTP</span>
+                            <input type="file" accept="image/*" onchange="handleDocUpload(this, 'ktp')">
+                        </div>
+                        <div class="doc-upload-item tilt-card" id="doc-selfie">
+                            <i class="bi bi-camera"></i>
+                            <span class="doc-label">Selfie + KTP</span>
+                            <input type="file" accept="image/*" onchange="handleDocUpload(this, 'selfie')">
+                        </div>
+                        <div class="doc-upload-item tilt-card" id="doc-slip-gaji">
+                            <i class="bi bi-file-earmark-text"></i>
+                            <span class="doc-label">Slip Gaji</span>
+                            <input type="file" accept="image/*" onchange="handleDocUpload(this, 'slip_gaji')">
+                        </div>
+                        <div class="doc-upload-item tilt-card" id="doc-npwp">
+                            <i class="bi bi-file-earmark"></i>
+                            <span class="doc-label">NPWP</span>
+                            <input type="file" accept="image/*" onchange="handleDocUpload(this, 'npwp')">
+                        </div>
+                        <div class="doc-upload-item tilt-card" id="doc-kk">
+                            <i class="bi bi-people"></i>
+                            <span class="doc-label">Kartu Keluarga</span>
+                            <input type="file" accept="image/*" onchange="handleDocUpload(this, 'kk')">
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-3 mt-4">
+                        <button type="button" class="btn btn-ghost flex-grow-1" onclick="goToStep(1)">
+                            <i class="bi bi-arrow-left me-2"></i> Kembali
+                        </button>
+                        <button type="submit" class="btn-checkout flex-grow-1" id="btnSubmit">
+                            <span class="spinner-border spinner-border-sm" id="submitSpinner" style="display:none;"></span>
+                            <span id="submitText">Ajukan Cicilan</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div class="row justify-content-center" id="step3" style="display:none;">
+        <div class="col-lg-6 text-center">
+            <div class="calc-card tilt-card reveal">
+                <div class="mb-4">
+                    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--success),var(--success));display:grid;place-items:center;margin:0 auto;color:var(--text-primary);font-size:2rem;">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+                </div>
+                <h2 style="font-family:'Space Grotesk';font-weight:700;color:var(--text-primary);" class="mb-2">
+                    Pengajuan Diterima!
+                </h2>
+                <p class="mb-4" style="color:var(--text-tertiary);">
+                    Tim kami akan meninjau pengajuan Anda dalam 1x24 jam. Notifikasi akan dikirim ke WhatsApp Anda.
+                </p>
+                <div class="p-3 mb-4" style="background:var(--bg-elevated);border-radius:var(--r-md);border:1px solid var(--border-default);">
+                    <p class="mb-1" style="font-size:0.8rem;color:var(--text-tertiary);">Kode Pengajuan</p>
+                    <p class="mb-0" style="font-family:'Space Grotesk';font-size:1.25rem;font-weight:700;color:var(--primary-400);" id="successCode">-</p>
+                </div>
+                <a href="{{ url_for('index') }}" class="btn-checkout">
+                    <i class="bi bi-house me-2"></i> Kembali ke Beranda
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ═══════════════════════════════════════════════════════════
+// INSTALLMENT CALCULATOR & APPLICATION LOGIC
+// ═══════════════════════════════════════════════════════════
+
+let PLANS = [];
+let SELECTED_PLAN = null;
+let PRODUCT_AMOUNT = {{ product.price if product else 0 }};
+
+const MIN_DP_NOMINAL_CENTS = 500000 * 100;
+
+// Load plans on init
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/installment/plans')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                PLANS = data.plans;
+                renderPlans();
+                updateCalculation();
+            }
+        });
+
+    // ═══════════════════════════════════════════════════
+    // 3D TILT EFFECT
+    // ═══════════════════════════════════════════════════
+    document.querySelectorAll('.tilt-card').forEach(el => {
+        el.addEventListener('mousemove', function(e) {
+            const rect = el.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const maxRotate = 4;
+            const rotateX = ((y - centerY) / centerY) * -maxRotate;
+            const rotateY = ((x - centerX) / centerX) * maxRotate;
+            el.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(5px)`;
+        });
+        el.addEventListener('mouseleave', function() {
+            el.style.transform = 'perspective(1200px) rotateX(0) rotateY(0) translateZ(0)';
+        });
+    });
+});
+
+function renderPlans() {
+    const grid = document.getElementById('planGrid');
+    if (!grid || !PLANS.length) return;
+
+    grid.innerHTML = PLANS.map((plan, idx) => `
+        <div class="plan-card tilt-card ${idx === 0 ? 'selected' : ''}"
+             id="plan-${plan.id}"
+             onclick="selectPlan(${plan.id})">
+            <span class="plan-badge ${plan.interest_rate_monthly === 0 ? 'promo' : 'standard'}">
+                ${plan.interest_rate_monthly === 0 ? 'PROMO 0%' : 'Bunga ' + (plan.interest_rate_monthly * 100).toFixed(1) + '%'}
+            </span>
+            <div class="plan-tenor">${plan.tenor_months}<span> bulan</span></div>
+            <div class="plan-rate">${plan.interest_type === 'flat' ? 'Bunga Flat' : 'Bunga Efektif'}</div>
+        </div>
+    `).join('');
+
+    if (PLANS.length > 0) {
+        SELECTED_PLAN = PLANS[0];
+    }
+}
+
+function handleManualAmountChange() {
+    const input = document.getElementById('manualProductAmount');
+    if (!input) return;
+    const rupiah = parseInt(input.value || '0', 10);
+    PRODUCT_AMOUNT = isNaN(rupiah) || rupiah <= 0 ? 0 : rupiah * 100;
+    document.getElementById('formProductAmount').value = PRODUCT_AMOUNT;
+    updateCalculation();
+}
+
+function selectPlan(planId) {
+    document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('plan-' + planId).classList.add('selected');
+    SELECTED_PLAN = PLANS.find(p => p.id === planId);
+    updateCalculation();
+}
+
+function updateCalculation() {
+    if (!SELECTED_PLAN || PRODUCT_AMOUNT === 0) return;
+
+    const dpInput = document.getElementById('dpAmountInput');
+    const digitsOnly = (dpInput.value || '').replace(/[^0-9]/g, '');
+    if (digitsOnly !== dpInput.value) dpInput.value = digitsOnly;
+    let dpRupiah = parseInt(digitsOnly || '0', 10);
+    if (isNaN(dpRupiah) || dpRupiah < 0) dpRupiah = 0;
+
+    const productAmountRupiah = PRODUCT_AMOUNT / 100;
+    if (productAmountRupiah > 0 && dpRupiah > productAmountRupiah) {
+        dpRupiah = Math.round(productAmountRupiah);
+        dpInput.value = dpRupiah;
+    }
+
+    const dpPercent = productAmountRupiah > 0 ? dpRupiah / productAmountRupiah : 0;
+    const dpAmount = Math.round(dpRupiah * 100);
+
+    document.getElementById('dpPercentLabel').textContent = (dpPercent * 100).toFixed(0) + '%';
+    document.getElementById('dpAmountLabel').textContent = formatCents(dpAmount);
+
+    const dpBelowMin = dpAmount < MIN_DP_NOMINAL_CENTS;
+    const dpWarning = document.getElementById('dpMinWarning');
+    if (dpWarning) {
+        dpWarning.style.display = dpBelowMin ? 'flex' : 'none';
+    }
+
+    if (dpBelowMin) {
+        return;
+    }
+
+    fetch('/api/installment/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: JSON.stringify({
+            product_amount: PRODUCT_AMOUNT,
+            dp_percentage: dpPercent,
+            plan_id: SELECTED_PLAN.id
+        })
+    })
+    .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const calc = data.calculation;
+            document.getElementById('resProductAmount').textContent = formatCents(calc.product_amount);
+            document.getElementById('resDP').textContent = formatCents(calc.dp_amount);
+            document.getElementById('resLoan').textContent = formatCents(calc.loan_amount);
+            document.getElementById('resInterest').textContent = formatCents(calc.total_interest);
+            document.getElementById('resFee').textContent = formatCents(calc.processing_fee);
+            document.getElementById('resMonthly').textContent = formatCents(calc.monthly_installment);
+            document.getElementById('resTotal').textContent = formatCents(calc.total_payment);
+            document.getElementById('resultBox').style.display = 'block';
+
+            document.getElementById('formPlanId').value = SELECTED_PLAN.id;
+            document.getElementById('formDPAmount').value = calc.dp_amount;
+        } else {
+            showToast(data.message || 'Gagal menghitung simulasi', 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Calculation error:', err);
+        const loanAmount = Math.round(productAmountRupiah - dpRupiah);
+        document.getElementById('resProductAmount').textContent = formatCents(PRODUCT_AMOUNT);
+        document.getElementById('resDP').textContent = formatCents(dpAmount);
+        document.getElementById('resLoan').textContent = formatCents(loanAmount * 100);
+        document.getElementById('resInterest').textContent = formatCents(0);
+        document.getElementById('resFee').textContent = formatCents(0);
+        document.getElementById('resMonthly').textContent = formatCents(Math.round((loanAmount / SELECTED_PLAN.tenor_months) * 100));
+        document.getElementById('resTotal').textContent = formatCents(Math.round(productAmountRupiah * 100));
+        document.getElementById('resultBox').style.display = 'block';
+        document.getElementById('formPlanId').value = SELECTED_PLAN.id;
+        document.getElementById('formDPAmount').value = dpAmount;
+    });
+}
+
+function formatCents(value) {
+    const amount = Number(value || 0) / 100;
+    return 'Rp ' + amount.toLocaleString('id-ID', { maximumFractionDigits: 0 });
+}
+
+function goToStep(step) {
+    if (step === 2 && !SELECTED_PLAN) {
+        showToast('Pilih tenor cicilan terlebih dahulu', 'warning');
+        return;
+    }
+
+    if (step === 2) {
+        const dpInput = document.getElementById('dpAmountInput');
+        const dpRupiah = parseInt((dpInput.value || '').replace(/[^0-9]/g, '') || '0', 10);
+        const dpAmount = Math.round(dpRupiah * 100);
+        if (dpAmount < MIN_DP_NOMINAL_CENTS) {
+            showToast('Uang muka (DP) minimum adalah Rp 500.000', 'warning');
+            dpInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            dpInput.focus();
+            return;
+        }
+        if (!document.getElementById('formPlanId').value) {
+            document.getElementById('formPlanId').value = SELECTED_PLAN.id;
+        }
+        if (!document.getElementById('formDPAmount').value) {
+            document.getElementById('formDPAmount').value = dpAmount;
+        }
+    }
+
+    const step1El = document.getElementById('step1');
+    if (step1El) step1El.style.display = step === 1 ? 'block' : 'none';
+    document.getElementById('step2').style.display = step === 2 ? 'block' : 'none';
+    document.getElementById('step3').style.display = step === 3 ? 'block' : 'none';
+
+    for (let i = 1; i <= 3; i++) {
+        const dot = document.getElementById('dot' + i);
+        if (!dot) continue;
+        dot.classList.remove('completed', 'active');
+        if (i < step) dot.classList.add('completed');
+        else if (i === step) dot.classList.add('active');
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+let uploadedDocs = {};
+
+function handleDocUpload(input, docType) {
+    if (!input.files || !input.files[0]) return;
+
+    const file = input.files[0];
+    uploadedDocs[docType] = file;
+
+    const item = document.getElementById('doc-' + docType.replace('_', '-'));
+    if (item) {
+        item.classList.add('uploaded');
+        const icon = item.querySelector('i');
+        const label = item.querySelector('.doc-label');
+        if (icon) icon.className = 'bi bi-check-circle-fill';
+        if (label) label.textContent = file.name.substring(0, 15) + '...';
+    }
+}
+
+function submitApplication(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('btnSubmit');
+    const spinner = document.getElementById('submitSpinner');
+    const text = document.getElementById('submitText');
+
+    btn.disabled = true;
+    spinner.style.display = 'inline-block';
+    text.textContent = 'Mengirim...';
+
+    const formData = new FormData(e.target);
+
+    formData.set('product_amount', Math.round(PRODUCT_AMOUNT / 100));
+    const dpAmountCents = parseInt(document.getElementById('formDPAmount').value || '0', 10);
+    formData.set('dp_amount', Math.round(dpAmountCents / 100));
+
+    Object.entries(uploadedDocs).forEach(([type, file]) => {
+        formData.append(type + '_file', file);
+    });
+
+    fetch('/api/installment/apply', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('successCode').textContent = data.application.application_code;
+            goToStep(3);
+        } else {
+            showToast(data.message || 'Gagal mengajukan cicilan', 'error');
+            btn.disabled = false;
+            spinner.style.display = 'none';
+            text.textContent = 'Ajukan Cicilan';
+        }
+    })
+    .catch(err => {
+        showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+        btn.disabled = false;
+        spinner.style.display = 'none';
+        text.textContent = 'Ajukan Cicilan';
+    });
+}
+</script>
+{% endblock %}

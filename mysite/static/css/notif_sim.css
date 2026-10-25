@@ -1,0 +1,606 @@
+/* ══ FLUID SIZE TOKENS ══
+   clamp(MIN, PREFERRED, MAX) — nilai tengah pakai vw supaya
+   ukuran ikut lebar viewport secara proporsional, dibatasi
+   MIN (HP kecil) dan MAX (tablet/desktop) supaya tidak
+   pernah terlalu kecil atau terlalu besar. */
+
+:root {
+    --island-w: 235px;
+    --island-min-h: 40px;
+    --island-pad-x: 10px;
+    --island-pad-y: 6px;
+    --island-gap: 8px;
+
+    /* Font sizes */
+    --fs-location: 0.65rem;
+    --fs-product: 0.72rem;
+    --fs-time: 0.58rem;
+    --fs-verified: 0.55rem;
+    --island-radius: clamp(28px, 3.5vw, 36px);
+
+    --icon-size: 28px;
+    --icon-svg: clamp(18px, 2.2vw, 22px);
+
+    --sensor-inset-top: clamp(8px, 1.2vw, 10px);
+    --sensor-inset-left: clamp(24px, 3vw, 28px);
+
+    --close-size: clamp(18px, 2.2vw, 22px);
+}
+
+
+
+
+/* ══ KEYFRAME ANIMATIONS ══ */
+@keyframes island-morph-in {
+    0% {
+        transform: translate3d(0, -14px, 0) scale(0.94);
+        border-radius: 999px;
+        opacity: 0;
+    }
+    45% {
+        opacity: 1;
+        border-radius: 999px;
+    }
+    72% {
+        transform: translate3d(0, 2px, 0) scale(1.004);
+        border-radius: var(--island-radius);
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+        border-radius: var(--island-radius);
+        opacity: 1;
+    }
+}
+
+@keyframes island-morph-out {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1);
+        border-radius: var(--island-radius);
+        opacity: 1;
+    }
+    40% {
+        transform: translate3d(0, -10px, 0) scale(0.96);
+        border-radius: 999px;
+        opacity: 1;
+    }
+    100% {
+        transform: translate3d(0, -14px, 0) scale(0.94);
+        border-radius: 999px;
+        opacity: 0;
+    }
+}
+
+@keyframes island-content-reveal {
+    0%, 40% { opacity: 0; transform: translateX(-4px); filter: blur(2px); }
+    100%    { opacity: 1; transform: translateX(0);     filter: blur(0); }
+}
+
+@keyframes notif-progress-shrink {
+    0%   { transform: scaleX(1); }
+    100% { transform: scaleX(0); }
+}
+
+@keyframes notif-icon-glow {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50%      { opacity: 0.75; transform: scale(1.14); }
+}
+
+@keyframes island-sensor-pulse {
+    0%, 100% { opacity: 0.55; }
+    50%      { opacity: 1; }
+}
+
+/* ══ MOBILE-ONLY: muncul dari bawah header ══
+   Island "jatuh" turun dari balik header, bukan dari atas layar
+   (notch), lalu morph dari capsule kecil ke island penuh. */
+@keyframes island-drop-in {
+    0% {
+        transform: translate3d(0, -46px, 0) scaleX(0.5) scaleY(0.6);
+        border-radius: 999px;
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+        border-radius: 999px;
+    }
+    76% {
+        transform: translate3d(0, 4px, 0) scaleX(1.02) scaleY(1.02);
+        border-radius: var(--island-radius);
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+        border-radius: var(--island-radius);
+        opacity: 1;
+    }
+}
+
+@keyframes island-drop-out {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1);
+        border-radius: var(--island-radius);
+        opacity: 1;
+    }
+    35% {
+        transform: translate3d(0, -6px, 0) scaleX(0.92) scaleY(0.96);
+        border-radius: 999px;
+        opacity: 1;
+    }
+    100% {
+        transform: translate3d(0, -40px, 0) scaleX(0.5) scaleY(0.6);
+        border-radius: 999px;
+        opacity: 0;
+    }
+}
+
+/* ══ MARQUEE PRODUK — versi upgrade ══
+   Berbeda dari versi lama (text-indent, jalan terus tanpa
+   syarat), sekarang pakai transform: translateX() pada span
+   dalam, dan HANYA aktif kalau class .is-marquee ditambahkan
+   lewat JS (artinya teks memang overflow / lebih panjang dari
+   lebar box). Kecepatan geser dihitung proporsional terhadap
+   jarak overflow lewat CSS var --marquee-duration, supaya nama
+   produk pendek & panjang terasa bergerak dengan kecepatan yang
+   sama (bukan makin lambat/cepat tergantung panjang teks). */
+@keyframes notif-marquee-scroll {
+    0%, 15%   { transform: translateX(0); }
+    45%, 55%  { transform: translateX(calc(-1 * var(--marquee-distance, 0px))); }
+    85%, 100% { transform: translateX(0); }
+}
+
+/* ══ BASE CONTAINER — top-center, nempel dekat notch/kamera,
+   auto menyesuaikan lebar layar apa pun ══ */
+.notif-sim-container {
+    position: fixed;
+    top: calc(var(--nav-h, 72px) + 16px); /* Tepat di bawah header */
+    left: 50%;
+    bottom: auto;
+    transform: translateX(-50%);
+    z-index: 1040;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(6px, 2vw, 10px);
+    pointer-events: none;
+    width: max-content;
+    max-width: calc(100vw - 20px);
+    transition: top 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ══ BASE CARD — the island itself, fluid di semua ukuran ══ */
+.notif-sim-card {
+    --notif-accent: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+
+    background: rgba(16, 22, 33, 0.45);
+    backdrop-filter: blur(38px) saturate(190%);
+    -webkit-backdrop-filter: blur(38px) saturate(190%);
+    border-radius: var(--island-radius);
+    padding: var(--island-pad-y) var(--island-pad-x) var(--island-pad-y) var(--island-pad-y);
+    display: flex;
+    align-items: center;
+    gap: var(--island-gap);
+    width: 235px;
+    min-width: 235px;
+    max-width: 235px;
+    min-height: var(--island-min-h);
+    box-sizing: border-box;
+    box-shadow:
+        0 1px 0 0 rgba(255,255,255,0.1) inset,
+        0 0 0 1px rgba(255,255,255,0.1) inset,
+        0 18px 40px -12px rgba(0,0,0,0.55),
+        0 6px 16px -4px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.13);
+    pointer-events: auto;
+    cursor: pointer;
+    opacity: 0;
+    position: relative;
+    overflow: hidden;
+    transform-origin: 50% 0%;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-y;
+    will-change: transform, opacity, border-radius;
+    transition: box-shadow 0.35s ease, width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Kilau tipis di tepi atas — rim light seperti kaca kamera */
+.notif-sim-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: clamp(14px, 5vw, 20px);
+    right: clamp(14px, 5vw, 20px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-primary, #fff) 28%, transparent), transparent);
+}
+
+/* "Sensor dot" dekoratif — sudut kiri atas island */
+.notif-sim-card::before {
+    content: '';
+    position: absolute;
+    top: var(--sensor-inset-top);
+    left: var(--sensor-inset-left);
+    width: clamp(4px, 1.4vw, 5px);
+    height: clamp(4px, 1.4vw, 5px);
+    border-radius: 50%;
+    background: radial-gradient(circle, #3a3a3f 0%, #1a1a1d 100%);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+    animation: island-sensor-pulse 2.8s ease-in-out infinite;
+    z-index: 2;
+}
+
+.notif-sim-card:hover {
+    box-shadow:
+        0 1px 0 0 rgba(255,255,255,0.07) inset,
+        0 0 0 1px rgba(255,255,255,0.09) inset,
+        0 24px 50px -12px rgba(0,0,0,0.72),
+        0 8px 20px -4px rgba(0,0,0,0.55);
+}
+
+.notif-sim-card.show {
+    animation: island-morph-in 0.62s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.notif-sim-card.show .notif-sim-content {
+    animation: island-content-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both;
+}
+
+.notif-sim-card.hide {
+    animation: island-morph-out 0.4s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.notif-sim-card.swiping {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Icon Wrap — ukuran ikut clamp, selalu proporsional ke card */
+.notif-sim-icon-wrap {
+    width: var(--icon-size);
+    height: var(--icon-size);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    position: relative;
+    background: var(--notif-accent);
+    box-shadow: 0 6px 16px -4px rgba(0,0,0,0.5);
+}
+
+.notif-sim-icon-wrap::before {
+    content: '';
+    position: absolute;
+    inset: clamp(-9px, -2.4vw, -6px);
+    border-radius: inherit;
+    background: var(--notif-accent);
+    filter: blur(13px);
+    opacity: 0.55;
+    z-index: -1;
+    animation: notif-icon-glow 3s ease-in-out infinite;
+}
+
+.notif-sim-icon-wrap svg {
+    width: var(--icon-svg);
+    height: var(--icon-svg);
+    color: #fff;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
+}
+
+/* Content */
+.notif-sim-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* BUG FIX: warna teks di bawah ini sebelumnya di-hardcode (mis. #f5f5f7
+   untuk nama produk) khusus untuk kartu island yang gelap. Di mode
+   "gray"/light (html[data-theme="light"] di dark_gray.css), background
+   kartu di-override jadi terang (rgba(241,245,249,...)) tapi warna teks
+   TIDAK ikut di-override, sehingga nama produk (elemen paling penting)
+   jadi nyaris putih di atas kartu terang = tidak terbaca. Sekarang semua
+   dipindah ke token tema (--text-primary/secondary/tertiary/disabled)
+   yang sudah didefinisikan per-tema di dark_gray.css, jadi otomatis
+   kontras di dark maupun gray/light tanpa perlu override tambahan. */
+.notif-sim-location {
+    font-size: var(--fs-location);
+    color: var(--text-tertiary, #8e8e93);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notif-sim-location strong {
+    color: var(--text-secondary, #c7c7cc);
+    font-weight: 600;
+}
+
+/* ══ PRODUK (marquee container) ══
+   overflow:hidden + white-space:nowrap membungkus teks;
+   mask-image bikin fade halus di tepi kanan (seperti ticker
+   iOS) alih-alih terpotong tegas. Animasi geser sendiri ada
+   di .notif-sim-product-text lewat class .is-marquee. */
+.notif-sim-product {
+    font-size: var(--fs-product);
+    font-weight: 600;
+    color: var(--text-primary, #f5f5f7);
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    mask-image: linear-gradient(90deg, #000 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent 100%);
+}
+
+.notif-sim-product-text {
+    display: inline-block;
+    will-change: transform;
+    padding-right: 4px; /* jarak napas saat teks kembali ke posisi awal */
+}
+
+/* Marquee HANYA jalan kalau JS menambahkan class ini setelah
+   mendeteksi scrollWidth > clientWidth (teks memang overflow) */
+.notif-sim-product.is-marquee .notif-sim-product-text {
+    animation: notif-marquee-scroll var(--marquee-duration, 7s) cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* Pause saat card di-hover/aktif, biar user bisa baca dengan tenang */
+.notif-sim-card:hover .notif-sim-product.is-marquee .notif-sim-product-text,
+.notif-sim-card:active .notif-sim-product.is-marquee .notif-sim-product-text {
+    animation-play-state: paused;
+}
+
+.notif-sim-meta {
+    display: flex;
+    align-items: center;
+    gap: clamp(6px, 2vw, 8px);
+    margin-top: 2px;
+    flex-wrap: wrap;
+}
+
+.notif-sim-time {
+    font-size: var(--fs-time);
+    color: var(--text-disabled, #6e6e73);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+}
+
+.notif-sim-verified {
+    font-size: var(--fs-verified);
+    font-weight: 700;
+    color: #34d399;
+    background: rgba(52,211,153,0.12);
+    border: 1px solid rgba(52,211,153,0.25);
+    padding: 2px clamp(5px, 1.8vw, 7px) 2px clamp(3px, 1.2vw, 5px);
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+
+.notif-sim-verified svg {
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+}
+
+/* Close Button */
+.notif-sim-close {
+    position: absolute;
+    top: clamp(5px, 1.8vw, 8px);
+    right: clamp(5px, 1.8vw, 8px);
+    width: var(--close-size);
+    height: var(--close-size);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--text-primary, #fff) 10%, transparent);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-default);
+    color: var(--text-tertiary, #98989d);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 5;
+    padding: 0;
+}
+
+.notif-sim-card:hover .notif-sim-close,
+.notif-sim-card:active .notif-sim-close {
+    opacity: 1;
+}
+
+.notif-sim-close:hover {
+    background: rgba(239,68,68,0.18);
+    color: #ff6b6b;
+    border-color: rgba(239,68,68,0.3);
+    transform: scale(1.08);
+}
+
+.notif-sim-close:active {
+    transform: scale(0.92);
+}
+
+.notif-sim-close svg {
+    width: 45%;
+    height: 45%;
+}
+
+/* Progress Bar — inset tipis mengikuti lengkung island */
+.notif-sim-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2.5px;
+    width: 100%;
+    background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
+    box-shadow: 0 0 6px 1px color-mix(in srgb, var(--primary-500) 55%, transparent);
+    border-radius: 0 0 var(--island-radius) var(--island-radius);
+    transform-origin: left center;
+}
+
+.notif-sim-card.show .notif-sim-progress {
+    animation: notif-progress-shrink 6s linear forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BREAKPOINT PENGAMAN
+   Karena hampir semua ukuran sudah fluid lewat clamp(), sisa
+   breakpoint di bawah ini cuma untuk kasus khusus yang tidak
+   bisa dihitung dari lebar viewport saja (orientasi landscape,
+   dan mematikan beberapa elemen di layar sangat sempit).
+   ═══════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   MODE MOBILE — muncul dari bawah header + teks berjalan
+   Ukuran dikunci PERSIS 200x60px.
+
+   FIX posisi: .navbar-main di base.html TIDAK menambahkan
+   env(safe-area-inset-top) sendiri (langsung top:0; height:
+   var(--nav-h)), jadi batas bawah header selalu persis di
+   y = var(--nav-h) px di SEMUA device. Rumus versi sebelumnya
+   ikut menambahkan safe-area-inset-top lagi di sini, sehingga
+   di HP ber-notch/Dynamic Island notif turun terlalu jauh dari
+   header (celah jadi tidak konsisten). Sekarang dihapus supaya
+   notif selalu nempel tepat di bawah header, di semua device.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .notif-sim-container {
+        top: calc(var(--nav-h, 64px) + 12px);
+        bottom: auto;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    .notif-sim-time {
+        font-size: 0.54rem;
+    }
+    .notif-sim-verified {
+        display: none;
+    }
+
+    .notif-sim-close {
+        width: 16px;
+        height: 16px;
+        top: 4px;
+        right: 4px;
+    }
+}
+
+/* Layar sangat sempit (≤ 340px, HP lipat dalam mode tertutup dst)
+   — sembunyikan badge verified supaya konten utama tidak sesak */
+@media (max-width: 340px) {
+    .notif-sim-verified {
+        display: none;
+    }
+}
+
+/* Landscape mobile — island jangan terlalu lebar relatif tinggi
+   layar yang pendek */
+@media (max-width: 900px) and (orientation: landscape) {
+    .notif-sim-container {
+        top: calc(var(--nav-h, 60px) + 8px);
+        bottom: auto;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+  .notif-sim-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 14px; right: 14px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  }
+  .notif-sim-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+  }
+  .notif-sim-card.show { animation: notif-entrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .notif-sim-card.hide { animation: notif-exit 0.35s cubic-bezier(0.4, 0, 1, 1) forwards; }
+  .notif-sim-icon-wrap {
+      width: 44px; height: 44px; border-radius: 13px;
+      display: grid; place-items: center; flex-shrink: 0;
+      position: relative;
+      background: var(--notif-accent);
+      box-shadow: 0 6px 16px -4px rgba(0,0,0,0.35);
+  }
+  .notif-sim-icon-wrap::before {
+      content: '';
+      position: absolute; inset: -9px; border-radius: inherit;
+      background: var(--notif-accent);
+      filter: blur(14px); opacity: 0.5; z-index: -1;
+      animation: notif-icon-glow 3s ease-in-out infinite;
+  }
+  .notif-sim-icon-wrap svg {
+      width: 22px; height: 22px; color: #fff; position: relative; z-index: 1;
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+  }
+  .notif-sim-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .notif-sim-location {
+      font-size: 0.76rem; color: var(--text-tertiary);
+      display: flex; align-items: center; gap: 4px; line-height: 1.3; letter-spacing: 0.01em;
+  }
+  .notif-sim-location strong { color: var(--text-secondary); font-weight: 600; }
+  .notif-sim-product {
+      font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+      line-height: 1.4; letter-spacing: -0.01em;
+  }
+  .notif-sim-meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
+  .notif-sim-time { font-size: 0.7rem; color: var(--text-disabled); display: flex; align-items: center; gap: 3px; }
+  .notif-sim-verified {
+      font-size: 0.66rem; font-weight: 700; color: var(--success);
+      background: linear-gradient(180deg, var(--success-bg), rgba(16,185,129,0.05));
+      border: 1px solid rgba(16,185,129,0.25);
+      padding: 3px 8px 3px 6px; border-radius: 20px;
+      display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+      letter-spacing: 0.01em; box-shadow: 0 1px 3px rgba(16,185,129,0.15);
+  }
+  .notif-sim-verified svg { width: 10px; height: 10px; }
+  .notif-sim-close {
+      position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(255,255,255,0.08); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.07); color: var(--text-disabled);
+      display: grid; place-items: center; cursor: pointer; opacity: 0;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); z-index: 5; padding: 0;
+  }
+  .notif-sim-card:hover .notif-sim-close, .notif-sim-card:active .notif-sim-close { opacity: 1; }
+  .notif-sim-close:hover { background: var(--danger-bg); color: var(--danger); border-color: rgba(239,68,68,0.25); transform: scale(1.08); }
+  .notif-sim-close svg { width: 10px; height: 10px; }
+  .notif-sim-progress {
+      position: absolute; bottom: 0; left: 0; height: 3px; width: 100%;
+      background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
+      box-shadow: 0 0 6px 1px color-mix(in srgb, var(--primary-500) 55%, transparent);
+      border-radius: 0 0 0 18px; transform-origin: left center;
+  }
+  .notif-sim-card.show .notif-sim-progress { animation: notif-progress-shrink 6s linear forwards; }
+
+  .notif-sim-card:nth-child(1) { z-index: 3; }
+  .notif-sim-card:nth-child(2) { z-index: 2; }
+  .notif-sim-card:nth-child(3) { z-index: 1; }
+  .notif-sim-container:has(.notif-sim-card.show:nth-child(2)) .notif-sim-card:nth-child(2) { opacity: 0.65; transform: scale(0.96) translateY(5px); }
+  .notif-sim-container:has(.notif-sim-card.show:nth-child(3)) .notif-sim-card:nth-child(3) { opacity: 0.35; transform: scale(0.92) translateY(9px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notif-sim-card { transition: none !important; animation: none !important; }
+    .notif-sim-card.show { transform: translateX(0) !important; opacity: 1 !important; filter: none !important; }
+    .notif-sim-progress { animation: none !important; opacity: 0; }
+    .notif-sim-icon-wrap::before { animation: none !important; opacity: 0.3; }
+    .notif-sim-product.is-marquee .notif-sim-product-text {
+        animation: none !important;
+        transform: none !important;
+    }
+}

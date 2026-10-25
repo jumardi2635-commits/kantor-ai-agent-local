@@ -1,0 +1,1200 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Katalog') }} — {{ site_name }}{% endblock %}
+{% block meta_keywords %}katalog hp, hp bekas, iphone bekas, samsung bekas, marketplace hp{% endblock %}
+
+{% block extra_css %}
+<style>
+/* =========================================================
+   CATALOG PAGE — Synchronized with index.html product cards
+   ========================================================= */
+
+/* ═══════════════════════════════════════════════════════════
+   CATALOG-SPECIFIC: HEADER / SORT / VIEW / FILTER / PAGINATION
+   ═══════════════════════════════════════════════════════════ */
+
+.catalog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    box-shadow: var(--shadow-xs), var(--glass-highlight);
+    transition: all var(--duration-slow) var(--ease-out-expo);
+}
+.catalog-header:hover {
+    box-shadow: var(--shadow-md), var(--glass-highlight);
+    border-color: rgba(10,132,255,0.1);
+}
+.catalog-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+.catalog-count {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    background: rgba(255,255,255,0.04);
+    padding: 0.3rem 0.8rem;
+    border-radius: var(--r-full);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-subtle);
+}
+
+/* View Toggle — Soft Glass */
+.view-toggle {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-md);
+    padding: 0.25rem;
+    gap: 0.25rem;
+    backdrop-filter: blur(8px);
+    transition: all var(--duration-base) var(--ease-out-expo);
+}
+.view-toggle:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-xs);
+}
+.view-toggle button {
+    width: 38px; height: 38px;
+    border-radius: var(--r-sm);
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all var(--duration-base) var(--ease-out-expo);
+    font-size: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+.view-toggle button:hover { color: var(--text-secondary); }
+.view-toggle button.active {
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    color: var(--text-primary);
+    box-shadow: 0 4px 12px var(--primary-glow-soft);
+    transform: translateY(-1px);
+}
+
+/* Sort Select */
+.sort-select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-md);
+    padding: 0.6rem 2.5rem 0.6rem 1rem;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    cursor: pointer;
+    transition: all var(--duration-base) var(--ease-out-expo);
+    backdrop-filter: blur(8px);
+}
+.sort-select:hover {
+    border-color: var(--border-strong);
+    background: rgba(255,255,255,0.06);
+}
+.sort-select:focus {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px var(--primary-glow-soft);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+/* Active Filters */
+.active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+.filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.9rem;
+    background: linear-gradient(135deg, var(--primary-glow-soft), rgba(99,102,241,0.04));
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: var(--r-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary-400);
+    backdrop-filter: blur(4px);
+    transition: all var(--duration-base) var(--ease-out-expo);
+}
+.filter-tag:hover {
+    border-color: rgba(99, 102, 241, 0.28);
+    background: linear-gradient(135deg, var(--primary-glow-soft), rgba(99,102,241,0.08));
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px var(--primary-glow-soft);
+}
+.filter-tag button {
+    background: none;
+    border: none;
+    color: inherit;
+    padding: 0;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 0.75rem;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    transition: all var(--duration-base) var(--ease-out-expo);
+}
+.filter-tag button:hover {
+    background: rgba(99, 102, 241, 0.12);
+    transform: scale(1.15) rotate(90deg);
+    color: var(--text-primary);
+}
+.filter-clear {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--r-full);
+    transition: all var(--duration-base) var(--ease-out-expo);
+}
+.filter-clear:hover {
+    color: var(--danger);
+    background: var(--danger-bg);
+    text-decoration: none;
+}
+
+/* Pagination — Soft Glass */
+.catalog-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.35rem;
+    margin-top: 2.5rem;
+    flex-wrap: wrap;
+    padding: 0.75rem;
+    background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    box-shadow: var(--shadow-xs), var(--glass-highlight);
+}
+.catalog-pagination a,
+.catalog-pagination span {
+    min-width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.75rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-md);
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all var(--duration-slow) var(--ease-out-expo);
+    backdrop-filter: blur(4px);
+}
+.catalog-pagination a:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+.catalog-pagination .page-active {
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    border-color: transparent;
+    color: var(--text-primary);
+    box-shadow: 0 4px 16px var(--primary-glow-soft);
+    transform: translateY(-1px);
+}
+.catalog-pagination .page-disabled {
+    background: transparent;
+    color: var(--text-disabled);
+    cursor: default;
+    border-color: transparent;
+}
+.catalog-pagination .page-ellipsis {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-disabled);
+    cursor: default;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 1rem;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-softer);
+    box-shadow: var(--shadow-sm), var(--glass-highlight);
+    transition: all var(--duration-slow) var(--ease-out-expo);
+}
+.empty-state:hover {
+    box-shadow: var(--shadow-md), var(--glass-highlight);
+    transform: translateY(-2px);
+}
+.empty-state-icon {
+    width: 80px; height: 80px;
+    border-radius: var(--radius-soft);
+    background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border: 1px solid var(--border-default);
+    display: grid;
+    place-items: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2rem;
+    color: var(--text-tertiary);
+    backdrop-filter: blur(8px);
+    transition: all var(--duration-slow) var(--ease-out-expo);
+}
+.empty-state:hover .empty-state-icon {
+    transform: scale(1.08) rotate(-3deg);
+    box-shadow: 0 8px 24px var(--primary-glow-soft);
+    color: var(--primary-500);
+}
+.empty-state h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+.empty-state p {
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PRODUCT CARDS — synced from index.html
+   ═══════════════════════════════════════════════════════════ */
+
+/* Product Grid */
+.product-grid-pro {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+@media (min-width: 576px) { .product-grid-pro { grid-template-columns: repeat(3, 1fr); gap: 0.75rem; } }
+@media (min-width: 992px) { .product-grid-pro { grid-template-columns: repeat(4, 1fr); gap: 1rem; } }
+
+/* Product Card Pro */
+.product-card-pro {
+    position: relative;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.01) 100%);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm), var(--glass-highlight);
+    transition: all var(--duration-slow) var(--ease-out-expo);
+    transform-style: preserve-3d;
+    perspective: 800px;
+}
+.product-card-pro::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent);
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.5;
+    transition: opacity var(--duration-slow) ease;
+}
+.product-card-pro::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 10%; right: 10%;
+    height: 80px;
+    background: radial-gradient(ellipse, var(--primary-glow-soft), transparent 70%);
+    opacity: 0;
+    transition: opacity var(--duration-slow) ease;
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(20px);
+}
+.product-card-pro:hover {
+    transform: translateY(-10px) rotateX(2deg) scale(1.01);
+    box-shadow: var(--shadow-md), var(--shadow-glow), var(--glass-highlight);
+    border-color: rgba(10,132,255,0.12);
+}
+.product-card-pro:hover::before { opacity: 0.8; }
+.product-card-pro:hover::after { opacity: 1; }
+
+.product-card-media-pro {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--bg-elevated), var(--bg-base));
+    border-radius: var(--r-xl) var(--r-xl) var(--r-lg) var(--r-lg);
+    margin: 0.25rem 0.25rem 0 0.25rem;
+}
+.product-card-media-pro img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.7s var(--ease-out-expo), filter 0.5s ease;
+}
+.product-card-pro:hover .product-card-media-pro img {
+    transform: scale(1.1);
+    filter: brightness(1.05) saturate(1.08);
+}
+.product-card-media-pro > a { display: block; width: 100%; height: 100%; }
+
+/* Premium Badge */
+.badge-premium {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--r-full);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-xs), var(--glass-highlight);
+    animation: badge-glow 2s ease-in-out infinite alternate;
+    position: relative;
+    overflow: hidden;
+    transition: transform var(--duration-fast) var(--ease-out-back);
+    z-index: 3;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+    border: 1px solid rgba(239,68,68,0.4);
+}
+.badge-premium::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+    pointer-events: none;
+}
+.badge-premium:hover {
+    transform: scale(1.05) translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+@keyframes badge-glow {
+    0% { box-shadow: var(--shadow-xs), 0 0 0 0 rgba(255,255,255,0); }
+    100% { box-shadow: var(--shadow-sm), 0 0 20px rgba(239,68,68,0.4); }
+}
+
+/* Card Actions (hover buttons) */
+.product-card-actions-pro {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    opacity: 0;
+    transform: translateX(12px) scale(0.9);
+    transition: all var(--duration-slow) var(--ease-out-expo);
+    z-index: 3;
+}
+.product-card-pro:hover .product-card-actions-pro {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+}
+@media (hover: none), (pointer: coarse) {
+    .product-card-actions-pro { opacity: 1; transform: translateX(0) scale(1); }
+}
+.action-btn-pro {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, rgba(14,20,32,0.85), rgba(14,20,32,0.7));
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all var(--duration-base) var(--ease-out-expo);
+    box-shadow: var(--shadow-xs);
+    position: relative;
+    overflow: hidden;
+}
+.action-btn-pro::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    opacity: 0;
+    transition: opacity var(--duration-fast) ease;
+    border-radius: inherit;
+}
+.action-btn-pro:hover {
+    transform: scale(1.15) rotate(5deg);
+    box-shadow: var(--shadow-sm);
+    border-color: transparent;
+}
+.action-btn-pro:hover::before { opacity: 1; }
+.action-btn-pro:hover i { color: var(--text-primary); position: relative; z-index: 1; }
+
+/* Card Body */
+.product-card-body-pro {
+    padding: 0.6rem;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.product-card-title-pro {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    margin-bottom: 0.35rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.35;
+    transition: color var(--duration-base) ease;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-sm);
+    padding: 0.35rem 0.55rem;
+}
+.product-card-pro:hover .product-card-title-pro {
+    color: var(--primary-400);
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(10,132,255,0.15);
+}
+.product-card-price-pro {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    background: linear-gradient(135deg, var(--primary-400), var(--accent-400));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.35rem;
+    transition: transform var(--duration-base) var(--ease-out-expo);
+    display: inline-block;
+}
+.product-card-pro:hover .product-card-price-pro {
+    transform: scale(1.04) translateX(2px);
+}
+.product-card-meta-pro {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.68rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
+}
+
+/* Condition Tag Pro */
+.condition-tag-pro {
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: var(--r-full);
+    background: var(--primary-glow-soft);
+    color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid rgba(10,132,255,0.08);
+    backdrop-filter: blur(4px);
+    transition: all var(--duration-fast) ease;
+    display: inline-flex;
+    align-items: center;
+}
+.product-card-pro:hover .condition-tag-pro,
+.home-card-pro:hover .condition-tag-pro {
+    border-color: rgba(10,132,255,0.15);
+    background: var(--primary-glow);
+}
+.condition-tag-pro.baru {
+    background: var(--success-bg);
+    color: var(--success);
+    border-color: rgba(16,185,129,0.1);
+}
+.condition-tag-pro.second,
+.condition-tag-pro.terpakai,
+.condition-tag-pro.second-hand {
+    background: var(--warning-bg);
+    color: var(--warning);
+    border-color: rgba(245,158,11,0.1);
+}
+.condition-tag-pro.like-new,
+.condition-tag-pro.likenew {
+    background: var(--primary-glow-soft);
+    color: var(--primary-400);
+    border-color: rgba(10,132,255,0.15);
+}
+
+/* Home Card Pro (variant used in grid) */
+.home-card-pro {
+    position: relative;
+    background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    transition: all var(--duration-slow) var(--ease-out-expo);
+    transform-style: preserve-3d;
+    perspective: 600px;
+    box-shadow: var(--shadow-xs), var(--glass-highlight);
+}
+.home-card-pro::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
+    pointer-events: none;
+    z-index: 2;
+    transition: opacity var(--duration-slow) ease;
+}
+.home-card-pro:hover {
+    transform: translateY(-8px) rotateX(1deg);
+    box-shadow: var(--shadow-md), var(--glass-highlight);
+    border-color: rgba(10,132,255,0.1);
+}
+.home-card-pro:hover::before { opacity: 0.8; }
+
+.home-card-pro .card-media {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--bg-elevated), var(--bg-base));
+    border-radius: var(--r-xl) var(--r-xl) var(--r-lg) var(--r-lg);
+    margin: 0.25rem 0.25rem 0 0.25rem;
+}
+.home-card-pro .card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s var(--ease-out-expo);
+}
+.home-card-pro:hover .card-media img { transform: scale(1.08); }
+.home-card-pro .card-media a { display: block; width: 100%; height: 100%; }
+
+/* Quick Overlay */
+.quick-overlay-pro {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    opacity: 0;
+    transition: all var(--duration-slow) var(--ease-out-expo);
+    background: rgba(2,6,23,0.4);
+    backdrop-filter: blur(4px);
+    z-index: 3;
+    border-radius: inherit;
+}
+.home-card-pro:hover .quick-overlay-pro { opacity: 1; }
+.quick-btn-pro {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, rgba(14,20,32,0.85), rgba(14,20,32,0.7));
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    text-decoration: none;
+    transition: all var(--duration-base) var(--ease-out-expo);
+    box-shadow: var(--shadow-xs);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+.quick-btn-pro::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    opacity: 0;
+    transition: opacity var(--duration-fast) ease;
+    border-radius: inherit;
+}
+.quick-btn-pro:hover {
+    transform: scale(1.15) rotate(5deg);
+    box-shadow: var(--shadow-sm);
+    border-color: transparent;
+}
+.quick-btn-pro:hover::before { opacity: 1; }
+.quick-btn-pro:hover i { color: var(--text-primary); position: relative; z-index: 1; }
+
+.home-card-pro .card-body {
+    padding: 0.875rem;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.home-card-pro .card-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.35;
+    transition: color var(--duration-base) ease;
+}
+.home-card-pro:hover .card-title { color: var(--primary-400); }
+.home-card-pro .card-meta {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    margin: 3px 0 6px;
+    font-weight: 500;
+}
+.home-card-pro .card-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+}
+.home-card-pro .card-price {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 0.92rem;
+    background: linear-gradient(135deg, var(--primary-400), var(--accent-400));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: transform var(--duration-base) var(--ease-out-expo);
+    display: inline-block;
+}
+.home-card-pro:hover .card-price { transform: scale(1.04); }
+
+/* List Product Pro */
+.list-product-pro {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    padding: 1rem 1.25rem;
+    transition: all var(--duration-slow) var(--ease-out-expo);
+    box-shadow: var(--shadow-xs), var(--glass-highlight);
+    position: relative;
+    overflow: hidden;
+}
+.list-product-pro::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--primary-500), var(--secondary-500));
+    opacity: 0;
+    transition: opacity var(--duration-base) ease;
+    border-radius: 3px 0 0 3px;
+}
+.list-product-pro:hover {
+    box-shadow: var(--shadow-md), var(--shadow-glow), var(--glass-highlight);
+    border-color: rgba(10,132,255,0.1);
+    transform: translateY(-3px);
+}
+.list-product-pro:hover::before { opacity: 1; }
+
+.list-product-img-pro {
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    border-radius: var(--r-lg);
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--bg-elevated), var(--bg-base));
+    box-shadow: var(--shadow-xs);
+    transition: all var(--duration-base) var(--ease-out-expo);
+    border: 1px solid var(--border-subtle);
+    display: block;
+}
+.list-product-pro:hover .list-product-img-pro {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-sm);
+    border-color: rgba(10,132,255,0.1);
+}
+.list-product-title-pro {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 1rem;
+    display: inline-block;
+    margin-bottom: 3px;
+    line-height: 1.3;
+    transition: color var(--duration-base) ease, background var(--duration-base) ease, border-color var(--duration-base) ease;
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-sm);
+    padding: 0.3rem 0.6rem;
+}
+.list-product-title-pro:hover { color: var(--primary-400); border-color: var(--border-strong); }
+.list-product-meta-pro {
+    font-size: 0.82rem;
+    color: var(--text-tertiary);
+    margin: 0;
+    font-weight: 500;
+}
+.list-product-price-pro {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    background: linear-gradient(135deg, var(--primary-400), var(--accent-400));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: transform var(--duration-base) var(--ease-out-expo);
+    display: inline-block;
+}
+.list-product-pro:hover .list-product-price-pro { transform: scale(1.03) translateX(2px); }
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+    .catalog-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 0.875rem 1rem;
+        border-radius: var(--r-lg);
+    }
+    .catalog-title { font-size: 1.15rem; }
+    .catalog-count { font-size: 0.75rem; }
+    .view-toggle { display: none !important; }
+    .catalog-pagination { padding: 0.5rem; gap: 0.25rem; }
+    .catalog-pagination a,
+    .catalog-pagination span {
+        min-width: 38px;
+        height: 38px;
+        font-size: 0.8rem;
+    }
+    .empty-state { padding: 3rem 1rem; border-radius: var(--r-lg); }
+    .empty-state-icon { width: 64px; height: 64px; font-size: 1.5rem; }
+
+    .product-card-title-pro { font-size: 0.75rem; }
+    .product-card-price-pro { font-size: 0.9rem; }
+    .product-card-meta-pro { font-size: 0.65rem; }
+    .home-card-pro .card-title { font-size: 0.75rem; }
+    .home-card-pro .card-price { font-size: 0.9rem; }
+    .home-card-pro .card-meta { font-size: 0.65rem; }
+    .list-product-pro { padding: 0.75rem 0.85rem; gap: 0.85rem; }
+    .list-product-img-pro { width: 56px; height: 56px; }
+    .list-product-title-pro { font-size: 0.9rem; }
+    .list-product-meta-pro { font-size: 0.7rem; }
+    .list-product-price-pro { font-size: 1rem; }
+}
+
+@media (max-width: 576px) {
+    .product-card-title-pro { font-size: 0.72rem; -webkit-line-clamp: 1; }
+    .product-card-price-pro { font-size: 0.85rem; }
+    .badge-premium { font-size: 0.5rem; padding: 3px 8px; }
+    .home-card-pro .card-title { font-size: 0.72rem; -webkit-line-clamp: 1; }
+    .home-card-pro .card-price { font-size: 0.85rem; }
+    .condition-tag-pro { font-size: 0.55rem; padding: 2px 8px; }
+    .list-product-pro {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 0.875rem;
+    }
+    .list-product-img-pro { width: 100%; height: auto; aspect-ratio: 16/9; }
+    .list-product-title-pro { font-size: 0.85rem; }
+    .list-product-price-pro { font-size: 0.95rem; }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .product-card-pro,
+    .home-card-pro,
+    .list-product-pro,
+    .action-btn-pro,
+    .quick-btn-pro,
+    .catalog-pagination a,
+    .filter-tag,
+    .empty-state,
+    .empty-state-icon,
+    .catalog-header {
+        transition: none !important;
+        animation: none !important;
+    }
+    .product-card-pro:hover,
+    .home-card-pro:hover,
+    .list-product-pro:hover {
+        transform: none;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Catalog Header -->
+<div class="catalog-header reveal">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <select class="sort-select" onchange="changeSort(this.value)" aria-label="Urutkan produk">
+            <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Terbaru</option>
+            <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>Harga: Rendah - Tinggi</option>
+            <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>Harga: Tinggi - Rendah</option>
+        </select>
+        <div class="view-toggle d-none d-md-flex">
+            <button class="active" onclick="setViewMode('grid', this)" title="Tampilan grid" aria-label="Tampilan grid">
+                <i class="bi bi-grid-fill"></i>
+            </button>
+            <button onclick="setViewMode('list', this)" title="Tampilan list" aria-label="Tampilan list">
+                <i class="bi bi-list-ul"></i>
+            </button>
+        </div>
+    </div>
+    {% if products %}
+    <span class="catalog-count">{{ products|length }} produk ditemukan</span>
+    {% endif %}
+</div>
+
+<!-- Active Filters -->
+<div class="active-filters" id="catalogActiveFilters" style="display: none;"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     GRID VIEW — menggunakan product-card-pro design
+     ═══════════════════════════════════════════════════════════ -->
+<div class="catalog-grid" id="gridView">
+    <div class="product-grid-pro">
+        {% for product in products %}
+        <div class="product-card-pro h-100 d-flex flex-column">
+
+            <div class="product-card-media-pro">
+                <a href="{{ url_for('product_detail', id=product.id) }}">
+                    <img src="{{ url_for('uploaded_product_file', filename=product.image_filename) if product.image_filename else 'https://placehold.co/400x400/0f172a/cbd5e1?text=No+Image' }}"
+                         alt="{{ product.name|e }}" loading="lazy"
+                         onerror="this.src='https://placehold.co/400x400/1e293b/94a3b8?text=No+Image'; this.onerror=null;">
+                </a>
+
+                {% if product.is_featured %}
+                <span class="badge-premium" style="position:absolute;top:0.6rem;left:0.6rem;">
+                    <i class="bi bi-star-fill"></i> Unggulan
+                </span>
+                {% elif product.compare_at_price and product.compare_at_price > product.price %}
+                <span class="badge-premium" style="position:absolute;top:0.6rem;left:0.6rem;">
+                    <i class="bi bi-lightning-fill text-warning"></i> -{{ ((product.compare_at_price - product.price) / product.compare_at_price * 100)|int }}%
+                </span>
+                {% endif %}
+
+                {% if product.stock <= 5 and product.stock > 0 %}
+                <span class="badge-premium" style="position:absolute;top:0.6rem;right:0.6rem;background:linear-gradient(135deg,#f59e0b,#d97706);border-color:rgba(245,158,11,0.4);">
+                    Sisa {{ product.stock }}
+                </span>
+                {% elif product.stock == 0 %}
+                <span class="badge-premium" style="position:absolute;top:0.6rem;right:0.6rem;background:linear-gradient(135deg,#64748b,#475569);border-color:rgba(100,116,139,0.4);animation:none;">
+                    Habis
+                </span>
+                {% endif %}
+
+                <div class="product-card-actions-pro">
+                    <button class="action-btn-pro" onclick="toggleWishlist({{ product.id }})" title="Simpan ke Wishlist">
+                        <i class="bi bi-heart"></i>
+                    </button>
+                    <button class="action-btn-pro" onclick="quickView({{ product.id }})" title="Quick View">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="product-card-body-pro flex-grow-1 d-flex flex-column p-3">
+                <a href="{{ url_for('product_detail', id=product.id) }}" class="text-decoration-none">
+                    <h4 class="product-card-title-pro">{{ product.name|e }}</h4>
+                </a>
+                <div class="product-card-meta-pro mb-2">
+                    <span class="fw-medium">{{ product.brand|e }} {{ product.model|e }}</span>
+                </div>
+                <div class="mt-auto">
+                    {% if product.compare_at_price and product.compare_at_price > product.price %}
+                    <span style="font-size:0.66rem;color:var(--text-tertiary);text-decoration:line-through;display:block;line-height:1.2;">{{ format_price(product.compare_at_price) }}</span>
+                    {% endif %}
+                    <span class="product-card-price-pro">{{ format_price(product.price) }}</span>
+                </div>
+                <div class="product-card-meta-pro mt-2 justify-content-between">
+                    <span class="rating fw-bold"><i class="bi bi-star-fill text-warning"></i> 4.8</span>
+                    <span class="condition-tag-pro {{ product.condition|lower|replace(' ', '-') }}">{{ product.condition|e }}</span>
+                </div>
+            </div>
+
+        </div>
+        {% else %}
+        <div style="grid-column: 1 / -1;">
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="bi bi-search"></i></div>
+                <h3>Tidak ada produk</h3>
+                <p>Coba sesuaikan filter atau kata kunci pencarian Anda.</p>
+                <button class="btn btn-primary" onclick="resetFilters()">Reset Filter</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LIST VIEW — menggunakan list-product-pro design
+     ═══════════════════════════════════════════════════════════ -->
+<div class="catalog-list" id="listView" style="display: none;">
+    <div class="d-flex flex-column gap-3">
+        {% for product in products %}
+        <div class="list-product-pro">
+            <a href="{{ url_for('product_detail', id=product.id) }}">
+                <img src="{{ url_for('uploaded_product_file', filename=product.image_filename) if product.image_filename else 'https://placehold.co/100x100/0f172a/cbd5e1?text=No+Image' }}"
+                     alt="{{ product.name|e }}" class="list-product-img-pro" loading="lazy"
+                     onerror="this.src='https://placehold.co/80x80/1e293b/94a3b8?text=No+Image'; this.onerror=null;">
+            </a>
+
+            <div class="flex-grow-1 min-w-0">
+                <a href="{{ url_for('product_detail', id=product.id) }}" class="list-product-title-pro">{{ product.name|e }}</a>
+                <p class="list-product-meta-pro">{{ product.brand|e }} {{ product.model|e }}</p>
+                <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                    <span class="condition-tag-pro {{ product.condition|lower|replace(' ', '-') }}">{{ product.condition|e }}</span>
+                    {% if product.stock <= 5 and product.stock > 0 %}
+                    <span class="badge-premium" style="font-size:0.6rem;padding:3px 10px;animation:none;">Sisa {{ product.stock }}</span>
+                    {% elif product.stock == 0 %}
+                    <span class="badge-premium" style="font-size:0.6rem;padding:3px 10px;background:linear-gradient(135deg,#64748b,#475569);border-color:rgba(100,116,139,0.4);animation:none;">Habis</span>
+                    {% endif %}
+                </div>
+                <p class="list-product-meta-pro mt-2" style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                    {{ product.short_description or product.description|truncate(120) }}
+                </p>
+            </div>
+
+            <div class="text-end flex-shrink-0">
+                <div class="list-product-price-pro fs-4 fw-bold mb-2">{{ format_price(product.price) }}</div>
+                {% if product.compare_at_price and product.compare_at_price > product.price %}
+                <div style="font-size:0.75rem;color:var(--text-disabled);text-decoration:line-through;margin-bottom:0.5rem;">
+                    {{ format_price(product.compare_at_price) }}
+                </div>
+                {% endif %}
+                <div class="d-flex gap-2 justify-content-end flex-wrap">
+                    <a href="{{ url_for('product_detail', id=product.id) }}" class="btn btn-secondary btn-sm rounded-pill px-3">Detail</a>
+                    <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" onsubmit="return handleCatalogAddToCart(event, {{ product.id }})">
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3" {% if product.stock == 0 %}disabled{% endif %}>
+                            <i class="bi bi-cart-plus me-1"></i> {% if product.stock == 0 %}Habis{% else %}Beli{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="bi bi-search"></i></div>
+            <h3>Tidak ada produk</h3>
+            <p>Coba sesuaikan filter atau kata kunci pencarian Anda.</p>
+            <button class="btn btn-primary" onclick="resetFilters()">Reset Filter</button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if pagination and pagination.pages > 1 %}
+<nav class="catalog-pagination" aria-label="Navigasi halaman">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('catalog', page=pagination.prev_num, q=current_q, brand=current_brand, condition=current_condition, sort=current_sort) }}" aria-label="Halaman sebelumnya">
+        <i class="bi bi-chevron-left"></i>
+    </a>
+    {% endif %}
+
+    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if page_num %}
+            {% if page_num == pagination.page %}
+            <span class="page-active" aria-current="page">{{ page_num }}</span>
+            {% else %}
+            <a href="{{ url_for('catalog', page=page_num, q=current_q, brand=current_brand, condition=current_condition, sort=current_sort) }}">{{ page_num }}</a>
+            {% endif %}
+        {% else %}
+            <span class="page-ellipsis">…</span>
+        {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+    <a href="{{ url_for('catalog', page=pagination.next_num, q=current_q, brand=current_brand, condition=current_condition, sort=current_sort) }}" aria-label="Halaman berikutnya">
+        <i class="bi bi-chevron-right"></i>
+    </a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ========== VIEW MODE ========== */
+let currentView = localStorage.getItem('catalogView') || 'grid';
+
+function setViewMode(mode, btn) {
+    currentView = mode;
+    localStorage.setItem('catalogView', mode);
+    document.getElementById('gridView').style.display = mode === 'grid' ? 'block' : 'none';
+    document.getElementById('listView').style.display = mode === 'list' ? 'block' : 'none';
+
+    document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const savedView = localStorage.getItem('catalogView') || 'grid';
+    const toggleBtns = document.querySelectorAll('.view-toggle button');
+    if (savedView === 'list' && toggleBtns[1]) {
+        toggleBtns[1].classList.add('active');
+        toggleBtns[0].classList.remove('active');
+    }
+    document.getElementById('gridView').style.display = savedView === 'grid' ? 'block' : 'none';
+    document.getElementById('listView').style.display = savedView === 'list' ? 'block' : 'none';
+    renderActiveFilters();
+});
+
+function changeSort(value) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('sort', value);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+}
+
+function renderActiveFilters() {
+    const container = document.getElementById('catalogActiveFilters');
+    const url = new URL(window.location.href);
+    const filters = [];
+
+    url.searchParams.forEach((value, key) => {
+        if (key !== 'page' && key !== 'sort' && value) {
+            const labelMap = {
+                'q': 'Pencarian',
+                'brand': 'Brand',
+                'condition': 'Kondisi',
+                'price_min': 'Min',
+                'price_max': 'Max'
+            };
+            filters.push({ key, value, label: `${labelMap[key] || key}: ${value}` });
+        }
+    });
+
+    if (filters.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'flex';
+    container.innerHTML = filters.map(f => `
+        <span class="filter-tag">
+            ${f.label}
+            <button onclick="removeFilter('${f.key}')" title="Hapus filter" aria-label="Hapus filter ${f.label}"><i class="bi bi-x"></i></button>
+        </span>
+    `).join('') + `
+        <button class="filter-clear" onclick="resetFilters()">Hapus semua</button>
+    `;
+}
+
+function removeFilter(key) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete(key);
+    window.location.href = url.toString();
+}
+
+function resetFilters() {
+    window.location.href = '{{ url_for("catalog") }}';
+}
+
+/* ========== WISHLIST ========== */
+async function toggleWishlist(productId) {
+    try {
+        const res = await fetch('/api/wishlist/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ product_id: productId })
+        });
+        const data = await res.json();
+        if (data.success) showToast('Ditambahkan ke wishlist!', 'success');
+        else showToast(data.message || 'Gagal menambahkan ke wishlist', 'warning');
+    } catch {
+        showToast('Fitur wishlist memerlukan login', 'info');
+    }
+}
+
+/* ========== QUICK VIEW ========== */
+function quickView(productId) {
+    window.location.href = '/product/' + productId;
+}
+
+/* ========== ADD TO CART (menggunakan fungsi base.html) ========== */
+function handleCatalogAddToCart(e, productId) {
+    e.preventDefault();
+    const form = e.target;
+    const btn = form.querySelector('button[type="submit"]');
+    const originalHTML = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ...';
+
+    const formData = new FormData(form);
+
+    fetch('/api/add_to_cart', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        if (data.success) {
+            showToast('Produk ditambahkan ke keranjang', 'success');
+            updateCartBadge(data.cart_count);
+            const fab = document.querySelector('.fab-primary');
+            if (fab) { fab.style.transform = 'scale(1.2)'; setTimeout(() => fab.style.transform = '', 300); }
+        } else {
+            showToast(data.message || 'Gagal menambahkan ke keranjang', 'error');
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        showToast('Terjadi kesalahan', 'error');
+    });
+
+    return false;
+}
+</script>
+{% endblock %}

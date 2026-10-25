@@ -1,0 +1,1319 @@
+{% extends "base.html" %}
+
+{% block title %}Keranjang Belanja — {{ site_name }}{% endblock %}
+
+{% block meta_description %}
+<meta name="description" content="Kelola keranjang belanja HP premium bekas Anda. Verifikasi ketat, garansi resmi, pembayaran aman.">
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CART PAGE — ULTRA PREMIUM DARK EDITION 2026
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── BREADCRUMB ─── */
+.breadcrumb-custom {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem;
+    font-size: 0.8rem; margin-bottom: 2.5rem; color: var(--text-disabled);
+    padding: 0.75rem 1rem;
+    background: linear-gradient(145deg, rgba(15,23,42,0.6), rgba(11,17,32,0.4));
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    width: fit-content;
+}
+.breadcrumb-custom a {
+    color: var(--text-tertiary); text-decoration: none; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    transition: all 0.2s ease;
+    padding: 0.2rem 0.4rem; border-radius: var(--r-xs);
+}
+.breadcrumb-custom a:hover { 
+    color: var(--primary-400); 
+    background: rgba(99,102,241,0.08);
+}
+.breadcrumb-custom .sep {
+    color: var(--text-disabled); font-size: 0.6rem;
+    opacity: 0.6;
+}
+.breadcrumb-custom .active { 
+    color: var(--text-primary); font-weight: 600; 
+    background: linear-gradient(90deg, var(--primary-glow-soft), transparent);
+    padding: 0.2rem 0.6rem; border-radius: var(--r-xs);
+}
+
+/* ─── PAGE HEADER ─── */
+.page-header {
+    margin-bottom: 2.5rem;
+    position: relative;
+}
+.page-header::before {
+    content: ''; position: absolute; left: -1rem; top: 0.5rem;
+    width: 4px; height: 2.5rem;
+    background: linear-gradient(180deg, var(--primary-500), var(--secondary-500));
+    border-radius: var(--r-full);
+    box-shadow: 0 0 20px var(--primary-glow-soft);
+}
+.page-header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 700; letter-spacing: -0.03em;
+    padding-left: 0.5rem;
+    background: linear-gradient(135deg, #fff 20%, var(--primary-400));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.page-header p {
+    color: var(--text-tertiary); font-size: 0.9rem;
+    padding-left: 0.5rem; margin-top: 0.35rem;
+    max-width: 480px;
+    line-height: 1.6;
+}
+
+/* ─── CART ITEM CARD ─── */
+.cart-item {
+    position: relative;
+    background: linear-gradient(145deg, rgba(15,23,42,0.9), rgba(11,17,32,0.7));
+    backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    padding: 1.75rem;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+.cart-item::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent);
+    opacity: 0; transition: opacity 0.4s;
+}
+.cart-item:hover::before { opacity: 1; }
+.cart-item:hover {
+    border-color: rgba(99,102,241,0.3);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 80px rgba(99,102,241,0.06);
+    transform: translateY(-3px);
+}
+.cart-item.selected {
+    border-color: rgba(99,102,241,0.5);
+    box-shadow: 0 0 0 1px rgba(99,102,241,0.2), 0 16px 48px rgba(0,0,0,0.5), 0 0 80px rgba(99,102,241,0.1);
+    background: linear-gradient(145deg, rgba(15,23,42,0.95), rgba(25,30,60,0.8));
+}
+.cart-item.selected::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--primary-500), var(--secondary-500));
+    border-radius: var(--r-xl) 0 0 var(--r-xl);
+    box-shadow: 0 0 12px var(--primary-glow);
+}
+
+/* Image */
+.cart-item-img-wrap {
+    position: relative; flex-shrink: 0;
+}
+.cart-item-img {
+    width: 120px; height: 120px; border-radius: var(--r-lg);
+    object-fit: cover; border: 1px solid var(--border-default);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.cart-item:hover .cart-item-img { 
+    transform: scale(1.05); 
+    border-color: rgba(99,102,241,0.4);
+    box-shadow: 0 12px 32px rgba(99,102,241,0.15);
+}
+.cart-item-img-placeholder {
+    width: 120px; height: 120px; border-radius: var(--r-lg);
+    background: linear-gradient(135deg, var(--bg-elevated), var(--bg-surface));
+    border: 1px solid var(--border-default);
+    display: grid; place-items: center; flex-shrink: 0;
+    color: var(--text-disabled); font-size: 1.5rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+/* Content */
+.cart-item-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
+    text-decoration: none; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    transition: color 0.2s;
+}
+.cart-item-title:hover { color: var(--primary-400); }
+.cart-item-meta {
+    font-size: 0.8rem; color: var(--text-tertiary); margin-top: 0.4rem;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.cart-item-badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.35rem 0.75rem; border-radius: var(--r-xs);
+    font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+    background: rgba(255,255,255,0.04); color: var(--text-tertiary);
+    border: 1px solid var(--border-default);
+    transition: all 0.2s;
+}
+.cart-item-badge.featured {
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.1));
+    border-color: rgba(99,102,241,0.25); color: var(--primary-400);
+}
+
+/* Price */
+.cart-item-price-block {
+    text-align: right; flex-shrink: 0;
+}
+.cart-item-price {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.3rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-400), var(--accent-400));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    white-space: nowrap; line-height: 1.2;
+}
+.cart-item-compare {
+    font-size: 0.8rem; color: var(--text-disabled); text-decoration: line-through;
+    margin-top: 0.2rem;
+}
+.cart-item-save {
+    font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+    background: var(--success-bg); color: var(--success);
+    border: 1px solid rgba(16,185,129,0.2); padding: 0.25rem 0.6rem;
+    border-radius: var(--r-xs);
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    margin-top: 0.3rem;
+}
+
+/* Quantity Stepper Premium */
+.qty-stepper {
+    display: inline-flex; align-items: center;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default); border-radius: var(--r-md);
+    overflow: hidden; height: 44px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+}
+.qty-stepper button {
+    width: 42px; height: 100%; display: grid; place-items: center;
+    background: transparent; border: none; color: var(--text-tertiary);
+    font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+}
+.qty-stepper button:hover:not(:disabled) { 
+    background: rgba(255,255,255,0.06); color: var(--text-primary); 
+}
+.qty-stepper button:active:not(:disabled) { transform: scale(0.92); }
+.qty-stepper button:disabled { opacity: 0.2; cursor: not-allowed; }
+.qty-stepper input {
+    width: 50px; height: 100%; background: transparent; border: none;
+    border-left: 1px solid var(--border-default); border-right: 1px solid var(--border-default);
+    color: var(--text-primary); text-align: center; font-weight: 700; font-size: 0.95rem;
+    outline: none; -moz-appearance: textfield; appearance: textfield;
+    font-family: 'Space Grotesk', monospace;
+}
+.qty-stepper input::-webkit-outer-spin-button,
+.qty-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Subtotal & Actions Row */
+.cart-actions-row {
+    border-top: 1px solid var(--border-subtle);
+    margin-top: 1.25rem; padding-top: 1.25rem;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem;
+}
+.cart-subtotal-label {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-disabled); font-weight: 700;
+}
+.cart-subtotal-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.15rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-400), var(--accent-400));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.btn-remove-item {
+    width: 40px; height: 40px; border-radius: var(--r-full);
+    background: transparent; border: 1px solid var(--border-default);
+    color: var(--text-disabled); display: grid; place-items: center;
+    cursor: pointer; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); font-size: 0.9rem;
+}
+.btn-remove-item:hover {
+    background: var(--danger-bg); color: var(--danger);
+    border-color: rgba(239,68,68,0.3); transform: scale(1.15) rotate(8deg);
+    box-shadow: 0 4px 12px rgba(239,68,68,0.2);
+}
+
+/* ─── SELECT ALL BAR ─── */
+.select-all-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(145deg, rgba(15,23,42,0.8), rgba(11,17,32,0.6));
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-default); border-radius: var(--r-xl);
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+.select-all-bar label {
+    display: inline-flex; align-items: center; gap: 0.75rem;
+    color: var(--text-secondary); font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; margin: 0;
+}
+.select-all-bar .remove-selected {
+    font-size: 0.8rem; font-weight: 700; color: var(--danger);
+    background: none; border: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    transition: all 0.2s; padding: 0.5rem 1rem;
+    border-radius: var(--r-md);
+}
+.select-all-bar .remove-selected:hover { 
+    background: var(--danger-bg); 
+    color: #f87171; 
+    transform: translateY(-1px);
+}
+
+/* Checkbox custom */
+.form-check-input.cart-check {
+    width: 1.25rem; height: 1.25rem;
+    background-color: var(--bg-elevated);
+    border-color: var(--border-strong);
+    cursor: pointer; margin-top: 0;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 8px;
+}
+.form-check-input.cart-check:checked {
+    background-color: var(--primary-500);
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px var(--primary-glow-soft), 0 0 12px var(--primary-glow-soft);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+}
+.form-check-input.cart-check:focus { 
+    box-shadow: 0 0 0 4px var(--primary-glow-soft); 
+    border-color: var(--primary-500);
+}
+
+/* Header actions */
+.cart-header-actions {
+    display: flex; align-items: center; gap: 0.75rem;
+}
+.count-badge {
+    padding: 0.6rem 1.1rem;
+    background: var(--bg-elevated); border: 1px solid var(--border-default);
+    border-radius: var(--r-md); font-size: 0.8rem; color: var(--text-tertiary); font-weight: 600;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.count-badge strong { color: var(--text-primary); font-family: 'Space Grotesk', monospace; font-size: 1rem; }
+.btn-clear {
+    padding: 0.6rem 1.1rem;
+    background: transparent; border: 1px solid rgba(239,68,68,0.15);
+    border-radius: var(--r-md); font-size: 0.8rem; font-weight: 700;
+    color: var(--danger); cursor: pointer; transition: all 0.25s;
+    display: inline-flex; align-items: center; gap: 0.4rem;
+}
+.btn-clear:hover {
+    background: var(--danger-bg); border-color: rgba(239,68,68,0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239,68,68,0.15);
+}
+
+/* ─── SUMMARY SIDEBAR ─── */
+.summary-card {
+    background: linear-gradient(145deg, rgba(15,23,42,0.95), rgba(11,17,32,0.8));
+    backdrop-filter: blur(32px) saturate(220%);
+    border: 1px solid var(--border-default); border-radius: var(--r-xl);
+    padding: 2rem;
+    position: sticky; top: calc(var(--nav-h) + 1.5rem);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+    overflow: hidden;
+}
+.summary-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent);
+}
+.summary-card::after {
+    content: ''; position: absolute; top: -100px; right: -100px; width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(99,102,241,0.08), transparent 70%);
+    pointer-events: none;
+}
+.summary-card .summary-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.9rem; padding: 0.6rem 0;
+    position: relative; z-index: 1;
+}
+.summary-card .summary-row .label { color: var(--text-tertiary); font-weight: 500; }
+.summary-card .summary-row .value { 
+    color: var(--text-primary); font-weight: 600; 
+    font-family: 'Space Grotesk', monospace;
+}
+.summary-card .summary-row .value-success { color: var(--success); font-weight: 700; }
+.summary-divider {
+    height: 1px; background: linear-gradient(90deg, transparent, var(--border-default), transparent);
+    margin: 1.25rem 0;
+    position: relative; z-index: 1;
+}
+.summary-card .summary-total {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-400), var(--accent-400));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+.summary-total-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 0.75rem 0 0.5rem;
+    position: relative; z-index: 1;
+}
+
+/* Promo input premium */
+.promo-input-group {
+    display: flex; gap: 0.5rem;
+    position: relative; z-index: 1;
+}
+.promo-input-group input {
+    flex: 1; background: var(--bg-elevated); border: 1px solid var(--border-default);
+    border-radius: var(--r-md); padding: 0.875rem 1rem; color: var(--text-primary);
+    font-size: 0.85rem; outline: none; transition: all 0.25s;
+    font-family: 'Space Grotesk', monospace; text-transform: uppercase; letter-spacing: 0.05em;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+.promo-input-group input:focus {
+    border-color: var(--primary-500); box-shadow: 0 0 0 4px var(--primary-glow-soft), inset 0 2px 4px rgba(0,0,0,0.2);
+}
+.promo-input-group input::placeholder { color: var(--text-disabled); text-transform: none; letter-spacing: normal; }
+.promo-input-group button {
+    padding: 0.875rem 1.25rem; border-radius: var(--r-md);
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    border: none; color: white; font-size: 0.8rem; font-weight: 700;
+    cursor: pointer; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); white-space: nowrap;
+    box-shadow: 0 4px 16px var(--primary-glow-soft);
+    position: relative; overflow: hidden;
+}
+.promo-input-group button::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: translateX(-100%); transition: transform 0.6s;
+}
+.promo-input-group button:hover:not(:disabled)::after { transform: translateX(100%); }
+.promo-input-group button:hover:not(:disabled) {
+    transform: translateY(-2px); box-shadow: 0 8px 24px var(--primary-glow);
+}
+.promo-input-group button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* OpenRouter AI badge in summary */
+.openrouter-summary {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(99,102,241,0.05));
+    border: 1px solid rgba(168,85,247,0.25); border-radius: var(--r-lg);
+    margin-bottom: 1.5rem;
+    position: relative; overflow: hidden;
+    transition: all 0.3s;
+}
+.openrouter-summary:hover {
+    border-color: rgba(168,85,247,0.4);
+    box-shadow: 0 4px 16px rgba(168,85,247,0.1);
+}
+.openrouter-summary::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+    background: linear-gradient(90deg, var(--secondary-500), var(--primary-500));
+    opacity: 0.6;
+}
+.openrouter-summary i { font-size: 1.3rem; color: var(--secondary-400); }
+.openrouter-summary .live-dot {
+    width: 8px; height: 8px; background: var(--success); border-radius: 50%;
+    animation: pulse-dot 2s ease infinite; flex-shrink: 0;
+    box-shadow: 0 0 10px var(--success);
+}
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.6); }
+}
+
+/* Trust badges */
+.trust-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+    padding: 1.25rem;
+    background: linear-gradient(145deg, rgba(15,23,42,0.7), rgba(11,17,32,0.5));
+    border: 1px solid var(--border-default); border-radius: var(--r-lg);
+    backdrop-filter: blur(8px);
+}
+.trust-item {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-size: 0.75rem; color: var(--text-tertiary); font-weight: 500;
+}
+.trust-item i { font-size: 1.1rem; }
+
+/* ─── EMPTY STATE ─── */
+.empty-cart {
+    text-align: center; padding: 6rem 2rem;
+    background: linear-gradient(145deg, rgba(15,23,42,0.8), rgba(11,17,32,0.6));
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-default); border-radius: var(--r-xl);
+    max-width: 560px; margin: 3rem auto;
+    position: relative; overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+}
+.empty-cart::before {
+    content: ''; position: absolute; top: -50%; left: 50%; transform: translateX(-50%);
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(99,102,241,0.1), transparent 70%);
+    pointer-events: none;
+}
+.empty-cart-icon {
+    width: 100px; height: 100px; border-radius: var(--r-lg);
+    background: linear-gradient(135deg, var(--bg-elevated), var(--bg-surface));
+    border: 1px solid var(--border-default);
+    display: grid; place-items: center; margin: 0 auto 2rem;
+    color: var(--text-disabled); font-size: 2.5rem;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.02);
+    position: relative; z-index: 1;
+    transition: all 0.4s;
+}
+.empty-cart:hover .empty-cart-icon {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 30px rgba(99,102,241,0.1);
+    border-color: rgba(99,102,241,0.2);
+}
+.empty-cart h3 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem;
+    position: relative; z-index: 1; margin-bottom: 0.75rem;
+}
+.empty-cart p {
+    color: var(--text-tertiary); font-size: 0.95rem; max-width: 340px; margin: 0 auto 2rem;
+    position: relative; z-index: 1; line-height: 1.7;
+}
+
+/* ─── CHECKOUT CTA ─── */
+.btn-checkout-cta {
+    width: 100%; padding: 1.1rem;
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    color: white; font-weight: 700; font-size: 1rem;
+    border: none; border-radius: var(--r-md);
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem;
+    box-shadow: 0 4px 24px var(--primary-glow-soft);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative; overflow: hidden;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+}
+.btn-checkout-cta::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: translateX(-100%); transition: transform 0.8s;
+}
+.btn-checkout-cta:hover::after { transform: translateX(100%); }
+.btn-checkout-cta:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px var(--primary-glow);
+    color: white;
+}
+.btn-checkout-cta:active { transform: scale(0.97); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 991px) {
+    .summary-card { position: static; margin-top: 2rem; }
+    .cart-item { padding: 1.5rem; }
+    .cart-item-img, .cart-item-img-placeholder { width: 100px; height: 100px; }
+    .cart-item-price { font-size: 1.15rem; }
+    .page-header::before { display: none; }
+    .page-header h1 { padding-left: 0; }
+    .breadcrumb-custom { margin-bottom: 1.5rem; }
+}
+@media (max-width: 767px) {
+    .cart-item { padding: 1.25rem; border-radius: var(--r-lg); }
+    .cart-item-img, .cart-item-img-placeholder { width: 80px; height: 80px; }
+    .cart-item-title { font-size: 0.95rem; }
+    .cart-item-price-block { text-align: left; margin-top: 0.5rem; }
+    .cart-actions-row { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .cart-item-price { font-size: 1.2rem; }
+    .summary-total { font-size: 1.6rem; }
+    .select-all-bar { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+    .cart-header-actions { width: 100%; justify-content: space-between; }
+    .trust-grid { grid-template-columns: 1fr; }
+    .empty-cart { padding: 4rem 1.5rem; }
+    .empty-cart h3 { font-size: 1.3rem; }
+}
+@media (max-width: 480px) {
+    .cart-item-img, .cart-item-img-placeholder { width: 64px; height: 64px; }
+    .qty-stepper { height: 38px; }
+    .qty-stepper button { width: 36px; }
+    .qty-stepper input { width: 38px; font-size: 0.8rem; }
+    .cart-item { padding: 1rem; }
+    .page-header h1 { font-size: 1.4rem; }
+    .summary-card { padding: 1.5rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav class="breadcrumb-custom reveal" aria-label="breadcrumb">
+    <a href="{{ url_for('index') }}"><i class="bi bi-house-door-fill"></i> Beranda</a>
+    <span class="sep"><i class="bi bi-chevron-right"></i></span>
+    <span class="active">Keranjang Belanja</span>
+</nav>
+
+<!-- Header -->
+<div class="page-header reveal">
+    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3">
+        <div>
+            <h1 class="display-heading d-flex align-items-center gap-3">
+                <div class="brand-icon" style="width: 52px; height: 52px; font-size: 1.4rem; box-shadow: 0 8px 24px var(--primary-glow-soft);">
+                    <i class="bi bi-cart-fill"></i>
+                </div>
+                Keranjang Belanja
+            </h1>
+            <p>Kelola item yang ingin Anda belanja sebelum checkout. Setiap produk telah melalui verifikasi ketat 47+ poin inspeksi.</p>
+        </div>
+        {% if cart_items %}
+        <div class="cart-header-actions reveal reveal-delay-1">
+            <span class="count-badge">
+                <i class="bi bi-bag" style="color: var(--primary-400);"></i>
+                <strong>{{ cart_items|length }}</strong> item
+            </span>
+            <button class="btn-clear" onclick="clearCart()">
+                <i class="bi bi-trash3"></i> Kosongkan
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if cart_items %}
+<div class="row g-4">
+    <!-- Cart Items -->
+    <div class="col-lg-8">
+        <!-- Select All -->
+        <div class="select-all-bar reveal">
+            <label>
+                <input type="checkbox" class="form-check-input cart-check" id="selectAllCheck" onchange="toggleSelectAll(this)">
+                <span>Pilih Semua (<span id="totalItemCount">{{ cart_items|length }}</span> item)</span>
+            </label>
+            <button class="remove-selected" id="btnRemoveSelected" onclick="removeSelected()" style="display: none;">
+                <i class="bi bi-trash3"></i> Hapus Terpilih
+            </button>
+        </div>
+
+        <!-- Items -->
+        <div class="d-flex flex-column" id="cartItemsContainer">
+            {% for item in cart_items %}
+            <div class="cart-item reveal reveal-delay-{{ loop.index % 3 + 1 }}" data-product-id="{{ item.product_id }}" id="cartItem-{{ item.product_id }}">
+                <div class="d-flex gap-3 gap-sm-4">
+                    <!-- Checkbox + Image -->
+                    <div class="d-flex align-items-start gap-2 gap-sm-3">
+                        <input type="checkbox" class="form-check-input cart-check item-check"
+                               value="{{ item.product_id }}" onchange="updateSelection()"
+                               style="margin-top: 0.35rem;">
+                        <a href="{{ url_for('product_detail', id=item.product_id) }}" class="cart-item-img-wrap">
+                            {% if item.image %}
+                            <img src="{{ url_for('uploaded_product_file', filename=item.image) }}"
+                                 alt="{{ item.name }}" class="cart-item-img" loading="lazy">
+                            {% else %}
+                            <div class="cart-item-img-placeholder"><i class="bi bi-image"></i></div>
+                            {% endif %}
+                        </a>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between gap-2">
+                            <div class="min-w-0">
+                                <a href="{{ url_for('product_detail', id=item.product_id) }}" class="cart-item-title">
+                                    {{ item.name }}
+                                </a>
+                                <p class="cart-item-meta">
+                                    <span>{{ item.brand }} {{ item.model }}</span>
+                                    <span style="color: var(--border-default);">|</span>
+                                    <span>SKU: {{ item.sku|default('N/A') }}</span>
+                                </p>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="cart-item-badge featured">
+                                        <i class="bi bi-stars" style="font-size: 0.6rem;"></i>
+                                        {{ item.condition }}
+                                    </span>
+                                    {% if item.compare_at_price and item.compare_at_price > item.price %}
+                                    <span class="cart-item-badge" style="background: var(--danger-bg); color: var(--danger); border-color: rgba(239,68,68,0.2);">
+                                        <i class="bi bi-tag-fill" style="font-size: 0.6rem;"></i>
+                                        Diskon
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="cart-item-price-block">
+                                <div class="cart-item-price" data-price="{{ item.price }}">{{ format_price(item.price * 100) }}</div>
+                                {% if item.compare_at_price and item.compare_at_price > item.price %}
+                                <div class="cart-item-compare" data-compare="{{ item.compare_at_price }}">{{ format_price(item.compare_at_price * 100) }}</div>
+                                <div class="cart-item-save">
+                                    <i class="bi bi-lightning-charge-fill" style="font-size: 0.6rem;"></i>
+                                    Hemat {{ format_price((item.compare_at_price - item.price) * 100) }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Quantity + Subtotal + Remove -->
+                        <div class="cart-actions-row">
+                            <div class="d-flex align-items-center gap-3">
+                                <span style="font-size: 0.75rem; color: var(--text-disabled); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">Jumlah</span>
+                                <div class="qty-stepper">
+                                    <button onclick="updateQty('{{ item.product_id }}', -1)"
+                                            {% if item.quantity <= 1 %}disabled{% endif %}
+                                            id="btnMinus-{{ item.product_id }}">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                    <input type="number" value="{{ item.quantity }}" min="1" max="{{ item.stock|default(99) }}"
+                                           readonly id="qtyInput-{{ item.product_id }}">
+                                    <button onclick="updateQty('{{ item.product_id }}', 1)"
+                                            {% if item.stock is defined and item.quantity >= item.stock %}disabled{% endif %}
+                                            id="btnPlus-{{ item.product_id }}">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                                <span style="font-size: 0.75rem; color: var(--text-disabled);">
+                                    Stok: <strong style="color: var(--text-tertiary);">{{ item.stock|default(99) }}</strong>
+                                </span>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="text-end">
+                                    <div class="cart-subtotal-label">Subtotal</div>
+                                    <div class="cart-subtotal-value" id="subtotal-{{ item.product_id }}" data-subtotal="{{ item.price * item.quantity }}">
+                                        {{ format_price(item.price * item.quantity * 100) }}
+                                    </div>
+                                </div>
+                                <button class="btn-remove-item" onclick="removeItem('{{ item.product_id }}')" title="Hapus item">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Summary Sidebar -->
+    <div class="col-lg-4">
+        <div class="summary-card reveal reveal-delay-2">
+            <h5 class="fw-bold mb-4 d-flex align-items-center gap-2" style="font-family: 'Space Grotesk', sans-serif; font-size: 1.15rem; position: relative; z-index: 1;">
+                <i class="bi bi-receipt" style="color: var(--primary-400);"></i> Ringkasan Belanja
+            </h5>
+
+            <div class="mb-4">
+                <div class="summary-row">
+                    <span class="label">Total Harga (<span id="summaryItemCount">{{ cart_items|length }}</span> item)</span>
+                    <span class="value" id="summaryTotalItems" data-total="{{ total }}">{{ format_price(total * 100) }}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="label">Ongkos Kirim</span>
+                    <span class="value-success">Gratis</span>
+                </div>
+                {% if total_savings is defined and total_savings > 0 %}
+                <div class="summary-row">
+                    <span class="label">Total Hemat</span>
+                    <span class="value-success" id="summarySavings" data-savings="{{ total_savings }}">-{{ format_price(total_savings * 100) }}</span>
+                </div>
+                {% endif %}
+                <div class="summary-divider"></div>
+                <div class="summary-total-row">
+                    <span class="label" style="font-size: 1.1rem; color: var(--text-primary); font-weight: 700;">Total Tagihan</span>
+                    <span class="summary-total" id="summaryGrandTotal" data-grand="{{ total }}">{{ format_price(total * 100) }}</span>
+                </div>
+            </div>
+
+            <!-- Promo -->
+            <div class="mb-4">
+                <label style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: var(--text-tertiary); margin-bottom: 0.6rem; display: block;">
+                    <i class="bi bi-ticket-perforated me-1"></i>Kode Promo
+                </label>
+                <div class="promo-input-group">
+                    <input type="text" id="promoInput" placeholder="Masukkan kode" maxlength="20">
+                    <button onclick="applyPromo()" id="btnApplyPromo">Terapkan</button>
+                </div>
+                <div id="promoMessage" class="mt-2" style="font-size: 0.8rem; display: none;"></div>
+            </div>
+
+            <!-- OpenClaw -->
+            {% if settings.get('openrouter_api_key') and settings.get('openrouter_model') %}
+            <div class="openrouter-summary">
+                <div class="brand-icon" style="width: 40px; height: 40px; font-size: 1rem; background: linear-gradient(135deg, var(--secondary-500), var(--primary-500)); box-shadow: 0 4px 12px var(--primary-glow-soft);">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <p class="mb-0" style="font-size: 0.85rem; font-weight: 700; color: var(--secondary-400);">OpenRouter AI Aktif</p>
+                    <p class="mb-0" style="font-size: 0.75rem; color: var(--text-disabled);">Asisten AI siap membantu</p>
+                </div>
+                <span class="live-dot"></span>
+            </div>
+            {% endif %}
+
+            <a href="{{ url_for('checkout') }}" class="btn-checkout-cta">
+                <i class="bi bi-credit-card"></i> Lanjut ke Checkout
+            </a>
+            <a href="{{ url_for('catalog') }}" class="btn btn-ghost w-100 mt-2" style="font-size: 0.85rem; border-radius: var(--r-md); padding: 0.75rem;">
+                <i class="bi bi-arrow-left me-1"></i> Lanjutkan Belanja
+            </a>
+        </div>
+
+        <!-- Trust Badges -->
+        <div class="trust-grid mt-3 reveal">
+            <div class="trust-item"><i class="bi bi-shield-check" style="color: var(--success);"></i> Transaksi Aman</div>
+            <div class="trust-item"><i class="bi bi-truck" style="color: var(--info);"></i> Pengiriman Cepat</div>
+            <div class="trust-item"><i class="bi bi-arrow-counterclockwise" style="color: var(--warning);"></i> Garansi 7 Hari</div>
+            <div class="trust-item"><i class="bi bi-headset" style="color: var(--secondary-400);"></i> Support 24/7</div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="empty-cart reveal">
+    <div class="empty-cart-icon"><i class="bi bi-cart-x"></i></div>
+    <h3 class="fw-bold mb-2">Keranjang Kosong</h3>
+    <p>Keranjang belanja Anda masih kosong. Jelajahi katalog kami dan temukan produk premium yang Anda sukai.</p>
+    <a href="{{ url_for('catalog') }}" class="btn btn-primary" style="position: relative; z-index: 1; padding: 0.875rem 1.75rem;">
+        <i class="bi bi-grid me-2"></i> Jelajahi Katalog
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* =========================================================
+   CART PAGE — 2026 PRO EDITION
+   Full PGI integration, offline queue, keyboard shortcuts
+   ========================================================= */
+
+/* ========== PGI NAMESPACE FALLBACK ========== */
+const PGI = window.PGI || {
+    Toast: {
+        success: (msg) => console.log('[Toast Success]', msg),
+        error: (msg) => console.log('[Toast Error]', msg),
+        warning: (msg) => console.log('[Toast Warning]', msg),
+        info: (msg) => console.log('[Toast Info]', msg)
+    },
+    Cart: {
+        sync: () => console.log('[Cart Sync]')
+    },
+    utils: {
+        getCSRFToken: () => {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            return meta ? meta.content : '';
+        },
+        safeJSONParse: (str, fallback) => {
+            try { return JSON.parse(str); } catch { return fallback; }
+        }
+    }
+};
+
+/* ========== SELECTION ========== */
+function toggleSelectAll(checkbox) {
+    document.querySelectorAll('.item-check').forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+    updateSelection();
+}
+
+function updateSelection() {
+    const checked = document.querySelectorAll('.item-check:checked');
+    const all = document.querySelectorAll('.item-check');
+    const selectAllBox = document.getElementById('selectAllCheck');
+    const btnRemove = document.getElementById('btnRemoveSelected');
+
+    if (checked.length === 0) {
+        selectAllBox.checked = false;
+        selectAllBox.indeterminate = false;
+    } else if (checked.length === all.length) {
+        selectAllBox.checked = true;
+        selectAllBox.indeterminate = false;
+    } else {
+        selectAllBox.checked = false;
+        selectAllBox.indeterminate = true;
+    }
+
+    btnRemove.style.display = checked.length > 0 ? 'inline-flex' : 'none';
+
+    document.querySelectorAll('.cart-item').forEach(item => {
+        const cb = item.querySelector('.item-check');
+        item.classList.toggle('selected', cb && cb.checked);
+    });
+}
+
+/* ========== OFFLINE QUEUE SYSTEM ========== */
+const OfflineQueue = {
+    STORAGE_KEY: 'pgi_cart_queue_v1',
+
+    getQueue() {
+        return PGI.utils.safeJSONParse(localStorage.getItem(this.STORAGE_KEY), []);
+    },
+
+    saveQueue(queue) {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(queue));
+    },
+
+    add(action, data) {
+        const queue = this.getQueue();
+        queue.push({ action, data, timestamp: Date.now(), retries: 0 });
+        this.saveQueue(queue);
+    },
+
+    async processQueue() {
+        const queue = this.getQueue();
+        if (!queue.length) return;
+
+        const processed = [];
+        for (const item of queue) {
+            try {
+                if (item.action === 'updateQty') {
+                    await syncUpdateQty(item.data.productId, item.data.quantity);
+                } else if (item.action === 'removeItem') {
+                    await syncRemoveItem(item.data.productId);
+                }
+                processed.push(item);
+            } catch (e) {
+                item.retries++;
+                if (item.retries > 3) processed.push(item);
+            }
+        }
+
+        const remaining = queue.filter(q => !processed.includes(q));
+        this.saveQueue(remaining);
+
+        if (remaining.length === 0 && processed.length > 0) {
+            PGI.Toast.success('Sinkronisasi keranjang selesai');
+            window.location.reload();
+        }
+    },
+
+    clear() {
+        localStorage.removeItem(this.STORAGE_KEY);
+    }
+};
+
+async function syncUpdateQty(productId, quantity) {
+    const res = await fetch(`/cart/update/${productId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': PGI.utils.getCSRFToken()
+        },
+        body: JSON.stringify({ quantity })
+    });
+    return res.json();
+}
+
+async function syncRemoveItem(productId) {
+    const res = await fetch(`/cart/remove/${productId}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': PGI.utils.getCSRFToken()
+        }
+    });
+    return res.json();
+}
+
+/* ========== NETWORK STATUS ========== */
+const NetworkStatus = {
+    isOnline: navigator.onLine,
+
+    init() {
+        window.addEventListener('online', () => {
+            this.isOnline = true;
+            PGI.Toast.success('Koneksi pulih. Menyinkronkan...');
+            OfflineQueue.processQueue();
+        });
+        window.addEventListener('offline', () => {
+            this.isOnline = false;
+            PGI.Toast.warning('Mode offline. Perubahan akan disinkronkan nanti.');
+        });
+    }
+};
+
+/* ========== QUANTITY ========== */
+async function updateQty(productId, delta) {
+    const input = document.getElementById('qtyInput-' + productId);
+    const btnMinus = document.getElementById('btnMinus-' + productId);
+    const btnPlus = document.getElementById('btnPlus-' + productId);
+    const current = parseInt(input.value) || 1;
+    const max = parseInt(input.max) || 99;
+    const newQty = current + delta;
+
+    if (newQty < 1 || newQty > max) return;
+
+    // Optimistic UI
+    input.value = newQty;
+    btnMinus.disabled = newQty <= 1;
+    btnPlus.disabled = newQty >= max;
+
+    // Update subtotal optimistically
+    const priceEl = document.querySelector(`#cartItem-${productId} .cart-item-price`);
+    if (priceEl) {
+        const price = parseInt(priceEl.dataset.price) || 0;
+        document.getElementById('subtotal-' + productId).textContent = formatRupiah(price * newQty);
+        document.getElementById('subtotal-' + productId).dataset.subtotal = price * newQty;
+    }
+
+    // Offline handling
+    if (!NetworkStatus.isOnline) {
+        OfflineQueue.add('updateQty', { productId, quantity: newQty });
+        recalculateTotals();
+        PGI.Toast.info('Perubahan disimpan secara lokal');
+        return;
+    }
+
+    try {
+        const res = await fetch(`/cart/update/${productId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': PGI.utils.getCSRFToken()
+            },
+            body: JSON.stringify({ quantity: newQty })
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (data.item_subtotal !== undefined) {
+                document.getElementById('subtotal-' + productId).textContent = 
+                    data.item_subtotal_formatted || formatRupiah(data.item_subtotal);
+            }
+            if (data.cart_total !== undefined) {
+                updateSummary(data.cart_total, data.cart_total_formatted, data.total_savings, data.total_savings_formatted);
+            } else {
+                recalculateTotals();
+            }
+            PGI.Cart.sync();
+            PGI.Toast.success('Jumlah diperbarui');
+        } else {
+            throw new Error(data.message || 'Gagal memperbarui');
+        }
+    } catch (err) {
+        // Revert optimistic UI
+        input.value = current;
+        btnMinus.disabled = current <= 1;
+        btnPlus.disabled = current >= max;
+
+        if (!navigator.onLine) {
+            OfflineQueue.add('updateQty', { productId, quantity: newQty });
+            PGI.Toast.warning('Mode offline. Akan disinkronkan nanti.');
+        } else {
+            PGI.Toast.error(err.message || 'Gagal memperbarui jumlah');
+        }
+    }
+}
+
+/* ========== REMOVE ITEM ========== */
+async function removeItem(productId) {
+    if (!confirm('Hapus item ini dari keranjang?')) return;
+
+    const itemEl = document.getElementById('cartItem-' + productId);
+    itemEl.style.transition = 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+    itemEl.style.opacity = '0';
+    itemEl.style.transform = 'translateX(60px) scale(0.92)';
+
+    if (!NetworkStatus.isOnline) {
+        OfflineQueue.add('removeItem', { productId });
+        setTimeout(() => {
+            itemEl.remove();
+            updateItemCount();
+            recalculateTotals();
+            PGI.Toast.info('Item dihapus secara lokal. Akan disinkronkan nanti.');
+            if (document.querySelectorAll('.cart-item').length === 0) {
+                window.location.reload();
+            }
+        }, 400);
+        return;
+    }
+
+    try {
+        const res = await fetch(`/cart/remove/${productId}`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': PGI.utils.getCSRFToken() 
+            }
+        });
+        const data = await res.json();
+        if (data.success) {
+            setTimeout(() => {
+                itemEl.remove();
+                updateItemCount();
+                if (data.cart_total !== undefined) {
+                    updateSummary(data.cart_total, data.cart_total_formatted, data.total_savings, data.total_savings_formatted);
+                } else {
+                    recalculateTotals();
+                }
+                PGI.Cart.sync();
+                PGI.Toast.success('Item dihapus dari keranjang');
+                if (document.querySelectorAll('.cart-item').length === 0) {
+                    window.location.reload();
+                }
+            }, 400);
+        } else {
+            throw new Error(data.message || 'Gagal menghapus');
+        }
+    } catch (err) {
+        itemEl.style.opacity = '1';
+        itemEl.style.transform = 'translateX(0) scale(1)';
+        PGI.Toast.error(err.message || 'Gagal menghapus item');
+    }
+}
+
+/* ========== REMOVE SELECTED ========== */
+async function removeSelected() {
+    const checked = document.querySelectorAll('.item-check:checked');
+    if (checked.length === 0) return;
+    if (!confirm(`Hapus ${checked.length} item terpilih dari keranjang?`)) return;
+
+    const ids = Array.from(checked).map(cb => cb.value);
+    let successCount = 0;
+
+    for (const id of ids) {
+        const el = document.getElementById('cartItem-' + id);
+        if (el) {
+            el.style.transition = 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+            el.style.opacity = '0';
+            el.style.transform = 'translateX(50px) scale(0.92)';
+        }
+
+        if (!NetworkStatus.isOnline) {
+            OfflineQueue.add('removeItem', { productId: id });
+            setTimeout(() => { if (el) el.remove(); }, 350);
+            successCount++;
+            continue;
+        }
+
+        try {
+            const res = await fetch(`/cart/remove/${id}`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': PGI.utils.getCSRFToken() 
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setTimeout(() => { if (el) el.remove(); }, 350);
+                successCount++;
+            }
+        } catch {}
+    }
+
+    setTimeout(() => {
+        updateItemCount();
+        PGI.Cart.sync();
+        PGI.Toast.success(`${successCount} item dihapus`);
+        if (document.querySelectorAll('.cart-item').length === 0) {
+            window.location.reload();
+        } else {
+            recalculateTotals();
+        }
+    }, 600);
+}
+
+/* ========== CLEAR CART ========== */
+async function clearCart() {
+    if (!confirm('Kosongkan semua isi keranjang? Tindakan ini tidak dapat dibatalkan.')) return;
+
+    const items = document.querySelectorAll('.cart-item');
+    items.forEach(el => {
+        el.style.transition = 'all 0.3s ease';
+        el.style.opacity = '0';
+        el.style.transform = 'scale(0.9)';
+    });
+
+    try {
+        const res = await fetch('/cart/clear', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': PGI.utils.getCSRFToken() }
+        });
+        const data = await res.json();
+        if (data.success) {
+            PGI.Cart.sync();
+            PGI.Toast.success('Keranjang dikosongkan');
+            setTimeout(() => window.location.reload(), 700);
+        } else {
+            throw new Error(data.message || 'Gagal mengosongkan');
+        }
+    } catch (err) {
+        items.forEach(el => {
+            el.style.opacity = '1';
+            el.style.transform = 'scale(1)';
+        });
+        PGI.Toast.error(err.message || 'Gagal mengosongkan keranjang');
+    }
+}
+
+/* ========== PROMO ========== */
+function applyPromo() {
+    const input = document.getElementById('promoInput');
+    const btn = document.getElementById('btnApplyPromo');
+    const msg = document.getElementById('promoMessage');
+    const code = input.value.trim().toUpperCase();
+
+    if (!code) {
+        msg.textContent = 'Masukkan kode promo';
+        msg.style.color = 'var(--warning)';
+        msg.style.display = 'block';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    // Simulate API call
+    setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = 'Terapkan';
+        msg.textContent = 'Kode promo tidak valid atau sudah kadaluarsa';
+        msg.style.color = 'var(--danger)';
+        msg.style.display = 'block';
+    }, 900);
+}
+
+/* ========== HELPERS ========== */
+function updateSummary(total, totalFormatted, savings, savingsFormatted) {
+    const grandEl = document.getElementById('summaryGrandTotal');
+    const itemsEl = document.getElementById('summaryTotalItems');
+    const savingsEl = document.getElementById('summarySavings');
+
+    if (grandEl) {
+        grandEl.textContent = totalFormatted || formatRupiah(total);
+        grandEl.dataset.grand = total;
+    }
+    if (itemsEl) {
+        itemsEl.textContent = totalFormatted || formatRupiah(total);
+        itemsEl.dataset.total = total;
+    }
+    if (savingsEl && savings !== undefined) {
+        savingsEl.textContent = savingsFormatted || `-${formatRupiah(savings)}`;
+        savingsEl.dataset.savings = savings;
+    }
+}
+
+function recalculateTotals() {
+    let total = 0;
+    let savings = 0;
+
+    document.querySelectorAll('.cart-item').forEach(item => {
+        const priceEl = item.querySelector('.cart-item-price');
+        const compareEl = item.querySelector('.cart-item-compare');
+        const qtyInput = item.querySelector('.qty-stepper input');
+
+        if (priceEl && qtyInput) {
+            const price = parseInt(priceEl.dataset.price) || 0;
+            const qty = parseInt(qtyInput.value) || 1;
+            total += price * qty;
+
+            if (compareEl) {
+                const compare = parseInt(compareEl.dataset.compare) || 0;
+                savings += (compare - price) * qty;
+            }
+        }
+    });
+
+    updateSummary(total, formatRupiah(total), savings, formatRupiah(savings));
+}
+
+function updateItemCount() {
+    const count = document.querySelectorAll('.cart-item').length;
+    const badge = document.querySelector('.count-badge strong');
+    const totalText = document.getElementById('totalItemCount');
+    const summaryCount = document.getElementById('summaryItemCount');
+    if (badge) badge.textContent = count;
+    if (totalText) totalText.textContent = count;
+    if (summaryCount) summaryCount.textContent = count;
+}
+
+function formatRupiah(num) {
+    if (num === undefined || num === null || isNaN(num)) return 'Rp 0';
+    return 'Rp ' + Number(num).toLocaleString('id-ID');
+}
+
+/* ========== KEYBOARD SHORTCUTS ========== */
+document.addEventListener('keydown', (e) => {
+    // Delete key to remove selected items
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        const checked = document.querySelectorAll('.item-check:checked');
+        if (checked.length > 0 && document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            removeSelected();
+        }
+    }
+
+    // Ctrl+A to select all
+    if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+        const selectAll = document.getElementById('selectAllCheck');
+        if (selectAll && document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            selectAll.checked = !selectAll.checked;
+            toggleSelectAll(selectAll);
+        }
+    }
+
+    // Escape to clear selection
+    if (e.key === 'Escape') {
+        const checked = document.querySelectorAll('.item-check:checked');
+        if (checked.length > 0) {
+            checked.forEach(cb => cb.checked = false);
+            updateSelection();
+        }
+    }
+});
+
+/* ========== SWIPE TO DELETE (Mobile) ========== */
+let touchStartX = 0;
+let touchCurrentX = 0;
+let swipedItem = null;
+
+document.querySelectorAll('.cart-item').forEach(item => {
+    item.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        swipedItem = item;
+    }, { passive: true });
+
+    item.addEventListener('touchmove', (e) => {
+        if (!swipedItem) return;
+        touchCurrentX = e.touches[0].clientX;
+        const diff = touchStartX - touchCurrentX;
+        if (diff > 0 && diff < 120) {
+            item.style.transform = `translateX(-${diff}px)`;
+            item.style.transition = 'none';
+        }
+    }, { passive: true });
+
+    item.addEventListener('touchend', () => {
+        if (!swipedItem) return;
+        const diff = touchStartX - touchCurrentX;
+        item.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+
+        if (diff > 80) {
+            const productId = item.dataset.productId;
+            if (confirm('Hapus item ini?')) {
+                removeItem(productId);
+            } else {
+                item.style.transform = 'translateX(0)';
+            }
+        } else {
+            item.style.transform = 'translateX(0)';
+        }
+        swipedItem = null;
+    }, { passive: true });
+});
+
+/* ========== INIT ========== */
+document.addEventListener('DOMContentLoaded', () => {
+    NetworkStatus.init();
+    OfflineQueue.processQueue();
+    updateSelection();
+
+    // Set up AI context
+    window.aiPageContext = {
+        page: 'cart',
+        prompt: `Anda adalah asisten belanja untuk Pusat Gadai Indonesia. Membantu pelanggan dengan:
+- Rekomendasi produk dan spesifikasi
+- Pertanyaan tentang harga, garansi, dan kondisi HP
+- Bantuan memilih HP yang sesuai budget
+- Informasi tentang verification dan authenticity
+Jawab dengan ramah, profesional, dan gunakan bahasa Indonesia.`
+    };
+});
+</script>
+{% endblock %}

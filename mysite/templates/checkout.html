@@ -1,0 +1,2550 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout — {{ global_settings.site_name }}{% endblock %}
+
+{% block meta_description %}
+<meta name="description" content="Selesaikan pembelian HP premium bekas Anda. Pengiriman aman, pembayaran terpercaya, garansi resmi.">
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════════════════
+   CHECKOUT PAGE — PREMIUM DARK THEME (Sesuai Base)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Page Header ── */
+.checkout-header {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.checkout-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 3px;
+    background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
+    border-radius: var(--r-full);
+}
+.checkout-header .brand-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    border-radius: var(--r-lg);
+    display: inline-grid; place-items: center;
+    color: white; font-size: 1.5rem;
+    box-shadow: 0 8px 32px var(--primary-glow-soft);
+    margin-bottom: 1rem;
+    position: relative;
+}
+.checkout-header .brand-icon::after {
+    content: ''; position: absolute; inset: -4px;
+    border-radius: inherit;
+    background: inherit; opacity: 0.3;
+    animation: fab-pulse 2.5s ease-out infinite;
+    z-index: -1;
+}
+.checkout-header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+.checkout-header .company-name {
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+}
+
+/* ── Breadcrumb ── */
+.breadcrumb-custom {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.8rem; color: var(--text-tertiary);
+    margin-bottom: 1.5rem; flex-wrap: wrap;
+}
+.breadcrumb-custom a {
+    color: var(--text-tertiary); text-decoration: none;
+    transition: color 0.2s;
+    display: inline-flex; align-items: center; gap: 0.25rem;
+}
+.breadcrumb-custom a:hover { color: var(--primary-400); }
+.breadcrumb-custom .sep { color: var(--text-disabled); font-size: 0.7rem; }
+.breadcrumb-custom .active { color: var(--text-secondary); font-weight: 600; }
+
+/* ── Progress Steps ── */
+.checkout-steps {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-bottom: 2.5rem; flex-wrap: wrap;
+}
+.step-item {
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    position: relative; z-index: 1;
+}
+.step-circle {
+    width: 40px; height: 40px; border-radius: var(--r-full);
+    display: grid; place-items: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 0.9rem;
+    background: var(--bg-elevated);
+    border: 2px solid var(--border-default);
+    color: var(--text-disabled);
+    transition: all 0.3s var(--ease-out-expo);
+}
+.step-item.completed .step-circle {
+    background: linear-gradient(135deg, var(--success), #059669);
+    border-color: transparent; color: white;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+.step-item.active .step-circle {
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    border-color: transparent; color: white;
+    box-shadow: 0 4px 20px var(--primary-glow-soft);
+    animation: step-pulse 2s ease-in-out infinite;
+}
+@keyframes step-pulse {
+    0%, 100% { box-shadow: 0 4px 20px var(--primary-glow-soft); }
+    50% { box-shadow: 0 4px 30px var(--primary-glow); }
+}
+.step-label {
+    font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-disabled);
+}
+.step-item.completed .step-label { color: var(--success); }
+.step-item.active .step-label { color: var(--primary-400); }
+.step-line {
+    width: 60px; height: 2px;
+    background: var(--border-default);
+    margin: 0 0.5rem; margin-bottom: 1.5rem;
+    position: relative; overflow: hidden;
+}
+.step-line.completed {
+    background: linear-gradient(90deg, var(--success), var(--primary-500));
+}
+.step-line::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: translateX(-100%);
+    animation: shimmer 2s infinite;
+}
+.step-line.completed::after { animation: none; }
+
+/* ── Checkout Cards ── */
+.checkout-card, .summary-card {
+    background: linear-gradient(180deg, rgba(15,23,42,0.8), rgba(15,23,42,0.6));
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.04);
+    padding: 2rem;
+    transition: all var(--duration-base) var(--ease-out-expo);
+}
+.checkout-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
+/* ── Section Titles ── */
+.checkout-section-title {
+    display: flex; align-items: center; gap: 0.75rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1.25rem; padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.checkout-section-icon {
+    width: 36px; height: 36px; border-radius: var(--r-md);
+    display: grid; place-items: center;
+    font-size: 0.9rem; color: white;
+    flex-shrink: 0;
+}
+
+/* ── Form Labels & Inputs ── */
+.form-label-premium {
+    font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 0.08em; font-weight: 700;
+    color: var(--text-tertiary); margin-bottom: 0.5rem;
+    display: block;
+}
+.form-label-premium .required { color: var(--danger); }
+.input-icon-wrap {
+    position: relative; display: flex; align-items: center;
+}
+.input-icon-wrap > i:first-child {
+    position: absolute; left: 1rem;
+    color: var(--text-disabled); font-size: 1rem;
+    z-index: 2; pointer-events: none;
+}
+.input-icon-wrap .form-control,
+.input-icon-wrap .form-select {
+    padding-left: 2.75rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    border-radius: var(--r-md);
+    transition: all var(--duration-fast);
+}
+.input-icon-wrap .form-control:focus,
+.input-icon-wrap .form-select:focus {
+    background: var(--bg-surface);
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px var(--primary-glow-soft);
+    color: var(--text-primary);
+}
+.input-icon-wrap .form-control::placeholder { color: var(--text-disabled); }
+.form-text {
+    font-size: 0.75rem; color: var(--text-disabled);
+    margin-top: 0.4rem;
+}
+
+/* ── Method Cards (Shipping & Payment) ── */
+.method-card {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-elevated);
+    border: 2px solid var(--border-default);
+    border-radius: var(--r-lg);
+    cursor: pointer;
+    position: relative;
+    transition: all var(--duration-fast) var(--ease-out-expo);
+    overflow: hidden;
+}
+.method-card:hover {
+    border-color: var(--border-strong);
+    background: var(--bg-surface-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+.method-card.selected {
+    border-color: var(--primary-500);
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.04));
+    box-shadow: 0 0 20px var(--primary-glow-soft);
+}
+.method-card .method-radio { display: none; }
+.check-indicator {
+    width: 24px; height: 24px; border-radius: var(--r-full);
+    border: 2px solid var(--border-default);
+    display: grid; place-items: center;
+    color: transparent; font-size: 0.8rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.method-card.selected .check-indicator {
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    border-color: transparent; color: white;
+    box-shadow: 0 2px 8px var(--primary-glow-soft);
+}
+.method-icon {
+    width: 44px; height: 44px; border-radius: var(--r-md);
+    display: grid; place-items: center;
+    font-size: 1.25rem; flex-shrink: 0;
+}
+.method-icon.shipping {
+    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(37,99,235,0.08));
+    color: var(--info);
+}
+.method-icon.payment-bank {
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.08));
+    color: var(--primary-400);
+}
+.method-icon.payment-cod {
+    background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.08));
+    color: var(--warning);
+}
+.method-info { flex: 1; min-width: 0; }
+.method-info .name {
+    font-weight: 700; font-size: 0.9rem;
+    color: var(--text-primary); display: flex;
+    align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.method-info .desc {
+    font-size: 0.8rem; color: var(--text-tertiary);
+    margin-top: 0.15rem;
+}
+.method-badge {
+    font-size: 0.65rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 0.15rem 0.5rem; border-radius: var(--r-xs);
+    background: var(--success-bg); color: var(--success);
+    border: 1px solid rgba(16,185,129,0.2);
+}
+.method-badge-warning {
+    font-size: 0.65rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 0.15rem 0.5rem; border-radius: var(--r-xs);
+    background: var(--warning-bg); color: var(--warning);
+    border: 1px solid rgba(245,158,11,0.2);
+}
+.shipping-cost-tag {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.8rem; font-weight: 700;
+    color: var(--primary-400);
+}
+
+/* ── Payment Details ── */
+.payment-details-box {
+    margin: 1.5rem 0; padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.03));
+    border: 1px solid rgba(99,102,241,0.15);
+    border-radius: var(--r-lg);
+}
+.payment-details-box .info-header {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.payment-details-box .info-header i { color: var(--primary-400); }
+.payment-details-box .info-header span {
+    font-weight: 600; font-size: 0.9rem; color: var(--text-primary);
+}
+.bank-account-item {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.875rem; margin-bottom: 0.5rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-md);
+    transition: all 0.2s;
+}
+.bank-account-item:hover {
+    border-color: var(--primary-500);
+    background: var(--bg-surface-hover);
+}
+.bank-account-item:last-child { margin-bottom: 0; }
+.bank-account-item .bank-icon {
+    width: 36px; height: 36px; border-radius: var(--r-sm);
+    background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.06));
+    display: grid; place-items: center; flex-shrink: 0;
+}
+.bank-account-item .bank-icon i { color: var(--primary-400); font-size: 0.9rem; }
+.bank-account-item .bank-info { flex: 1; min-width: 0; }
+.bank-account-item .bank-name {
+    font-weight: 600; font-size: 0.85rem; color: var(--text-primary);
+}
+.bank-account-item .bank-number {
+    font-family: 'Space Grotesk', monospace;
+    font-weight: 700; font-size: 0.95rem;
+    color: var(--primary-400); letter-spacing: 0.05em;
+    margin: 0.25rem 0;
+}
+.bank-account-item .bank-holder {
+    font-size: 0.75rem; color: var(--text-disabled);
+}
+.copy-btn {
+    width: 32px; height: 32px; border-radius: var(--r-sm);
+    background: rgba(99,102,241,0.08); border: 1px solid var(--border-default);
+    color: var(--primary-400); display: grid; place-items: center;
+    cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+    font-size: 0.8rem;
+}
+.copy-btn:hover {
+    background: var(--primary-500); border-color: var(--primary-500); color: white;
+}
+.copy-btn.copied {
+    background: var(--success); border-color: var(--success); color: white;
+}
+.payment-note {
+    margin-top: 1rem; padding: 0.875rem;
+    background: rgba(59,130,246,0.05);
+    border-radius: var(--r-md);
+    font-size: 0.8rem; color: var(--text-secondary);
+    border-left: 3px solid var(--primary-400);
+}
+.payment-deadline {
+    margin-top: 0.75rem; padding: 0.875rem;
+    background: rgba(245,158,11,0.05);
+    border-radius: var(--r-md);
+    font-size: 0.8rem; color: var(--text-secondary);
+    border-left: 3px solid var(--warning);
+}
+
+/* ── Terms Box ── */
+.terms-box {
+    display: flex; align-items: flex-start; gap: 0.875rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(168,85,247,0.03));
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    margin-bottom: 1.5rem;
+}
+.terms-box .form-check-input {
+    width: 20px; height: 20px; margin-top: 0.15rem;
+    background: var(--bg-elevated); border-color: var(--border-default);
+    cursor: pointer; flex-shrink: 0;
+}
+.terms-box .form-check-input:checked {
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    border-color: transparent;
+}
+.terms-box p {
+    font-size: 0.85rem; color: var(--text-secondary);
+    line-height: 1.6; margin: 0;
+}
+.terms-box a {
+    color: var(--primary-400); text-decoration: none;
+    font-weight: 600; transition: color 0.2s;
+}
+.terms-box a:hover { color: var(--primary-300); text-decoration: underline; }
+
+/* ── Submit Button ── */
+.btn-checkout {
+    width: 100%; padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    color: white; border: none; border-radius: var(--r-lg);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 1rem;
+    letter-spacing: 0.02em;
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 0.5rem; cursor: pointer;
+    box-shadow: 0 4px 20px var(--primary-glow-soft);
+    transition: all var(--duration-fast) var(--ease-out-expo);
+    position: relative; overflow: hidden;
+}
+.btn-checkout::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.15), transparent);
+    transform: translateX(-100%); transition: transform 0.6s;
+}
+.btn-checkout:hover::after { transform: translateX(100%); }
+.btn-checkout:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px var(--primary-glow);
+}
+.btn-checkout:disabled {
+    opacity: 0.5; cursor: not-allowed;
+    background: var(--bg-surface-hover);
+    box-shadow: none;
+}
+.btn-checkout:disabled::after { display: none; }
+
+/* ── Summary Card ── */
+.summary-card {
+    position: sticky; top: calc(var(--nav-h) + 1rem);
+}
+.summary-card .checkout-section-title {
+    font-size: 1rem; padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+/* OpenRouter Badge */
+.openrouter-summary {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: linear-gradient(135deg, rgba(168,85,247,0.08), rgba(99,102,241,0.05));
+    border: 1px solid rgba(168,85,247,0.15);
+    border-radius: var(--r-lg);
+    margin-bottom: 1.25rem;
+}
+.openrouter-summary .live-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--success);
+    animation: pulse-dot 2s ease infinite;
+    flex-shrink: 0;
+}
+
+/* Summary Items */
+.summary-items-scroll {
+    max-height: 320px; overflow-y: auto;
+    padding-right: 0.5rem; margin-bottom: 1rem;
+}
+.summary-items-scroll::-webkit-scrollbar { width: 4px; }
+.summary-items-scroll::-webkit-scrollbar-track { background: transparent; }
+.summary-items-scroll::-webkit-scrollbar-thumb {
+    background: var(--border-default); border-radius: var(--r-full);
+}
+.summary-item {
+    display: flex; align-items: center; gap: 0.875rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.summary-item:last-child { border-bottom: none; }
+.summary-item img {
+    width: 56px; height: 56px; border-radius: var(--r-sm);
+    object-fit: cover; border: 1px solid var(--border-default);
+    flex-shrink: 0;
+}
+.summary-item .item-placeholder {
+    width: 56px; height: 56px; border-radius: var(--r-sm);
+    background: var(--bg-elevated); border: 1px solid var(--border-default);
+    display: grid; place-items: center; flex-shrink: 0;
+    color: var(--text-disabled); font-size: 1rem;
+}
+.summary-item .name {
+    font-weight: 600; font-size: 0.85rem;
+    color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.summary-item .meta {
+    font-size: 0.75rem; color: var(--text-disabled);
+    margin-top: 0.1rem;
+}
+.summary-item .qty {
+    font-size: 0.75rem; color: var(--text-tertiary);
+    background: var(--bg-elevated);
+    padding: 0.15rem 0.5rem; border-radius: var(--r-xs);
+}
+.summary-item .price {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+/* Summary Divider */
+.summary-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-default), transparent);
+    margin: 0.75rem 0;
+}
+
+/* Summary Rows */
+.summary-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.4rem 0; font-size: 0.85rem;
+}
+.summary-row .label { color: var(--text-tertiary); }
+.summary-row .value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600; color: var(--text-primary);
+}
+.summary-row .value-success { color: var(--success); font-weight: 700; }
+.summary-total-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 0.75rem;
+}
+.summary-total {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 800; font-size: 1.35rem;
+    background: linear-gradient(135deg, var(--primary-400), var(--accent-400));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* Security Badges */
+.security-badges {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; padding: 1rem;
+    background: linear-gradient(180deg, rgba(15,23,42,0.6), rgba(15,23,42,0.4));
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    backdrop-filter: blur(12px);
+}
+.security-badge {
+    display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+    padding: 0 1rem; flex: 1;
+}
+.security-badge i { font-size: 1.1rem; }
+.security-badge span {
+    font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+}
+.security-divider {
+    width: 1px; height: 24px;
+    background: var(--border-subtle);
+}
+
+/* ── Login Required Card ── */
+.login-required-card {
+    text-align: center; padding: 3rem 2rem;
+    background: linear-gradient(180deg, rgba(15,23,42,0.8), rgba(15,23,42,0.6));
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    box-shadow: var(--shadow-md);
+}
+.login-required-icon {
+    width: 72px; height: 72px; border-radius: var(--r-full);
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    display: grid; place-items: center; margin: 0 auto 1.5rem;
+    color: white; font-size: 2rem;
+    box-shadow: 0 8px 32px var(--primary-glow-soft);
+}
+.login-required-card h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; color: var(--text-primary);
+}
+.login-required-card p {
+    color: var(--text-tertiary); font-size: 0.9rem;
+    max-width: 320px; margin: 0 auto 1.5rem;
+}
+
+/* ── Empty Shipping State ── */
+.empty-shipping-state {
+    text-align: center; padding: 2rem;
+    color: var(--text-disabled); font-size: 0.85rem;
+    background: var(--bg-elevated); border-radius: var(--r-lg);
+    border: 1px dashed var(--border-default);
+}
+.empty-shipping-state i {
+    display: block; font-size: 2rem;
+    color: var(--text-disabled); margin-bottom: 0.75rem;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   POLICY SECTIONS — KEBIJAKAN PEMESANAN
+   ═══════════════════════════════════════════════════════════ */
+
+.policy-section {
+    margin-bottom: 1.25rem;
+    animation: fadeInUp 0.5s ease-out both;
+}
+.policy-section:nth-child(2) { animation-delay: 0.1s; }
+.policy-section:nth-child(3) { animation-delay: 0.2s; }
+.policy-section:nth-child(4) { animation-delay: 0.3s; }
+
+.policy-header {
+    display: flex; align-items: center; gap: 0.875rem;
+    margin-bottom: 0.875rem;
+}
+
+.policy-number {
+    width: 36px; height: 36px; border-radius: var(--r-md);
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    color: white; display: grid; place-items: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 0.9rem;
+    flex-shrink: 0; box-shadow: 0 4px 12px var(--primary-glow-soft);
+}
+
+.policy-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem; font-weight: 700;
+    color: var(--text-primary); margin: 0;
+}
+
+.policy-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    padding: 1.25rem;
+    transition: all var(--duration-fast) var(--ease-out-expo);
+}
+.policy-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-sm);
+}
+
+.policy-card p {
+    color: var(--text-secondary);
+    line-height: 1.7; font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+.policy-card p:last-of-type { margin-bottom: 0; }
+.policy-card p strong { color: var(--text-primary); }
+.policy-card p em { color: var(--text-tertiary); font-style: italic; }
+
+.policy-list {
+    padding-left: 0; margin: 0.75rem 0;
+    list-style: none;
+}
+.policy-list li {
+    position: relative; padding-left: 1.5rem;
+    color: var(--text-secondary); font-size: 0.85rem;
+    line-height: 1.7; margin-bottom: 0.5rem;
+}
+.policy-list li::before {
+    content: '•'; position: absolute; left: 0.5rem;
+    color: var(--danger); font-weight: 700;
+}
+
+/* ── Policy Badges ── */
+.policy-badge {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.4rem 0.875rem; border-radius: var(--r-full);
+    font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+}
+.policy-badge:hover { transform: translateY(-1px); }
+
+.badge-blue {
+    background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(37,99,235,0.06));
+    color: var(--info); border: 1px solid rgba(59,130,246,0.2);
+}
+.badge-orange {
+    background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(217,119,6,0.06));
+    color: var(--warning); border: 1px solid rgba(245,158,11,0.2);
+}
+.badge-green {
+    background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(5,150,105,0.06));
+    color: var(--success); border: 1px solid rgba(16,185,129,0.2);
+}
+.badge-red {
+    background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.06));
+    color: var(--danger); border: 1px solid rgba(239,68,68,0.2);
+}
+
+/* ── Footer Note ── */
+.footer-note {
+    display: flex; align-items: flex-start; gap: 0.5rem;
+    background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(217,119,6,0.03));
+    border: 1px solid rgba(245,158,11,0.12);
+    border-radius: var(--r-lg);
+    padding: 1rem 1.25rem;
+    margin-top: 1.5rem;
+    color: var(--text-secondary);
+    line-height: 1.7; font-size: 0.85rem;
+}
+.footer-note strong { color: var(--warning); }
+
+/* ── Animations ── */
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.8); }
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 991px) {
+    .summary-card { position: static; margin-top: 2rem; }
+    .checkout-steps { gap: 0.5rem; }
+    .step-line { width: 30px; }
+}
+@media (max-width: 576px) {
+    .checkout-header { padding: 2rem 1rem; }
+    .checkout-card, .summary-card { padding: 1.25rem; }
+    .method-card { padding: 0.875rem 1rem; }
+    .step-circle { width: 32px; height: 32px; font-size: 0.8rem; }
+    .step-label { font-size: 0.6rem; }
+    .step-line { width: 20px; }
+    .policy-badge { display: flex; width: 100%; margin-right: 0; margin-bottom: 0.5rem; }
+    .policy-badge:last-child { margin-bottom: 0; }
+}
+
+/* ── Light Mode Overrides ── */
+html[data-theme="light"] .policy-card {
+    background: var(--bg-elevated);
+    border-color: var(--border-default);
+}
+html[data-theme="light"] .policy-card p { color: var(--text-secondary); }
+html[data-theme="light"] .policy-card p strong { color: var(--text-primary); }
+html[data-theme="light"] .policy-list li { color: var(--text-secondary); }
+html[data-theme="light"] .footer-note {
+    background: linear-gradient(135deg, rgba(245,158,11,0.04), rgba(217,119,6,0.02));
+    border-color: rgba(245,158,11,0.1);
+    color: var(--text-secondary);
+}
+html[data-theme="light"] .footer-note strong { color: var(--amber-600); }
+
+
+/* ── Credit Payment Styles ── */
+.method-icon.payment-credit {
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.08));
+    color: var(--primary-400);
+}
+
+.credit-summary-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-md);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.credit-schedule-preview {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.credit-schedule-preview::-webkit-scrollbar { width: 4px; }
+.credit-schedule-preview::-webkit-scrollbar-track { background: transparent; }
+.credit-schedule-preview::-webkit-scrollbar-thumb {
+    background: var(--border-default); border-radius: var(--r-full);
+}
+
+.credit-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--r-xs);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.credit-status-badge.approved {
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid rgba(16,185,129,0.2);
+}
+
+.credit-status-badge.pending {
+    background: rgba(251,191,36,0.12);
+    color: var(--warning);
+    border: 1px solid rgba(245,158,11,0.2);
+}
+
+.credit-terms-box {
+    background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(168,85,247,0.03));
+    border: 1px solid rgba(99,102,241,0.15);
+    border-radius: var(--r-lg);
+    padding: 1rem 1.25rem;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.credit-terms-box strong {
+    color: var(--primary-400);
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if not user_logged_in %}
+{# ================================================================ #}
+{# LOGIN REQUIRED STATE #}
+{# ================================================================ #}
+<div class="row justify-content-center mb-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="login-required-card reveal">
+            <div class="login-required-icon"><i class="bi bi-shield-lock-fill"></i></div>
+            <h2 class="mb-2">Akun Diperlukan</h2>
+            <p>Untuk melanjutkan proses checkout dan mendapatkan riwayat pesanan, silakan masuk ke akun Anda atau daftar akun baru.</p>
+            <button type="button" class="btn btn-primary w-100 mb-3" data-bs-toggle="modal" data-bs-target="#authModal">
+                <i class="bi bi-box-arrow-in-right me-2"></i> Masuk / Daftar Akun
+            </button>
+            <a href="{{ url_for('cart') }}" class="btn btn-ghost w-100" style="font-size:0.85rem;">
+                <i class="bi bi-arrow-left me-1"></i> Kembali ke Keranjang
+            </a>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- KYC Status Banner -->
+{% if credit_enabled %}
+<div class="row g-4 mb-4" id="kycStatusBanner">
+    <div class="col-12">
+        <div class="checkout-card reveal" style="padding: 1.25rem;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="checkout-section-icon" id="kycIcon" 
+                     style="width:40px;height:40px;font-size:1rem;
+                     {% if current_user.kyc_verified %}background:linear-gradient(135deg,var(--success),#059669);{% elif kyc_pending %}background:linear-gradient(135deg,var(--warning),#d97706);{% else %}background:linear-gradient(135deg,var(--warning),var(--danger));{% endif %}">
+                    <i class="bi {% if current_user.kyc_verified %}bi-shield-check{% elif kyc_pending %}bi-hourglass-split{% else %}bi-shield-exclamation{% endif %}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h5 style="font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--text-primary);margin:0;font-size:0.95rem;">
+                        {% if current_user.kyc_verified %}
+                        ✅ Verifikasi KYC Terverifikasi
+                        {% elif kyc_pending %}
+                        ⏳ Verifikasi KYC Sedang Direview
+                        {% else %}
+                        ⚠️ Verifikasi KYC Diperlukan untuk Kredit
+                        {% endif %}
+                    </h5>
+                    <p style="color:var(--text-tertiary);font-size:0.8rem;margin:0;">
+                        {% if current_user.kyc_verified %}
+                        Identitas Anda telah terverifikasi. Anda dapat menggunakan pembayaran kredit/angsuran.
+                        {% elif kyc_pending %}
+                        Pengajuan verifikasi identitas Anda sudah kami terima{% if kyc_pending_since %} sejak {{ kyc_pending_since|format_date }}{% endif %} dan sedang ditinjau tim kami. Kami akan mengonfirmasi dalam 1×24 jam — tidak perlu mengajukan ulang.
+                        {% else %}
+                        Untuk menggunakan pembayaran kredit, Anda perlu melakukan verifikasi identitas biometrik terlebih dahulu.
+                        {% endif %}
+                    </p>
+                </div>
+                {% if kyc_pending %}
+                <span class="method-badge" style="background: rgba(245,158,11,0.12); color: var(--warning); border-color: var(--warning); white-space:nowrap; font-size:0.75rem; padding:0.5rem 0.85rem;">
+                    <i class="bi bi-clock-history me-1"></i> Menunggu Konfirmasi
+                </span>
+                {% elif not current_user.kyc_verified %}
+                <a href="{{ url_for('kyc_verification_page', redirect=request.url) }}" 
+                   class="btn btn-primary" style="font-size:0.85rem;white-space:nowrap;">
+                    <i class="bi bi-fingerprint me-1"></i> Verifikasi Sekarang
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ================================================================ #}
+{# FULL CHECKOUT FORM #}
+{# ================================================================ #}
+
+<!-- Breadcrumb -->
+<nav class="breadcrumb-custom reveal" aria-label="breadcrumb">
+    <a href="{{ url_for('index') }}"><i class="bi bi-house-door-fill"></i> Beranda</a>
+    <span class="sep"><i class="bi bi-chevron-right"></i></span>
+    <a href="{{ url_for('cart') }}">Keranjang</a>
+    <span class="sep"><i class="bi bi-chevron-right"></i></span>
+    <span class="active">Checkout</span>
+</nav>
+
+<!-- Progress Steps -->
+<div class="checkout-steps reveal">
+    <div class="step-item completed">
+        <div class="step-circle"><i class="bi bi-check-lg"></i></div>
+        <span class="step-label">Keranjang</span>
+    </div>
+    <div class="step-line completed"></div>
+    <div class="step-item active">
+        <div class="step-circle">2</div>
+        <span class="step-label">Checkout</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+        <div class="step-circle">3</div>
+        <span class="step-label">Pembayaran</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+        <div class="step-circle">4</div>
+        <span class="step-label">Selesai</span>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- KEBIJAKAN & KETENTUAN PEMESANAN -->
+<!-- ============================================================ -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="checkout-card reveal">
+            <div class="checkout-section-title">
+                <div class="checkout-section-icon" style="background:linear-gradient(135deg,var(--warning),var(--danger));">
+                    <i class="bi bi-shield-exclamation"></i>
+                </div>
+                <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;">Kebijakan Pemesanan</span>
+                <span class="glass-pill ms-auto" style="font-size:0.7rem;">
+                    <i class="bi bi-info-circle me-1"></i>Wajib Dibaca
+                </span>
+            </div>
+
+            <!-- Section 1: Ketentuan Pembayaran -->
+            <div class="policy-section">
+                <div class="policy-header">
+                    <div class="policy-number">1</div>
+                    <h4 class="policy-title">Ketentuan Pembayaran</h4>
+                </div>
+                <div class="policy-card">
+                    <p>Untuk setiap pemesanan, <strong>wajib melampirkan bukti pembayaran</strong> sebagai konfirmasi resmi. Pembayaran penuh (<em>full payment</em>) di muka merupakan metode utama kami untuk memastikan kelancaran proses pengiriman.</p>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <span class="policy-badge badge-blue"><i class="bi bi-credit-card me-1"></i>Transfer / Virtual Account</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Kebijakan COD -->
+            <div class="policy-section">
+                <div class="policy-header">
+                    <div class="policy-number">2</div>
+                    <h4 class="policy-title">Kebijakan Cash on Delivery (COD)</h4>
+                </div>
+                <div class="policy-card">
+                    <p><strong>Pemesanan pertama:</strong> Kami tidak melayani metode COD. Hal ini kami terapkan mengingat pengalaman operasional di masa lalu, di mana terdapat kasus:</p>
+                    <ul class="policy-list">
+                        <li>Barang telah sampai, namun penerima mengklaim tidak pernah melakukan pemesanan.</li>
+                        <li>Barang telah sampai, namun penerima tidak berada di lokasi pada saat pengantaran.</li>
+                    </ul>
+                    <p><strong>Pemesanan kedua dan seterusnya:</strong> Metode COD dapat digunakan, dengan tetap mempertahankan kebijakan bukti pembayaran sebagai jaminan.</p>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <span class="policy-badge badge-orange"><i class="bi bi-exclamation-triangle me-1"></i>Berlaku untuk pemesanan pertama</span>
+                        <span class="policy-badge badge-green"><i class="bi bi-check-circle me-1"></i>Dibuka untuk pemesanan kedua+</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Jaminan Kualitas -->
+            <div class="policy-section">
+                <div class="policy-header">
+                    <div class="policy-number">3</div>
+                    <h4 class="policy-title">Jaminan Kualitas & Ketidaksesuaian</h4>
+                </div>
+                <div class="policy-card">
+                    <p><strong>Produk tidak sesuai pesanan:</strong> Pesanan dapat dibatalkan (<em>cancel</em>) dan seluruh dana akan <strong>dikembalikan 100% tanpa potongan apa pun</strong>.</p>
+                    <p><strong>Produk dalam kondisi rusak atau pecah:</strong> Kami menyediakan <strong>ganti rugi berupa penggantian produk</strong> dengan syarat melakukan video unboxing paket.</p>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <span class="policy-badge badge-green"><i class="bi bi-arrow-repeat me-1"></i>Garansi Penggantian</span>
+                        <span class="policy-badge badge-blue"><i class="bi bi-cash-stack me-1"></i>Refund 100%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Note -->
+            <div class="footer-note">
+                <i class="bi bi-pin-angle-fill me-2" style="color:var(--warning);"></i>
+                <strong>Catatan Penting:</strong> Pastikan alamat pengiriman dan nomor kontak yang diberikan aktif serta dapat dihubungi. Bukti pembayaran dan konfirmasi transfer di upload ke akun.
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- ============================================================ -->
+    <!-- CHECKOUT FORM — LEFT COLUMN -->
+    <!-- ============================================================ -->
+    <div class="col-lg-8">
+        <div class="checkout-card reveal">
+
+            <!-- SECTION 1: Informasi Penerima -->
+            <div class="checkout-section-title">
+                <div class="checkout-section-icon" style="background:linear-gradient(135deg,var(--primary-500),var(--secondary-500));">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                Informasi Penerima
+            </div>
+
+            <form method="POST" id="checkoutForm" action="{{ url_for('checkout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Nama Lengkap <span class="required">*</span></label>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-person"></i>
+                            <input type="text" name="name" id="checkoutName" class="form-control"
+                                   placeholder="Nama lengkap penerima"
+                                   value="{{ current_user.full_name or '' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Nomor WhatsApp <span class="required">*</span></label>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-whatsapp"></i>
+                            <input type="tel" name="phone" id="checkoutPhone" class="form-control"
+                                   placeholder="628123456789"
+                                   value="{{ current_user.phone or '' }}" required>
+                        </div>
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>Konfirmasi pesanan dikirim ke nomor ini.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label-premium">Email <span style="color:var(--text-disabled);font-weight:500;">(opsional)</span></label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-envelope"></i>
+                        <input type="email" name="email" id="checkoutEmail" class="form-control"
+                               placeholder="email@contoh.com"
+                               value="{{ current_user.email or '' }}">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label-premium">Alamat Jalan / Detail Lokasi <span class="required">*</span></label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-geo-alt"></i>
+                        <textarea name="address" id="checkoutAddress" class="form-control" rows="3"
+                                  placeholder="Jalan, Nomor Rumah, RT/RW, Patokan..."
+                                  required style="resize:none;">{{ current_user.address or '' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- ======================================================= -->
+                <!-- SECTION 2: Detail Alamat Pengiriman -->
+                <!-- ======================================================= -->
+                <div class="checkout-section-title mt-4">
+                    <div class="checkout-section-icon" style="background:linear-gradient(135deg,var(--info),var(--primary-500));">
+                        <i class="bi bi-geo"></i>
+                    </div>
+                    Detail Alamat Pengiriman
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Provinsi <span class="required">*</span></label>
+                        {% if shipping_provinces %}
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-map"></i>
+                            <select name="shipping_province" id="shippingProvince" class="form-select" required>
+                                <option value="">-- Pilih Provinsi --</option>
+                                {% for prov in shipping_provinces %}
+                                <option value="{{ prov }}"
+                                    {{ 'selected' if current_user.default_province == prov }}>{{ prov }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% else %}
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-map"></i>
+                            <input type="text" name="shipping_province" id="shippingProvince"
+                                   class="form-control" placeholder="Contoh: DKI Jakarta"
+                                   value="{{ current_user.default_province or '' }}" required>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Kota / Kabupaten <span class="required">*</span></label>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-building"></i>
+                            <input type="text" name="shipping_city" class="form-control"
+                                   placeholder="Contoh: Jakarta Pusat"
+                                   value="{{ current_user.default_city or '' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Kecamatan <span class="required">*</span></label>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-signpost"></i>
+                            <input type="text" name="shipping_district" class="form-control"
+                                   placeholder="Contoh: Tamalate"
+                                   value="{{ current_user.default_district or '' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Kode Pos <span class="required">*</span></label>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-mailbox"></i>
+                            <input type="text" name="shipping_postal_code" class="form-control"
+                                   placeholder="Contoh: 90234"
+                                   value="{{ current_user.default_postal_code or '' }}"
+                                   pattern="[0-9]{5}" maxlength="5" required>
+                        </div>
+                    </div>
+                    <div class="col-12 mt-1">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="save_shipping_default"
+                                   id="saveShippingDefault" value="1" checked>
+                            <label class="form-check-label" for="saveShippingDefault"
+                                   style="font-size:0.85rem;color:var(--text-secondary);">
+                                Simpan sebagai alamat pengiriman default
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ======================================================= -->
+                <!-- SECTION 3: Metode Pengiriman -->
+                <!-- ======================================================= -->
+                <div class="checkout-section-title mt-4">
+                    <div class="checkout-section-icon" style="background:linear-gradient(135deg,var(--info),var(--primary-500));">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    Metode Pengiriman
+                </div>
+
+                {% set free_all_shipping = shipping_free_threshold > 0 and subtotal >= shipping_free_threshold %}
+
+                {% if active_couriers_detail %}
+                <div class="row g-3 mb-4">
+                    {% set card_idx = namespace(v=0) %}
+                    {% for courier in active_couriers_detail %}
+                        {% for svc in courier.services %}
+                        {% set card_id = courier.key ~ '_' ~ svc.key %}
+                        {% set is_first = card_idx.v == 0 %}
+                        <div class="col-md-6">
+                            <label class="method-card {{ 'selected' if is_first }}"
+                                   id="ship-{{ card_id }}"
+                                   onclick="selectShipping('{{ card_id }}', {{ svc.cost }})">
+                                <input type="radio" name="shipping_courier"
+                                       value="{{ courier.key }}_{{ svc.key }}"
+                                       class="method-radio"
+                                       {{ 'checked' if is_first }}>
+                                <input type="hidden"
+                                       class="svc-cost-hidden"
+                                       data-courier="{{ courier.key }}_{{ svc.key }}"
+                                       value="{{ svc.cost }}">
+                                <div class="check-indicator"><i class="bi bi-check-lg"></i></div>
+                                <div class="method-icon shipping"><i class="bi bi-truck"></i></div>
+                                <div class="method-info">
+                                    <div class="name">
+                                        {{ courier.name }}
+                                        {% if free_all_shipping or svc.cost == 0 %}
+                                        <span class="method-badge">Gratis</span>
+                                        {% else %}
+                                        <span class="shipping-cost-tag">{{ format_price(svc.cost) }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="desc">{{ svc.label }}</div>
+                                </div>
+                            </label>
+                        </div>
+                        {% set card_idx.v = card_idx.v + 1 %}
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="mb-4">
+                    <div class="empty-shipping-state mb-3">
+                        <i class="bi bi-truck"></i>
+                        Belum ada ekspedisi yang dikonfigurasi. Hubungi admin atau gunakan opsi default di bawah.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="method-card selected" id="ship-jne_reg" onclick="selectShipping('jne_reg', 0)">
+                                <input type="radio" name="shipping_courier" value="jne_reg" class="method-radio" checked>
+                                <input type="hidden" class="svc-cost-hidden" data-courier="jne_reg" value="0">
+                                <div class="check-indicator"><i class="bi bi-check-lg"></i></div>
+                                <div class="method-icon shipping"><i class="bi bi-truck"></i></div>
+                                <div class="method-info">
+                                    <div class="name">JNE Reguler <span class="method-badge">Gratis</span></div>
+                                    <div class="desc">Estimasi 2–4 hari kerja</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="method-card" id="ship-jnt_reg" onclick="selectShipping('jnt_reg', 0)">
+                                <input type="radio" name="shipping_courier" value="jnt_reg" class="method-radio">
+                                <input type="hidden" class="svc-cost-hidden" data-courier="jnt_reg" value="0">
+                                <div class="check-indicator"><i class="bi bi-check-lg"></i></div>
+                                <div class="method-icon shipping"><i class="bi bi-truck-front"></i></div>
+                                <div class="method-info">
+                                    <div class="name">J&T Express <span class="method-badge">Gratis</span></div>
+                                    <div class="desc">Estimasi 2–3 hari kerja</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ======================================================= -->
+                <!-- SECTION 4: Metode Pembayaran -->
+                <!-- ======================================================= -->
+                <div class="checkout-section-title mt-4">
+                    <div class="checkout-section-icon" style="background:linear-gradient(135deg,var(--success),var(--accent-400));">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                    Metode Pembayaran
+                </div>
+
+                <div class="d-flex flex-column gap-3 mb-4">
+                    {% set first_pay = namespace(value=true) %}
+
+                    {% if payment_bank_enabled %}
+                    <label class="method-card {{ 'selected' if first_pay.value }}"
+                           id="pay-transfer"
+                           onclick="selectPayment('transfer')">
+                        <input type="radio" name="payment_method" value="transfer"
+                               class="method-radio" {{ 'checked' if first_pay.value }}>
+                        <div class="check-indicator"><i class="bi bi-check-lg"></i></div>
+                        <div class="method-icon payment-bank"><i class="bi bi-bank2"></i></div>
+                        <div class="method-info">
+                            <div class="name">Transfer Bank</div>
+                            <div class="desc">
+                                Transfer ke rekening bank kami.
+                                {% set deadline = settings.get('payment_deadline_hours', '24') %}
+                                Batas waktu {{ deadline }} jam setelah pesanan dibuat.
+                            </div>
+                        </div>
+                    </label>
+                    {% set first_pay.value = false %}
+                    {% endif %}
+
+                    {% if payment_qris_enabled %}
+                    <label class="method-card {{ 'selected' if first_pay.value }}"
+                           id="pay-qris"
+                           onclick="selectPayment('qris')">
+                        <input type="radio" name="payment_method" value="qris"
+                               class="method-radio" {{ 'checked' if first_pay.value }}>
+                        <div class="check-indicator"><i class="bi bi-check-lg"></i></div>
+                        <div class="method-icon payment-bank"
+                             style="background:linear-gradient(135deg,rgba(234,179,8,0.12),rgba(245,158,11,0.08));color:var(--warning);">
+                            <i class="bi bi-qr-code-scan"></i>
+                        </div>
+                        <div class="method-info">
+                            <div class="name">
+                                QRIS (GoPay, OVO, DANA, ShopeePay)
+                                <span class="method-badge-warning">Scan QR</span>
+                            </div>
+                            <div class="desc">Scan kode QRIS setelah pesanan dibuat, lalu unggah bukti pembayaran. Dikonfirmasi admin.</div>
+                        </div>
+                    </label>
+                    {% set first_pay.value = false %}
+                    {% endif %}
+
+                    {% if payment_notivgo_enabled %}
+                    <label class="method-card {{ 'selected' if first_pay.value }}"
+                           id="pay-notivgo"
+                           onclick="selectPayment('notivgo')">
+                        <input type="radio" name="payment_method" value="notivgo"
+                               class="method-radio" {{ 'checked' if first_pay.value }}>
+                        <div class="check-indicator"><i class="bi bi-check-lg"></i></div>
+                        <div class="method-icon payment-bank"
+                             style="background:linear-gradient(135deg,rgba(234,179,8,0.12),rgba(245,158,11,0.08));color:var(--warning);">
+                            <i class="bi bi-lightning-charge"></i>
+                        </div>
+                        <div class="method-info">
+                            <div class="name">
+                                QRIS Otomatis
+                                <span class="method-badge-warning">Otomatis</span>
+                            </div>
+                            <div class="desc">Bayar otomatis via QRIS NotivGo. <strong style="color:var(--warning);">Kode QRIS tampil setelah pesanan dibuat; nominal memuat kode unik.</strong></div>
+                        </div>
+                    </label>
+                    {% set first_pay.value = false %}
+                    {% endif %}
+
+                    {% if payment_cod_enabled %}
+                    <label class="method-card {{ 'selected' if first_pay.value }}"
+                           id="pay-cod"
+                           onclick="selectPayment('cod')">
+                        <input type="radio" name="payment_method" value="cod"
+                               class="method-radio" {{ 'checked' if first_pay.value }}>
+                        <div class="check-indicator"><i class="bi bi-check-lg"></i></div>
+                        <div class="method-icon payment-cod"><i class="bi bi-cash-coin"></i></div>
+                        <div class="method-info">
+                            <div class="name">
+                                Bayar di Tempat (COD)
+                                {% if cod_fee > 0 %}
+                                <span class="shipping-cost-tag">
+                                    +{{ format_price(cod_fee) }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="desc">
+                                Bayar tunai saat barang tiba
+                                {%- if cod_areas %} — Area: {{ cod_areas }}{% endif %}
+                                {%- if cod_max_order > 0 %} — Maks. {{ format_price(cod_max_order) }}{% endif %}
+                            </div>
+                        </div>
+                    </label>
+                    {% set first_pay.value = false %}
+                    {% endif %}
+
+                    
+                    {% if credit_enabled and approved_credit %}
+                    {% if current_user.kyc_verified %}
+                    <label class="method-card {{ 'selected' if first_pay.value }}"
+                           id="pay-credit"
+                           onclick="selectPayment('credit')">
+                        <input type="radio" name="payment_method" value="credit"
+                               class="method-radio" {{ 'checked' if first_pay.value }}
+                               data-credit-id="{{ approved_credit.id }}">
+                        <div class="check-indicator"><i class="bi bi-check-lg"></i></div>
+                        <div class="method-icon payment-credit"
+                             style="background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.08));
+                             color: var(--primary-400);">
+                            <i class="bi bi-credit-card-2-front"></i>
+                        </div>
+                        <div class="method-info">
+                            <div class="name">
+                                Kredit / Angsuran
+                                <span class="method-badge" style="background: var(--primary-glow-soft); color: var(--primary-400); border-color: var(--primary-500);">Aktif</span>
+                            </div>
+                            <div class="desc">
+                                {{ approved_credit.tenor_months }}x angsuran — 
+                                {{ format_price(approved_credit.monthly_installment) }}/bulan
+                                • DP {{ format_price(approved_credit.down_payment) }}
+                            </div>
+                        </div>
+                    </label>
+                    {% elif kyc_pending %}
+                    <label class="method-card disabled"
+                           id="pay-credit"
+                           style="opacity: 0.7; cursor: not-allowed;"
+                           onclick="showKYCPendingToast()">
+                        <input type="radio" name="payment_method" value="credit"
+                               class="method-radio" disabled>
+                        <div class="check-indicator" style="border-color: var(--warning);"><i class="bi bi-hourglass-split" style="color: var(--warning);"></i></div>
+                        <div class="method-icon payment-credit"
+                             style="background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.08));
+                             color: var(--warning);">
+                            <i class="bi bi-credit-card-2-front"></i>
+                        </div>
+                        <div class="method-info">
+                            <div class="name">
+                                Kredit / Angsuran
+                                <span class="method-badge" style="background: rgba(245,158,11,0.12); color: var(--warning); border-color: var(--warning);">Sedang Direview</span>
+                            </div>
+                            <div class="desc" style="color: var(--text-disabled);">
+                                Verifikasi KYC Anda sedang ditinjau tim kami. Pembayaran kredit akan otomatis aktif setelah disetujui — tidak perlu mengajukan ulang.
+                            </div>
+                        </div>
+                    </label>
+                    {% else %}
+                    <label class="method-card disabled"
+                           id="pay-credit"
+                           style="opacity: 0.6; cursor: not-allowed;"
+                           onclick="showKYCRequiredToast()">
+                        <input type="radio" name="payment_method" value="credit"
+                               class="method-radio" disabled>
+                        <div class="check-indicator" style="border-color: var(--text-disabled);"><i class="bi bi-lock-fill" style="color: var(--text-disabled);"></i></div>
+                        <div class="method-icon payment-credit"
+                             style="background: linear-gradient(135deg, rgba(100,100,100,0.15), rgba(100,100,100,0.08));
+                             color: var(--text-disabled);">
+                            <i class="bi bi-credit-card-2-front"></i>
+                        </div>
+                        <div class="method-info">
+                            <div class="name">
+                                Kredit / Angsuran
+                                <span class="method-badge" style="background: var(--bg-elevated); color: var(--text-disabled); border-color: var(--border-default);">KYC Diperlukan</span>
+                            </div>
+                            <div class="desc" style="color: var(--text-disabled);">
+                                Verifikasi KYC wajib untuk menggunakan pembayaran kredit.
+                                <a href="{{ url_for('kyc_verification_page', redirect=request.url) }}" style="color: var(--primary-400); text-decoration: underline;">Verifikasi sekarang →</a>
+                            </div>
+                        </div>
+                    </label>
+                    {% endif %}
+                    {% set first_pay.value = false %}
+
+                    {% elif credit_enabled and credit_inline_available %}
+                    <!-- User sudah terverifikasi KYC tapi belum punya pengajuan kredit yang
+                         disetujui sebelumnya -> tawarkan pilih paket cicilan (dari Pengaturan
+                         Cicilan admin) & DP langsung di checkout. -->
+                    <label class="method-card"
+                           id="pay-credit"
+                           onclick="selectPayment('credit')">
+                        <input type="radio" name="payment_method" value="credit" class="method-radio">
+                        <div class="check-indicator"><i class="bi bi-check-lg"></i></div>
+                        <div class="method-icon payment-credit"
+                             style="background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.08));
+                             color: var(--primary-400);">
+                            <i class="bi bi-credit-card-2-front"></i>
+                        </div>
+                        <div class="method-info">
+                            <div class="name">
+                                Kredit / Angsuran
+                                <span class="method-badge" style="background: var(--primary-glow-soft); color: var(--primary-400); border-color: var(--primary-500);">Pilih Paket & DP</span>
+                            </div>
+                            <div class="desc">
+                                Identitas Anda sudah terverifikasi KYC — DP mulai {{ credit_min_dp_formatted }}, tenor hingga {{ credit_max_tenor }} bulan.
+                            </div>
+                        </div>
+                    </label>
+                    {% set first_pay.value = false %}
+
+                    {% elif credit_enabled and kyc_pending %}
+                    <label class="method-card disabled"
+                           id="pay-credit"
+                           style="opacity: 0.7; cursor: not-allowed;"
+                           onclick="showKYCPendingToast()">
+                        <input type="radio" name="payment_method" value="credit"
+                               class="method-radio" disabled>
+                        <div class="check-indicator" style="border-color: var(--warning);"><i class="bi bi-hourglass-split" style="color: var(--warning);"></i></div>
+                        <div class="method-icon payment-credit"
+                             style="background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.08));
+                             color: var(--warning);">
+                            <i class="bi bi-credit-card-2-front"></i>
+                        </div>
+                        <div class="method-info">
+                            <div class="name">
+                                Kredit / Angsuran
+                                <span class="method-badge" style="background: rgba(245,158,11,0.12); color: var(--warning); border-color: var(--warning);">Sedang Direview</span>
+                            </div>
+                            <div class="desc" style="color: var(--text-disabled);">
+                                Verifikasi KYC Anda sedang ditinjau tim kami. Pembayaran kredit akan otomatis aktif setelah disetujui — tidak perlu mengajukan ulang.
+                            </div>
+                        </div>
+                    </label>
+
+                    {% elif credit_enabled %}
+                    <label class="method-card disabled"
+                           id="pay-credit"
+                           style="opacity: 0.6; cursor: not-allowed;"
+                           onclick="showKYCRequiredToast()">
+                        <input type="radio" name="payment_method" value="credit"
+                               class="method-radio" disabled>
+                        <div class="check-indicator" style="border-color: var(--text-disabled);"><i class="bi bi-lock-fill" style="color: var(--text-disabled);"></i></div>
+                        <div class="method-icon payment-credit"
+                             style="background: linear-gradient(135deg, rgba(100,100,100,0.15), rgba(100,100,100,0.08));
+                             color: var(--text-disabled);">
+                            <i class="bi bi-credit-card-2-front"></i>
+                        </div>
+                        <div class="method-info">
+                            <div class="name">
+                                Kredit / Angsuran
+                                <span class="method-badge" style="background: var(--bg-elevated); color: var(--text-disabled); border-color: var(--border-default);">KYC Diperlukan</span>
+                            </div>
+                            <div class="desc" style="color: var(--text-disabled);">
+                                Verifikasi KYC wajib untuk menggunakan pembayaran kredit.
+                                <a href="{{ url_for('kyc_verification_page', redirect=request.url) }}" style="color: var(--primary-400); text-decoration: underline;">Verifikasi sekarang →</a>
+                            </div>
+                        </div>
+                    </label>
+                    {% endif %}
+
+                    {% if credit_enabled and not approved_credit and current_user.is_authenticated %}
+                    <!-- INTEGRASI: installment_apply.html — alternatif halaman penuh untuk
+                         pengajuan cicilan (kalkulator + form data diri, KYC & dokumen
+                         lengkap dalam satu halaman). Berguna untuk user yang belum
+                         verifikasi KYC (halaman itu otomatis mengarahkan ke verifikasi
+                         KYC lalu kembali) atau lebih nyaman mengisi di luar modal
+                         checkout, mis. layar kecil. product_id dikirim otomatis kalau
+                         keranjang berisi 1 produk; kalau tidak, user isi manual di sana. -->
+                    <div class="text-center" style="margin-top: -0.5rem; margin-bottom: 1rem;">
+                        <a href="{{ url_for('installment_apply', product_id=checkout_installment_product_id) if checkout_installment_product_id else url_for('installment_apply') }}"
+                           target="_blank" rel="noopener"
+                           style="font-size: 0.78rem; color: var(--text-tertiary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;"
+                           onmouseover="this.style.color='var(--primary-400)'" onmouseout="this.style.color='var(--text-tertiary)'">
+                            <i class="bi bi-arrows-fullscreen"></i> Ajukan cicilan di halaman penuh <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if not payment_bank_enabled and not payment_qris_enabled and not payment_notivgo_enabled and not payment_cod_enabled %}
+                    <label class="method-card selected" id="pay-transfer" onclick="selectPayment('transfer')">
+                        <input type="radio" name="payment_method" value="transfer" class="method-radio" checked>
+                        <div class="check-indicator"><i class="bi bi-check-lg"></i></div>
+                        <div class="method-icon payment-bank"><i class="bi bi-bank2"></i></div>
+                        <div class="method-info">
+                            <div class="name">Transfer Bank</div>
+                            <div class="desc">Rekening akan ditampilkan setelah checkout dikonfirmasi.</div>
+                        </div>
+                    </label>
+                    {% endif %}
+                </div>
+
+                <!-- Payment Details (Bank Account) -->
+                <div class="payment-details-box" id="paymentDetailsSection" style="display: none;">
+                    <div class="info-header">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Detail Pembayaran</span>
+                    </div>
+                    <div id="paymentDetailsContent">
+                        <div style="padding:0.5rem;text-align:center;font-size:0.85rem;color:var(--text-disabled);">
+                            <span class="spinner-border spinner-border-sm me-2"></span>Memuat...
+                        </div>
+                    </div>
+                    {% if settings.get('bank_transfer_instructions') %}
+                    <div class="payment-note">
+                        <i class="bi bi-exclamation-circle me-2" style="color: var(--primary-400);"></i>
+                        {{ settings.get('bank_transfer_instructions', '') }}
+                    </div>
+                    {% endif %}
+                    {% if settings.get('payment_deadline_hours') %}
+                    <div class="payment-deadline">
+                        <i class="bi bi-clock me-2" style="color: var(--warning);"></i>
+                        Harap transfer dalam <strong>{{ settings.get('payment_deadline_hours', '24') }} jam</strong> sejak pesanan dibuat.
+                    </div>
+                    {% endif %}
+                </div>
+
+                
+                <!-- Credit Details Section -->
+                <div class="payment-details-box" id="creditDetailsSection" style="display: none;">
+                    <div class="info-header">
+                        <i class="bi bi-credit-card-2-front" style="color: var(--primary-400);"></i>
+                        <span>Detail Kredit</span>
+                    </div>
+                    {% if approved_credit %}
+                    <div class="credit-summary-card" style="background: var(--bg-elevated); border-radius: var(--r-md); padding: 1rem; margin-bottom: 1rem;">
+                        <div class="d-flex justify-content-between mb-2" style="font-size: 0.85rem;">
+                            <span style="color: var(--text-tertiary);">Harga Produk</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">{{ format_price(approved_credit.product_price) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2" style="font-size: 0.85rem;">
+                            <span style="color: var(--text-tertiary);">Uang Muka (DP)</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">{{ format_price(approved_credit.down_payment) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2" style="font-size: 0.85rem;">
+                            <span style="color: var(--text-tertiary);">Pokok Hutang</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">{{ format_price(approved_credit.principal) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2" style="font-size: 0.85rem;">
+                            <span style="color: var(--text-tertiary);">Bunga Total</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">{{ format_price(approved_credit.total_interest) }}</span>
+                        </div>
+                        <div class="summary-divider" style="margin: 0.5rem 0;"></div>
+                        <div class="d-flex justify-content-between" style="font-size: 0.9rem;">
+                            <span style="color: var(--text-primary); font-weight: 700;">Angsuran/Bulan</span>
+                            <span style="color: var(--primary-400); font-weight: 700; font-family: 'Space Grotesk', sans-serif;">{{ format_price(approved_credit.monthly_installment) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1" style="font-size: 0.8rem;">
+                            <span style="color: var(--text-tertiary);">Tenor</span>
+                            <span style="color: var(--text-secondary); font-weight: 600;">{{ approved_credit.tenor_months }} bulan</span>
+                        </div>
+                    </div>
+
+                    <div class="credit-schedule-preview" style="max-height: 200px; overflow-y: auto;">
+                        <h6 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                            <i class="bi bi-calendar3 me-1"></i> Jadwal Angsuran
+                        </h6>
+                        {% for inst in approved_credit.installments[:6] %}
+                        <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid var(--border-subtle); font-size: 0.8rem;">
+                            <span style="color: var(--text-tertiary);">#{{ inst.installment_no }} — {{ inst.due_date.strftime('%d %b %Y') if inst.due_date else '-' }}</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">{{ format_price(inst.total_amount) }}</span>
+                        </div>
+                        {% endfor %}
+                        {% if approved_credit.installments|length > 6 %}
+                        <div class="text-center py-2" style="font-size: 0.75rem; color: var(--text-disabled);">
+                            ... dan {{ approved_credit.installments|length - 6 }} angsuran lainnya
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="payment-note" style="margin-top: 1rem; background: rgba(99,102,241,0.05); border-left-color: var(--primary-400);">
+                        <i class="bi bi-info-circle me-2" style="color: var(--primary-400);"></i>
+                        Pembayaran pertama (DP) akan diproses setelah checkout. Angsuran berikutnya otomatis ditagih sesuai jadwal.
+                    </div>
+                    {% elif credit_inline_available %}
+                    <!-- Picker paket & DP langsung di checkout — untuk user yang
+                         sudah verifikasi KYC tapi belum punya pengajuan kredit
+                         yang disetujui sebelumnya. Paket diambil dari
+                         InstallmentPlan (Pengaturan Cicilan admin). -->
+                    <div class="mb-3">
+                        <label class="form-label-premium">Paket Cicilan</label>
+                        <select id="creditPlanInput" class="form-select">
+                            {% for p in credit_plans %}
+                            <option value="{{ p.id }}"
+                                    data-min-dp-pct="{{ p.min_dp_percentage }}"
+                                    data-max-dp-pct="{{ p.max_dp_percentage }}"
+                                    {{ 'selected' if loop.first }}>
+                                {{ p.name }} — {{ p.tenor_months }} bulan
+                                ({{ 'Bebas Bunga' if p.interest_rate_monthly == 0 else 'Bunga ' + (p.interest_rate_monthly * 100)|round(1)|string + '%/bulan' }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div style="font-size: 0.75rem; color: var(--text-disabled); margin-top: 0.35rem;">
+                            Tenor maksimal {{ credit_max_tenor }} bulan
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label-premium">Uang Muka (DP)</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: var(--bg-elevated); border-color: var(--border-default); color: var(--text-secondary);">Rp</span>
+                            <input type="number"
+                                   id="creditDpInput"
+                                   class="form-control"
+                                   min="{{ credit_min_dp }}"
+                                   step="50000"
+                                   value="{{ credit_min_dp }}"
+                                   placeholder="Minimal {{ credit_min_dp_formatted }}">
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-disabled); margin-top: 0.35rem;" id="creditDpRangeHint">
+                            DP minimal {{ credit_min_dp_formatted }}
+                        </div>
+                    </div>
+
+                    <div id="creditInlineSummary" class="credit-summary-card" style="background: var(--bg-elevated); border-radius: var(--r-md); padding: 1rem; margin-bottom: 1rem; display: none;">
+                        <div class="d-flex justify-content-between mb-2" style="font-size: 0.85rem;">
+                            <span style="color: var(--text-tertiary);">Harga Produk</span>
+                            <span id="creditInlineProductPrice" style="color: var(--text-primary); font-weight: 600;">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2" style="font-size: 0.85rem;">
+                            <span style="color: var(--text-tertiary);">Uang Muka (DP)</span>
+                            <span id="creditInlineDp" style="color: var(--text-primary); font-weight: 600;">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2" style="font-size: 0.85rem;">
+                            <span style="color: var(--text-tertiary);">Pokok Hutang</span>
+                            <span id="creditInlinePrincipal" style="color: var(--text-primary); font-weight: 600;">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2" style="font-size: 0.85rem;">
+                            <span style="color: var(--text-tertiary);">Bunga Total</span>
+                            <span id="creditInlineInterest" style="color: var(--text-primary); font-weight: 600;">-</span>
+                        </div>
+                        <div class="summary-divider" style="margin: 0.5rem 0;"></div>
+                        <div class="d-flex justify-content-between" style="font-size: 0.9rem;">
+                            <span style="color: var(--text-primary); font-weight: 700;">Angsuran/Bulan</span>
+                            <span id="creditInlineMonthly" style="color: var(--primary-400); font-weight: 700; font-family: 'Space Grotesk', sans-serif;">-</span>
+                        </div>
+                    </div>
+                    <div id="creditInlineError" style="display:none; font-size: 0.8rem; color: var(--danger); margin-bottom: 0.75rem;"></div>
+                    <div id="creditInlineLoading" style="display:none; font-size: 0.8rem; color: var(--text-disabled); margin-bottom: 0.75rem;">
+                        <span class="spinner-border spinner-border-sm me-2"></span>Menghitung simulasi...
+                    </div>
+
+                    <div class="payment-note" style="margin-top: 1rem; background: rgba(99,102,241,0.05); border-left-color: var(--primary-400);">
+                        <i class="bi bi-info-circle me-2" style="color: var(--primary-400);"></i>
+                        Pembayaran pertama (DP) akan diproses setelah checkout. Angsuran berikutnya otomatis ditagih sesuai jadwal.
+                    </div>
+
+                    <input type="hidden" name="credit_dp_amount" id="creditDpAmountField" value="{{ credit_min_dp }}">
+                    <input type="hidden" name="credit_plan_id" id="creditPlanField" value="{{ credit_plans[0].id if credit_plans else '' }}">
+                    {% else %}
+                    <div style="padding: 1rem; text-align: center; color: var(--text-disabled); font-size: 0.85rem;">
+                        <i class="bi bi-exclamation-circle" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+                        Anda belum memiliki kredit yang disetujui. 
+                        <a href="{{ url_for('product_detail', id=cart_items[0].product_id) }}#creditModal" style="color: var(--primary-400);">Ajukan kredit</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Catatan Tambahan -->
+                <div class="mb-4">
+                    <label class="form-label-premium">
+                        Catatan Tambahan
+                        <span style="color:var(--text-disabled);font-weight:500;">(opsional)</span>
+                    </label>
+                    <textarea name="notes" id="checkoutNotes" class="form-control" rows="2"
+                              placeholder="Instruksi khusus untuk pengiriman atau catatan pembelian..."
+                              style="resize:none;"></textarea>
+                </div>
+
+                <!-- Terms & Conditions -->
+                <div class="terms-box">
+                    <input type="checkbox" class="form-check-input" id="agreeTerms" onchange="toggleSubmit()">
+                    <p>
+                        Saya menyetujui
+                        <a href="#" onclick="return false;">Syarat &amp; Ketentuan</a>
+                        serta
+                        <a href="#" onclick="return false;">Kebijakan Privasi</a>
+                        yang berlaku, dan memahami bahwa informasi di atas adalah benar.
+                    </p>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-checkout" id="btnPlaceOrder" disabled>
+                    <span class="spinner-border spinner-border-sm" id="btnSpinner" style="display:none;"></span>
+                    <i class="bi bi-check-circle-fill" id="btnIcon"></i>
+                    <span id="btnText">Buat Pesanan</span>
+                </button>
+            </form>
+
+            <a href="{{ url_for('cart') }}" class="btn btn-ghost w-100 mt-3" style="font-size:0.85rem;">
+                <i class="bi bi-arrow-left me-1"></i> Kembali ke Keranjang
+            </a>
+        </div><!-- /.checkout-card -->
+    </div><!-- /.col-lg-8 -->
+
+    <!-- ============================================================ -->
+    <!-- ORDER SUMMARY — RIGHT COLUMN -->
+    <!-- ============================================================ -->
+    <div class="col-lg-4">
+        <div class="summary-card reveal">
+            <div class="checkout-section-title" style="font-size:1rem;padding-bottom:0.75rem;">
+                <div class="checkout-section-icon"
+                     style="width:36px;height:36px;font-size:0.85rem;background:linear-gradient(135deg,var(--secondary-500),var(--primary-500));">
+                    <i class="bi bi-bag-fill"></i>
+                </div>
+                Ringkasan Pesanan
+            </div>
+
+            <!-- AI Status Badge -->
+            {% if settings.get('openrouter_api_key') and settings.get('openrouter_model') %}
+            <div class="openrouter-summary">
+                <div class="brand-icon"
+                     style="width:36px;height:36px;font-size:0.9rem;background:linear-gradient(135deg,var(--primary-500),var(--secondary-500));">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <p class="mb-0" style="font-size:0.8rem;font-weight:700;color:var(--primary-400);">AI OpenRouter Aktif</p>
+                    <p class="mb-0" style="font-size:0.7rem;color:var(--text-disabled);">
+                        Model: {{ settings.get('openrouter_model', 'openrouter/free') }}
+                    </p>
+                </div>
+                <span class="live-dot"></span>
+            </div>
+            {% endif %}
+
+            <!-- Cart Items -->
+            <div class="summary-items-scroll">
+                {% for item in cart_items %}
+                <div class="summary-item">
+                    {% if item.image %}
+                    <img src="{{ url_for('uploaded_product_file', filename=item.image) }}"
+                         alt="{{ item.name }}" loading="lazy">
+                    {% else %}
+                    <div class="item-placeholder">
+                        <i class="bi bi-image"></i>
+                    </div>
+                    {% endif %}
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="name">{{ item.name }}</div>
+                        <div class="meta">{{ item.brand }} {{ item.model }}</div>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span class="qty">x{{ item.quantity }}</span>
+                            <span class="price">{{ format_price(item.price * item.quantity * 100) }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Price Breakdown -->
+            <div class="summary-divider"></div>
+
+            <div class="summary-row">
+                <span class="label">Subtotal ({{ cart_items|length }} produk)</span>
+                <span class="value">{{ subtotal_formatted }}</span>
+            </div>
+
+            <div class="summary-row">
+                <span class="label">Ongkos Kirim</span>
+                <span id="summaryShipping" class="value-success">
+                    {% if free_all_shipping %}Gratis
+                    {% elif active_couriers_detail %}
+                        {% set first_svc = active_couriers_detail[0].services[0] %}
+                        {% if first_svc.cost == 0 %}Gratis
+                        {% else %}{{ format_price(first_svc.cost) }}
+                        {% endif %}
+                    {% else %}
+                        Gratis
+                    {% endif %}
+                </span>
+            </div>
+
+            {% if packaging_cost > 0 %}
+            <div class="summary-row">
+                <span class="label">Biaya Kemasan</span>
+                <span class="value">{{ format_price(packaging_cost) }}</span>
+            </div>
+            {% endif %}
+
+            <div class="summary-row" id="codFeeRow" style="display:none;">
+                <span class="label">Biaya COD</span>
+                <span class="value">{{ format_price(cod_fee) }}</span>
+            </div>
+
+            {% if discount > 0 %}
+            <div class="summary-row">
+                <span class="label">Diskon</span>
+                <span class="value-success">-{{ format_price(discount) }}</span>
+            </div>
+            {% endif %}
+
+            <div class="summary-divider"></div>
+            
+            {% if approved_credit %}
+            <div class="summary-row" id="creditDPRRow" style="display: none;">
+                <span class="label">Uang Muka (DP)</span>
+                <span class="value">{{ format_price(approved_credit.down_payment) }}</span>
+            </div>
+            <div class="summary-row" id="creditPrincipalRow" style="display: none;">
+                <span class="label">Pokok Hutang</span>
+                <span class="value">{{ format_price(approved_credit.principal) }}</span>
+            </div>
+            <div class="summary-row" id="creditInterestRow" style="display: none;">
+                <span class="label">Bunga Kredit</span>
+                <span class="value" style="color: var(--warning);">{{ format_price(approved_credit.total_interest) }}</span>
+            </div>
+            <div class="summary-row" id="creditMonthlyRow" style="display: none;">
+                <span class="label">Angsuran/Bulan</span>
+                <span class="value" style="color: var(--primary-400); font-weight: 700;">{{ format_price(approved_credit.monthly_installment) }}</span>
+            </div>
+            {% endif %}
+
+            <div class="summary-total-row">
+                <span class="label" style="font-size:1.05rem;color:var(--text-primary);font-weight:700;">Total Pembayaran</span>
+                <span class="summary-total" id="summaryTotal">{{ total_formatted }}</span>
+            </div>
+        </div><!-- /.summary-card -->
+
+        <!-- Security Badges -->
+        <div class="security-badges mt-3 reveal">
+            <div class="security-badge">
+                <i class="bi bi-shield-check" style="color:var(--success);"></i>
+                <span>Aman</span>
+            </div>
+            <div class="security-divider"></div>
+            <div class="security-badge">
+                <i class="bi bi-truck" style="color:var(--info);"></i>
+                <span>Cepat</span>
+            </div>
+            <div class="security-divider"></div>
+            <div class="security-badge">
+                <i class="bi bi-arrow-counterclockwise" style="color:var(--warning);"></i>
+                <span>Garansi</span>
+            </div>
+        </div>
+    </div><!-- /.col-lg-4 -->
+</div><!-- /.row -->
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ======================================================================
+   CHECKOUT PAGE — CLIENT-SIDE LOGIC
+   ====================================================================== */
+
+var CHECKOUT = {
+    // FIX: subtotal/shipping_free_threshold are RUPIAH server-side, but shippingCost
+    // (svc.cost), packagingCost, codFee and approvedCredit are all CENTS. recalcTotal()
+    // mixes all of these together, so these two are scaled to cents here to match.
+    subtotal:       {{ (subtotal * 100) | int }},
+    freeThreshold:  {{ (shipping_free_threshold * 100) | int }},
+    packagingCost:  {{ packaging_cost | int }},
+    codFee:         {{ cod_fee | int }},
+    discount:       {{ discount | int }},
+    freeAllShipping: {{ 'true' if (shipping_free_threshold > 0 and subtotal >= shipping_free_threshold) else 'false' }},
+
+    approvedCredit: {% if approved_credit %}{{ approved_credit|tojson }}{% else %}null{% endif %},
+
+    creditEnabled: {{ 'true' if credit_enabled else 'false' }},
+    userLoggedIn: {{ 'true' if user_logged_in else 'false' }},
+    kycPending: {{ 'true' if kyc_pending else 'false' }},
+    kycVerified: {{ 'true' if current_user.kyc_verified else 'false' }},
+
+    // Cicilan langsung di checkout (paket dari InstallmentPlan & DP dipilih user sendiri)
+    creditInlineAvailable: {{ 'true' if credit_inline_available else 'false' }},
+    creditPlans: {{ (credit_plans | default([])) | tojson }},
+    creditMinDp: {{ credit_min_dp | int }},
+    creditMaxTenor: {{ credit_max_tenor | int }},
+    inlineCreditCalc: null,   // diisi lewat /api/checkout/credit/simulate
+};
+
+var BANK_ACCOUNTS = [];
+try {
+    var raw = {{ (bank_accounts_json | default('[]')) | tojson }};
+    BANK_ACCOUNTS = (typeof raw === 'string') ? JSON.parse(raw) : (Array.isArray(raw) ? raw : []);
+} catch(e) { BANK_ACCOUNTS = []; }
+
+function formatRupiah(value) {
+    var amount = Number(value || 0);
+    return 'Rp ' + amount.toLocaleString('id-ID', { maximumFractionDigits: 0 });
+}
+
+// FIX: shippingCost, packagingCost, codFee, dan total gabungan di recalcTotal()
+// semuanya disimpan dalam satuan SEN (cents, dikali 100) agar konsisten dengan
+// approvedCredit. formatRupiah() sendiri mengharapkan nilai dalam Rupiah biasa,
+// jadi nilai bersatuan sen harus dibagi 100 dulu sebelum diformat — pakai
+// formatRupiahCents() untuk itu supaya tidak tampil 100x lebih besar.
+function formatRupiahCents(cents) {
+    return formatRupiah((Number(cents || 0)) / 100);
+}
+
+function escapeHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderCheckoutBankAccounts() {
+    var container = document.getElementById('paymentDetailsContent');
+    if (!container) return;
+    if (!BANK_ACCOUNTS.length) {
+        container.innerHTML = '<div style="padding:0.5rem;text-align:center;font-size:0.85rem;color:var(--text-disabled);">Rekening belum diatur. Hubungi admin.</div>';
+        return;
+    }
+    container.innerHTML = BANK_ACCOUNTS.map(function(acc) {
+        return '<div class="bank-account-item">' +
+            '<div class="bank-icon"><i class="bi bi-bank"></i></div>' +
+            '<div class="bank-info">' +
+            '<div class="bank-name">' + escapeHtml(acc.bank) + '</div>' +
+            '<div class="bank-number">' + escapeHtml(acc.number) + '</div>' +
+            '<div class="bank-holder">a.n. ' + escapeHtml(acc.holder) + '</div>' +
+            '</div>' +
+            '<button type="button" class="copy-btn" data-number="' + escapeHtml(acc.number) + '" title="Salin Nomor">' +
+            '<i class="bi bi-clipboard"></i></button>' +
+            '</div>';
+    }).join('');
+    // Event delegation sudah di-attach di DOMContentLoaded
+}
+
+function selectShipping(cardId, serviceCost) {
+    document.querySelectorAll('[id^="ship-"]').forEach(function(el) {
+        el.classList.remove('selected');
+        var radio = el.querySelector('input[type="radio"]');
+        if (radio) radio.checked = false;
+    });
+    var card = document.getElementById('ship-' + cardId);
+    if (card) {
+        card.classList.add('selected');
+        var radio = card.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+    }
+    recalcTotal(serviceCost);
+}
+
+var creditInlineDebounce = null;
+
+function selectedCreditPlan() {
+    var planInput = document.getElementById('creditPlanInput');
+    if (!planInput || !CHECKOUT.creditPlans) return null;
+    var planId = parseInt(planInput.value, 10);
+    for (var i = 0; i < CHECKOUT.creditPlans.length; i++) {
+        if (CHECKOUT.creditPlans[i].id === planId) return CHECKOUT.creditPlans[i];
+    }
+    return null;
+}
+
+// Saat paket cicilan diganti, DP minimal/maksimal ikut berubah sesuai
+// min_dp_percentage/max_dp_percentage paket tersebut (dari InstallmentPlan
+// yang admin atur), bukan lagi satu nilai DP flat yang sama untuk semua paket.
+function updateDpBoundsForSelectedPlan() {
+    var plan = selectedCreditPlan();
+    var dpInput = document.getElementById('creditDpInput');
+    var hintEl = document.getElementById('creditDpRangeHint');
+    if (!plan || !dpInput) return;
+
+    var subtotalRupiah = CHECKOUT.subtotal / 100;
+    var minDp = Math.round(subtotalRupiah * (plan.min_dp_percentage || 0));
+    var maxDp = Math.round(subtotalRupiah * (plan.max_dp_percentage || 1));
+    minDp = Math.max(minDp, CHECKOUT.creditMinDp || 0);
+
+    dpInput.min = minDp;
+    dpInput.max = maxDp;
+    var currentVal = parseInt(dpInput.value, 10) || 0;
+    if (currentVal < minDp || currentVal > maxDp || !currentVal) {
+        dpInput.value = minDp;
+    }
+    if (hintEl) {
+        hintEl.textContent = 'DP untuk paket ini: ' + formatRupiah(minDp) + ' – ' + formatRupiah(maxDp);
+    }
+}
+
+function simulateInlineCredit() {
+    if (!CHECKOUT.creditInlineAvailable) return;
+
+    var dpInput = document.getElementById('creditDpInput');
+    var plan = selectedCreditPlan();
+    if (!dpInput || !plan) return;
+
+    var dpAmount = parseInt(dpInput.value, 10) || 0;
+
+    var errorEl = document.getElementById('creditInlineError');
+    var loadingEl = document.getElementById('creditInlineLoading');
+    var summaryEl = document.getElementById('creditInlineSummary');
+
+    if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+
+    var subtotalRupiah = CHECKOUT.subtotal / 100;
+    var minDp = Math.max(Math.round(subtotalRupiah * (plan.min_dp_percentage || 0)), CHECKOUT.creditMinDp || 0);
+    if (dpAmount < minDp) {
+        CHECKOUT.inlineCreditCalc = null;
+        if (errorEl) {
+            errorEl.textContent = 'DP minimal Rp ' + minDp.toLocaleString('id-ID') + ' untuk paket ' + plan.name;
+            errorEl.style.display = 'block';
+        }
+        if (summaryEl) summaryEl.style.display = 'none';
+        recalcTotal();
+        return;
+    }
+
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (summaryEl) summaryEl.style.display = 'none';
+
+    fetch('/api/checkout/credit/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dp_amount: dpAmount, plan_id: plan.id })
+    })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (!data.success) {
+                CHECKOUT.inlineCreditCalc = null;
+                if (errorEl) {
+                    errorEl.textContent = data.message || 'Tidak bisa menghitung simulasi cicilan.';
+                    errorEl.style.display = 'block';
+                }
+                recalcTotal();
+                return;
+            }
+
+            CHECKOUT.inlineCreditCalc = data.calc;
+            // FIX: /api/checkout/credit/simulate ALREADY returns down_payment in CENTS,
+            // so we don't need to multiply by 100 again here.
+            CHECKOUT.inlineCreditCalc.down_payment_cents = data.calc.down_payment || 0;
+
+            var pEl = document.getElementById('creditInlineProductPrice');
+            var dpEl = document.getElementById('creditInlineDp');
+            var prEl = document.getElementById('creditInlinePrincipal');
+            var iEl = document.getElementById('creditInlineInterest');
+            var mEl = document.getElementById('creditInlineMonthly');
+            if (pEl) pEl.textContent = data.calc.product_price_formatted;
+            if (dpEl) dpEl.textContent = data.calc.down_payment_formatted || formatRupiah(data.calc.down_payment || 0);
+            if (prEl) prEl.textContent = data.calc.principal_formatted;
+            if (iEl) iEl.textContent = data.calc.total_interest_formatted;
+            if (mEl) mEl.textContent = data.calc.monthly_installment_formatted;
+            if (summaryEl) summaryEl.style.display = 'block';
+
+            var dpField = document.getElementById('creditDpAmountField');
+            var planField = document.getElementById('creditPlanField');
+            if (dpField) dpField.value = dpAmount;
+            if (planField) planField.value = plan.id;
+
+            recalcTotal();
+        })
+        .catch(function() {
+            if (loadingEl) loadingEl.style.display = 'none';
+            CHECKOUT.inlineCreditCalc = null;
+            if (errorEl) {
+                errorEl.textContent = 'Gagal menghubungi server. Coba lagi.';
+                errorEl.style.display = 'block';
+            }
+            recalcTotal();
+        });
+}
+
+function scheduleInlineCreditSimulate() {
+    if (creditInlineDebounce) clearTimeout(creditInlineDebounce);
+    creditInlineDebounce = setTimeout(simulateInlineCredit, 450);
+}
+
+function selectPayment(method) {
+    document.querySelectorAll('[id^="pay-"]').forEach(function(el) {
+        el.classList.remove('selected');
+        var radio = el.querySelector('input[type="radio"]');
+        if (radio) radio.checked = false;
+    });
+    var card = document.getElementById('pay-' + method);
+    if (card) {
+        card.classList.add('selected');
+        var radio = card.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+    }
+
+    var codRow = document.getElementById('codFeeRow');
+    if (codRow) {
+        codRow.style.display = (method === 'cod' && CHECKOUT.codFee > 0) ? 'flex' : 'none';
+    }
+
+    // Credit rows visibility
+    var creditDPRRow = document.getElementById('creditDPRRow');
+    var creditPrincipalRow = document.getElementById('creditPrincipalRow');
+    var creditInterestRow = document.getElementById('creditInterestRow');
+    var creditMonthlyRow = document.getElementById('creditMonthlyRow');
+    var creditDetailsSection = document.getElementById('creditDetailsSection');
+
+    if (creditDetailsSection) {
+        creditDetailsSection.style.display = (method === 'credit') ? 'block' : 'none';
+    }
+    if (creditDPRRow)       creditDPRRow.style.display = (method === 'credit') ? 'flex' : 'none';
+    if (creditPrincipalRow) creditPrincipalRow.style.display = (method === 'credit') ? 'flex' : 'none';
+    if (creditInterestRow)  creditInterestRow.style.display = (method === 'credit') ? 'flex' : 'none';
+    if (creditMonthlyRow)   creditMonthlyRow.style.display = (method === 'credit') ? 'flex' : 'none';
+
+    if (method === 'credit' && CHECKOUT.creditInlineAvailable && !CHECKOUT.approvedCredit && !CHECKOUT.inlineCreditCalc) {
+        simulateInlineCredit();
+    }
+
+    // Payment details section
+    var paymentSection = document.getElementById('paymentDetailsSection');
+    if (paymentSection) {
+        if (method === 'transfer') {
+            paymentSection.style.display = 'block';
+            renderCheckoutBankAccounts();
+        } else {
+            paymentSection.style.display = 'none';
+        }
+    }
+    recalcTotal();
+}
+
+function getCurrentShippingCost() {
+    var selected = document.querySelector('input[name="shipping_courier"]:checked');
+    if (!selected) return 0;
+    var hiddenInput = document.querySelector('.svc-cost-hidden[data-courier="' + selected.value + '"]');
+    return hiddenInput ? (parseInt(hiddenInput.value) || 0) : 0;
+}
+
+function recalcTotal(shippingCost) {
+    shippingCost = (shippingCost === undefined) ? getCurrentShippingCost() : shippingCost;
+    shippingCost = shippingCost || 0;
+
+    var isFreeShipping = CHECKOUT.freeAllShipping === true;
+    if (!isFreeShipping && CHECKOUT.freeThreshold > 0) {
+        isFreeShipping = CHECKOUT.subtotal >= CHECKOUT.freeThreshold;
+    }
+
+    if (isFreeShipping) shippingCost = 0;
+
+    var shippingEl = document.getElementById('summaryShipping');
+    if (shippingEl) {
+        shippingEl.textContent = isFreeShipping ? 'Gratis' : formatRupiahCents(shippingCost);
+        shippingEl.className = isFreeShipping ? 'value-success' : 'value';
+    }
+
+    var selectedPay = document.querySelector('input[name="payment_method"]:checked');
+    var payMethod = selectedPay ? selectedPay.value : 'transfer';
+    var total = 0;
+
+    // ── Credit payment: hanya bayar DP + ongkir/kemasan di checkout ──
+    if (payMethod === 'credit' && CHECKOUT.approvedCredit) {
+        total = (CHECKOUT.approvedCredit.down_payment || 0) + shippingCost + CHECKOUT.packagingCost;
+        var totalEl = document.getElementById('summaryTotal');
+        if (totalEl) {
+            totalEl.textContent = formatRupiahCents(total);
+            totalEl.classList.add('credit-active');
+        }
+        var totalLabel = document.querySelector('.summary-total-row .label');
+        if (totalLabel) totalLabel.textContent = 'Total DP Hari Ini';
+        return;
+    }
+
+    // ── Credit payment (DP/tenor dipilih langsung di checkout) ──
+    if (payMethod === 'credit' && CHECKOUT.creditInlineAvailable && CHECKOUT.inlineCreditCalc) {
+        total = (CHECKOUT.inlineCreditCalc.down_payment_cents || 0) + shippingCost + CHECKOUT.packagingCost;
+        var totalEl2 = document.getElementById('summaryTotal');
+        if (totalEl2) {
+            totalEl2.textContent = formatRupiahCents(total);
+            totalEl2.classList.add('credit-active');
+        }
+        var totalLabel2 = document.querySelector('.summary-total-row .label');
+        if (totalLabel2) totalLabel2.textContent = 'Total DP Hari Ini';
+        return;
+    }
+
+    // ── Normal calculation ──
+    var codFee = (payMethod === 'cod') ? CHECKOUT.codFee : 0;
+    total = CHECKOUT.subtotal + shippingCost + CHECKOUT.packagingCost + codFee - CHECKOUT.discount;
+    if (isNaN(total) || total < 0) total = CHECKOUT.subtotal;
+
+    var totalEl = document.getElementById('summaryTotal');
+    if (totalEl) {
+        totalEl.textContent = formatRupiahCents(total);
+        totalEl.classList.remove('credit-active');
+    }
+    var totalLabel = document.querySelector('.summary-total-row .label');
+    if (totalLabel) totalLabel.textContent = 'Total Pembayaran';
+}
+
+function toggleSubmit() {
+    var agree = document.getElementById('agreeTerms').checked;
+    var btn = document.getElementById('btnPlaceOrder');
+    if (!btn) return;
+    btn.disabled = !agree;
+}
+
+document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+    var name    = document.getElementById('checkoutName').value.trim();
+    var phone   = document.getElementById('checkoutPhone').value.trim();
+    var address = document.getElementById('checkoutAddress').value.trim();
+    var province = document.getElementById('shippingProvince');
+    var city    = document.querySelector('input[name="shipping_city"]');
+    var district = document.querySelector('input[name="shipping_district"]');
+    var postal   = document.querySelector('input[name="shipping_postal_code"]');
+
+    // Validasi field wajib
+    if (!name || !phone || !address) {
+        e.preventDefault();
+        if (typeof showToast === 'function') showToast('Mohon isi semua field yang wajib diisi', 'error');
+        // Fokus ke field yang kosong
+        if (!name)  document.getElementById('checkoutName').focus();
+        else if (!phone) document.getElementById('checkoutPhone').focus();
+        else if (!address) document.getElementById('checkoutAddress').focus();
+        return;
+    }
+
+    // Validasi alamat lengkap
+    if (province && !province.value.trim()) {
+        e.preventDefault();
+        if (typeof showToast === 'function') showToast('Mohon pilih provinsi pengiriman', 'error');
+        province.focus();
+        return;
+    }
+    if (city && !city.value.trim()) {
+        e.preventDefault();
+        if (typeof showToast === 'function') showToast('Mohon isi kota/kabupaten', 'error');
+        city.focus();
+        return;
+    }
+    if (district && !district.value.trim()) {
+        e.preventDefault();
+        if (typeof showToast === 'function') showToast('Mohon isi kecamatan', 'error');
+        district.focus();
+        return;
+    }
+    if (postal && !postal.value.trim()) {
+        e.preventDefault();
+        if (typeof showToast === 'function') showToast('Mohon isi kode pos', 'error');
+        postal.focus();
+        return;
+    }
+
+    // Validasi metode pembayaran
+    var selectedPay = document.querySelector('input[name="payment_method"]:checked');
+    if (!selectedPay) {
+        e.preventDefault();
+        if (typeof showToast === 'function') showToast('Mohon pilih metode pembayaran', 'warning');
+        return;
+    }
+
+    // Validasi metode pengiriman
+    var selectedShip = document.querySelector('input[name="shipping_courier"]:checked');
+    if (!selectedShip) {
+        e.preventDefault();
+        if (typeof showToast === 'function') showToast('Mohon pilih metode pengiriman', 'warning');
+        return;
+    }
+
+    // Validasi pilihan DP & tenor cicilan langsung di checkout
+    if (selectedPay.value === 'credit' && CHECKOUT.creditInlineAvailable && !CHECKOUT.approvedCredit) {
+        if (!CHECKOUT.inlineCreditCalc) {
+            e.preventDefault();
+            if (typeof showToast === 'function') showToast('Mohon pilih DP dan tenor cicilan yang valid', 'warning');
+            return;
+        }
+    }
+
+    if (!document.getElementById('agreeTerms').checked) {
+        e.preventDefault();
+        if (typeof showToast === 'function') showToast('Anda harus menyetujui Syarat & Ketentuan', 'warning');
+        return;
+    }
+
+    // Format nomor telepon
+    var formatted = phone;
+    if (formatted.startsWith('0'))  formatted = '62' + formatted.slice(1);
+    if (formatted.startsWith('+'))  formatted = formatted.slice(1);
+    formatted = formatted.replace(/\s+/g, '').replace(/\D/g, '');
+    document.getElementById('checkoutPhone').value = formatted;
+
+    // Simpan ke localStorage
+    try {
+        localStorage.setItem('checkoutData', JSON.stringify({
+            name:    name,
+            phone:   formatted,
+            email:   document.getElementById('checkoutEmail').value.trim(),
+            address: address
+        }));
+    } catch(ex) {}
+
+    // Loading state tombol
+    var btn     = document.getElementById('btnPlaceOrder');
+    var spinner = document.getElementById('btnSpinner');
+    var icon    = document.getElementById('btnIcon');
+    var text    = document.getElementById('btnText');
+    if (btn)     btn.disabled = true;
+    if (spinner) spinner.style.display = 'inline-block';
+    if (icon)    icon.style.display = 'none';
+    if (text)    text.textContent = 'Memproses...';
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Restore saved form data
+    try {
+        var saved = localStorage.getItem('checkoutData');
+        if (saved) {
+            var data = JSON.parse(saved);
+            var nameEl  = document.getElementById('checkoutName');
+            var phoneEl = document.getElementById('checkoutPhone');
+            var emailEl = document.getElementById('checkoutEmail');
+            var addrEl  = document.getElementById('checkoutAddress');
+            if (data.name    && nameEl  && !nameEl.value)  nameEl.value  = data.name;
+            if (data.phone   && phoneEl && !phoneEl.value) phoneEl.value = data.phone;
+            if (data.email   && emailEl && !emailEl.value) emailEl.value = data.email;
+            if (data.address && addrEl  && !addrEl.value)  addrEl.value  = data.address;
+        }
+    } catch(ex) {}
+
+    // Inisialisasi tombol submit berdasarkan checkbox
+    toggleSubmit();
+
+    // Inisialisasi payment method yang aktif
+    var selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+    if (selectedPayment) {
+        selectPayment(selectedPayment.value);
+    } else {
+        recalcTotal();
+    }
+
+    // Picker paket & DP cicilan langsung di checkout
+    var creditDpInputEl = document.getElementById('creditDpInput');
+    var creditPlanInputEl = document.getElementById('creditPlanInput');
+    if (creditPlanInputEl) {
+        updateDpBoundsForSelectedPlan();
+        creditPlanInputEl.addEventListener('change', function() {
+            updateDpBoundsForSelectedPlan();
+            simulateInlineCredit();
+        });
+    }
+    if (creditDpInputEl) {
+        creditDpInputEl.addEventListener('input', scheduleInlineCreditSimulate);
+        creditDpInputEl.addEventListener('blur', function() {
+            var plan = selectedCreditPlan();
+            var subtotalRupiah = CHECKOUT.subtotal / 100;
+            var minDp = plan
+                ? Math.max(Math.round(subtotalRupiah * (plan.min_dp_percentage || 0)), CHECKOUT.creditMinDp || 0)
+                : (CHECKOUT.creditMinDp || 0);
+            var val = parseInt(creditDpInputEl.value, 10) || 0;
+            if (val < minDp) {
+                creditDpInputEl.value = minDp;
+                simulateInlineCredit();
+            }
+        });
+    }
+
+    // Event delegation untuk copy rekening (lebih reliable)
+    var paymentContent = document.getElementById('paymentDetailsContent');
+    if (paymentContent) {
+        paymentContent.addEventListener('click', function(e) {
+            var btn = e.target.closest('.copy-btn');
+            if (!btn) return;
+            e.preventDefault();
+            var num = btn.dataset.number;
+            if (!num) return;
+            var self = btn;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(num).then(function() {
+                    self.classList.add('copied');
+                    self.innerHTML = '<i class="bi bi-check2"></i>';
+                    setTimeout(function() {
+                        self.classList.remove('copied');
+                        self.innerHTML = '<i class="bi bi-clipboard"></i>';
+                    }, 2000);
+                }).catch(function() {
+                    prompt('Salin nomor rekening:', num);
+                });
+            } else {
+                prompt('Salin nomor rekening:', num);
+            }
+        });
+    }
+
+    // Check for approved credit
+    if (CHECKOUT.creditEnabled && CHECKOUT.userLoggedIn) {
+        fetch('/api/credit/check-approved')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.has_credit) {
+                    // FIX: /api/credit/check-approved returns amounts in RUPIAH (it's shared
+                    // with profile.html). CHECKOUT.approvedCredit needs to stay CENTS-based to
+                    // match subtotal/shipping/packaging in recalcTotal()'s math, so convert here.
+                    var c = data.credit;
+                    CHECKOUT.approvedCredit = {
+                        id: c.id,
+                        product_price: Math.round((c.product_price || 0) * 100),
+                        down_payment: Math.round((c.down_payment || 0) * 100),
+                        principal: Math.round((c.principal || 0) * 100),
+                        monthly_installment: Math.round((c.monthly_installment || 0) * 100),
+                        total_interest: Math.round((c.total_interest || 0) * 100),
+                        tenor_months: c.tenor_months,
+                        installments: c.installments
+                    };
+                    if (document.getElementById('pay-credit')) {
+                        document.getElementById('pay-credit').style.display = 'flex';
+                    }
+                }
+            })
+            .catch(err => console.error('Credit check error:', err));
+    }
+});
+
+document.getElementById('checkoutPhone').addEventListener('blur', function() {
+    var val = this.value.trim();
+    if (val.startsWith('0'))  val = '62' + val.slice(1);
+    if (val.startsWith('+'))  val = val.slice(1);
+    val = val.replace(/\s+/g, '').replace(/\D/g, '');
+    this.value = val;
+});
+
+// Event listener untuk checkbox terms agar tombol submit aktif
+var agreeTermsEl = document.getElementById('agreeTerms');
+if (agreeTermsEl) {
+    agreeTermsEl.addEventListener('change', toggleSubmit);
+}
+
+
+
+
+/* ── KYC Integration Functions ── */
+function showKYCRequiredToast() {
+    showToast('Verifikasi KYC diperlukan untuk menggunakan pembayaran kredit. Silakan verifikasi identitas Anda terlebih dahulu.', 'warning');
+}
+
+function showKYCPendingToast() {
+    showToast('Verifikasi KYC Anda masih dalam antrian review admin. Kami akan mengonfirmasi begitu selesai ditinjau.', 'warning');
+}
+
+/**
+ * updateKYCUI — Update banner KYC tanpa refresh halaman.
+ * Membangun DOM secara programmatic agar tidak ada string HTML yang kompleks.
+ */
+function updateKYCUI(data) {
+    var banner = document.getElementById('kycStatusBanner');
+    if (!banner) return;
+
+    var col = document.createElement('div');
+    col.className = 'col-12';
+
+    var card = document.createElement('div');
+    card.className = 'checkout-card reveal';
+    card.style.padding = '1.25rem';
+
+    var flex = document.createElement('div');
+    flex.className = 'd-flex align-items-center gap-3';
+
+    // Icon
+    var iconDiv = document.createElement('div');
+    iconDiv.className = 'checkout-section-icon';
+    iconDiv.style.cssText = 'width:40px;height:40px;font-size:1rem;';
+    var iconI = document.createElement('i');
+    iconI.className = 'bi';
+
+    // Content
+    var contentDiv = document.createElement('div');
+    contentDiv.className = 'flex-grow-1';
+    var h5 = document.createElement('h5');
+    h5.style.cssText = "font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--text-primary);margin:0;font-size:0.95rem;";
+    var p = document.createElement('p');
+    p.style.cssText = 'color:var(--text-tertiary);font-size:0.8rem;margin:0;';
+
+    // Badge
+    var badge = document.createElement('span');
+    badge.className = 'method-badge';
+    badge.style.cssText = 'white-space:nowrap;font-size:0.75rem;padding:0.5rem 0.85rem;';
+    var badgeIcon = document.createElement('i');
+    badgeIcon.className = 'bi me-1';
+
+    if (data.kyc_verified) {
+        iconDiv.style.background = 'linear-gradient(135deg,var(--success),#059669)';
+        iconI.className += ' bi-shield-check';
+        h5.textContent = '✅ Verifikasi KYC Terverifikasi';
+        p.textContent = 'Identitas Anda telah terverifikasi. Anda dapat menggunakan pembayaran kredit/angsuran.';
+        badge.style.background = 'var(--success-bg)';
+        badge.style.color = 'var(--success)';
+        badge.style.borderColor = 'var(--success)';
+        badgeIcon.className += ' bi-check-circle';
+        badge.appendChild(badgeIcon);
+        badge.appendChild(document.createTextNode('Terverifikasi'));
+    } else if (data.kyc_pending) {
+        iconDiv.style.background = 'linear-gradient(135deg,var(--warning),#d97706)';
+        iconI.className += ' bi-hourglass-split';
+        h5.textContent = '⏳ Verifikasi KYC Sedang Direview';
+        p.textContent = 'Pengajuan verifikasi identitas Anda sedang ditinjau tim kami. Kami akan mengonfirmasi dalam 1×24 jam.';
+        badge.style.background = 'rgba(245,158,11,0.12)';
+        badge.style.color = 'var(--warning)';
+        badge.style.borderColor = 'var(--warning)';
+        badgeIcon.className += ' bi-clock-history';
+        badge.appendChild(badgeIcon);
+        badge.appendChild(document.createTextNode('Menunggu Konfirmasi'));
+    } else {
+        return; // Tidak ada perubahan status
+    }
+
+    iconDiv.appendChild(iconI);
+    contentDiv.appendChild(h5);
+    contentDiv.appendChild(p);
+    flex.appendChild(iconDiv);
+    flex.appendChild(contentDiv);
+    flex.appendChild(badge);
+    card.appendChild(flex);
+    col.appendChild(card);
+
+    banner.innerHTML = '';
+    banner.appendChild(col);
+
+    // Jika baru terverifikasi, reload halaman hanya jika form masih kosong
+    if (data.kyc_verified && !CHECKOUT.kycVerified) {
+        var nameVal = document.getElementById('checkoutName').value.trim();
+        var addrVal = document.getElementById('checkoutAddress').value.trim();
+        if (!nameVal && !addrVal) {
+            window.location.reload();
+        }
+    }
+}
+
+function checkKYCStatus() {
+    // Jangan poll jika user sedang aktif mengetik di form
+    if (document.querySelector('input:focus, textarea:focus, select:focus')) {
+        return;
+    }
+
+    fetch('/api/kyc/status')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+
+            // Jika baru terverifikasi, tampilkan toast & update UI tanpa refresh
+            if (data.kyc_verified && !CHECKOUT.kycVerified) {
+                showToast('🎉 Verifikasi KYC berhasil! Pembayaran kredit/angsuran kini aktif.', 'success');
+                CHECKOUT.kycVerified = true;
+                CHECKOUT.kycPending = false;
+                updateKYCUI(data);
+                // Reload hanya jika user belum mulai mengisi form
+                var nameVal = document.getElementById('checkoutName').value.trim();
+                var addrVal = document.getElementById('checkoutAddress').value.trim();
+                if (!nameVal && !addrVal) {
+                    window.location.reload();
+                }
+            }
+            // Jika pending berubah (baru submit), update UI saja
+            else if (data.kyc_pending !== CHECKOUT.kycPending) {
+                CHECKOUT.kycPending = data.kyc_pending;
+                updateKYCUI(data);
+            }
+        })
+        .catch(err => console.error('KYC status check error:', err));
+}
+
+// Check KYC status periodically if not verified
+{% if not current_user.kyc_verified %}
+setInterval(checkKYCStatus, 30000); // Check setiap 30 detik (lebih jarang, tidak mengganggu)
+{% endif %}
+</script>
+{% endblock %}

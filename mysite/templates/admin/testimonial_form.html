@@ -1,0 +1,140 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}{{ _('add_new') if not testimonial else _('edit') }} Testimoni{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+        <i class="fas fa-comment-dots text-2xl text-blue-600"></i>
+        {{ _('add_new') if not testimonial else _('edit') }} Testimoni
+    </h1>
+</div>
+
+<div class="admin-card p-8 relative overflow-hidden">
+    <div class="absolute -top-10 -right-10 w-40 h-40 bg-green-500/10 rounded-full blur-3xl z-0"></div>
+    <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl z-0"></div>
+
+    <form method="POST" enctype="multipart/form-data" class="relative z-10" id="testimonialForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-6">
+                <div class="admin-card p-4 rounded-xl border border-gray-100 shadow-sm">
+                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-user-circle text-blue-500"></i>
+                        Foto Profil (Avatar) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex items-start gap-4">
+                        {% if testimonial and testimonial.image_filename %}
+                        <div class="flex-shrink-0 relative group">
+                            <img src="{{ url_for('uploaded_testimonial_file', filename=testimonial.image_filename) }}"
+                                 alt="{{ testimonial.name }}"
+                                 class="h-16 w-16 object-cover rounded-full border border-gray-700/50 shadow-sm transition transform group-hover:scale-105">
+                        </div>
+                        {% endif %}
+                        <div class="flex-1 w-full">
+                            <input type="file" name="avatar" id="avatarInput" accept="image/*" {% if not testimonial %}required{% endif %}
+                                   class="block w-full text-sm text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer">
+                            {% if testimonial and testimonial.image_filename %}
+                                <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle"></i> Biarkan kosong jika tidak diganti.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-user text-blue-500"></i>
+                        Nama Pelanggan <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="name" value="{{ testimonial.name if testimonial else '' }}" required
+                           class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm">
+                </div>
+
+                <div>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-map-marker-alt text-blue-500"></i>
+                        Lokasi / Pekerjaan
+                    </label>
+                    <input type="text" name="location" value="{{ testimonial.location if testimonial else '' }}"
+                           class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm"
+                           placeholder="Contoh: Jakarta Selatan">
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-quote-left text-blue-500"></i>
+                        Isi Testimoni <span class="text-red-500">*</span>
+                    </label>
+                    <textarea name="text" rows="4" required
+                              class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm resize-none">{{ testimonial.text if testimonial else '' }}</textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-star text-yellow-400"></i>
+                            Rating (1-5)
+                        </label>
+                        <select name="rating"
+                                class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm">
+                            <option value="5" {% if testimonial and testimonial.rating == 5 %}selected{% endif %}>5 ⭐ Sangat Baik</option>
+                            <option value="4" {% if testimonial and testimonial.rating == 4 %}selected{% endif %}>4 ⭐ Baik</option>
+                            <option value="3" {% if testimonial and testimonial.rating == 3 %}selected{% endif %}>3 ⭐ Cukup</option>
+                            <option value="2" {% if testimonial and testimonial.rating == 2 %}selected{% endif %}>2 ⭐ Kurang</option>
+                            <option value="1" {% if testimonial and testimonial.rating == 1 %}selected{% endif %}>1 ⭐ Buruk</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-sort-numeric-down text-blue-500"></i>
+                            Urutan Tampil
+                        </label>
+                        <input type="number" name="order" value="{{ testimonial.order if testimonial else 0 }}"
+                               class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm">
+                    </div>
+                </div>
+
+                <div class="admin-card p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between mt-2">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700">Status Aktif</p>
+                        <p class="text-xs text-gray-400">Tampilkan ulasan ini di website?</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="is_active" value="true" {% if not testimonial or testimonial.is_active %}checked{% endif %} class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 mt-8 pt-6 border-t border-gray-100/50">
+            <button type="submit" id="submitBtn" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-xl transition-all transform hover:-translate-y-0.5">
+                <i class="fas fa-save"></i>
+                <span id="btnText">{{ _('save') if not testimonial else _('update') }}</span>
+            </button>
+            <a href="{{ url_for('admin_testimonials') }}"
+               class="inline-flex items-center gap-2 bg-white hover:bg-dark-800/50 text-gray-700 font-medium py-2.5 px-6 rounded-xl border border-gray-700/50 shadow-sm transition-all transform hover:-translate-y-0.5">
+                <i class="fas fa-times"></i> Batal
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('testimonialForm');
+    form.addEventListener('submit', function() {
+        const btn = document.getElementById('submitBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.querySelector('span').innerText = 'Menyimpan...';
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+        }
+    });
+});
+</script>
+{% endblock %}

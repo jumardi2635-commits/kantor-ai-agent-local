@@ -1,0 +1,3671 @@
+{% extends 'base.html' %}
+
+{% block title %}Verifikasi KYC — {{ site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ======================================================
+   KYC PAGE — DESIGN SYSTEM
+   ====================================================== */
+
+.kyc-wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-bottom: 6rem;
+}
+
+/* Page Header */
+.kyc-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+.kyc-header-icon {
+  width: 80px; height: 80px;
+  background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+  border-radius: var(--r-xl);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 2.25rem; color: #fff;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 16px 48px var(--primary-glow);
+  animation: kyc-float 4s ease-in-out infinite;
+}
+@keyframes kyc-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+.kyc-header-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem; font-weight: 800; letter-spacing: -0.04em;
+  background: linear-gradient(135deg, var(--text-primary) 30%, var(--primary-400));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+.kyc-header-sub {
+  color: var(--text-tertiary);
+  font-size: 0.95rem;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.75;
+}
+@media (max-width: 480px) {
+  .kyc-header-title { font-size: 1.5rem; }
+  .kyc-header-sub { font-size: 0.875rem; }
+}
+
+/* ── Progress Stepper ── */
+.kyc-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2.25rem;
+}
+.kyc-step-item {
+  display: flex; flex-direction: column; align-items: center;
+  position: relative; flex: 1; max-width: 130px;
+}
+.step-circle {
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 2px solid var(--border-default);
+  background: var(--bg-elevated);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.875rem; font-weight: 800;
+  color: var(--text-disabled);
+  position: relative; z-index: 2;
+  transition: all 0.4s var(--ease-out-expo);
+}
+.kyc-step-item.active .step-circle {
+  background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+  border-color: transparent; color: #fff;
+  box-shadow: 0 0 0 5px var(--primary-glow-soft), 0 4px 16px var(--primary-glow);
+  animation: stepper-pulse 2s ease-out infinite;
+}
+@keyframes stepper-pulse {
+  0%, 100% { box-shadow: 0 0 0 5px var(--primary-glow-soft), 0 4px 16px var(--primary-glow); }
+  50% { box-shadow: 0 0 0 8px rgba(99,102,241,0.08), 0 4px 16px var(--primary-glow); }
+}
+.kyc-step-item.done .step-circle {
+  background: var(--success); border-color: transparent; color: #fff;
+  box-shadow: none; animation: none;
+}
+.step-label {
+  font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text-disabled);
+  margin-top: 0.45rem; text-align: center;
+  transition: color 0.3s;
+  line-height: 1.3;
+}
+.kyc-step-item.active .step-label,
+.kyc-step-item.done .step-label { color: var(--text-secondary); }
+.step-line {
+  flex: 1; height: 2px; background: var(--border-default);
+  max-width: 72px; position: relative; margin-bottom: 1.4rem;
+  border-radius: var(--r-full); overflow: hidden;
+}
+.step-line::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--success), var(--primary-500));
+  transform-origin: left; transform: scaleX(0);
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.step-line.filled::after { transform: scaleX(1); }
+
+/* ── Card ── */
+.kyc-card {
+  background: linear-gradient(160deg, rgba(11,17,32,0.97), rgba(2,6,23,0.97));
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  position: relative;
+  box-shadow: var(--shadow-md);
+}
+.kyc-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--primary-500), var(--secondary-500), var(--accent-400));
+}
+.kyc-card-body { padding: 2rem; }
+@media (max-width: 576px) { .kyc-card-body { padding: 1.25rem; } }
+
+/* ── Step Headings ── */
+.step-badge {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: var(--primary-glow-soft); color: var(--primary-400);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: var(--r-full);
+  font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 0.3rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.kyc-step-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.3rem; font-weight: 800; letter-spacing: -0.03em;
+  color: var(--text-primary); margin-bottom: 0.35rem;
+}
+.kyc-step-sub {
+  color: var(--text-tertiary); font-size: 0.875rem; line-height: 1.65;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Benefit Items ── */
+.benefit-grid { display: flex; flex-direction: column; gap: 0.625rem; }
+.benefit-row {
+  display: flex; align-items: flex-start; gap: 0.875rem;
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md); padding: 0.875rem 1rem;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
+}
+.benefit-row:hover { border-color: var(--border-default); background: var(--bg-surface-hover); }
+.benefit-ico {
+  width: 40px; height: 40px; min-width: 40px; border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+}
+.ico-primary { background: var(--primary-glow-soft); color: var(--primary-400); }
+.ico-success { background: var(--success-bg); color: var(--success); }
+.ico-info { background: var(--info-bg); color: var(--info); }
+.ico-warning { background: var(--warning-bg); color: var(--warning); }
+
+/* ── Check List ── */
+.req-check {
+  display: flex; align-items: center; gap: 0.625rem;
+  font-size: 0.85rem; color: var(--text-secondary); padding: 0.2rem 0;
+}
+.req-check i { color: var(--success); font-size: 0.85rem; flex-shrink: 0; }
+
+/* ── Model Loading ── */
+.model-status-box {
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md); padding: 1rem 1.25rem; text-align: center;
+}
+.model-status-box.success-box {
+  background: var(--success-bg); border-color: rgba(16,185,129,0.25);
+}
+.model-status-box.warn-box {
+  background: var(--warning-bg); border-color: rgba(245,158,11,0.25);
+}
+.model-progress-bar {
+  height: 4px; background: var(--border-default);
+  border-radius: var(--r-full); overflow: hidden; margin-top: 0.75rem;
+}
+.model-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
+  border-radius: var(--r-full);
+  transition: width 0.4s ease;
+  width: 0%;
+}
+
+/* ── Privacy Note ── */
+.privacy-note {
+  background: var(--info-bg); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: var(--r-md); padding: 0.875rem 1rem;
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  font-size: 0.8rem; color: var(--text-secondary); line-height: 1.65;
+}
+.privacy-note i { color: var(--info); font-size: 1rem; margin-top: 0.1rem; flex-shrink: 0; }
+
+/* ── Terms Checkbox ── */
+.terms-label {
+  display: flex; align-items: flex-start; gap: 0.875rem;
+  cursor: pointer; padding: 1.1rem;
+  background: var(--bg-surface); border: 1px solid var(--border-default);
+  border-radius: var(--r-md); user-select: none;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
+}
+.terms-label:hover { border-color: var(--border-strong); }
+.terms-label.checked { border-color: var(--primary-500); background: var(--primary-glow-soft); }
+.terms-box {
+  width: 22px; height: 22px; min-width: 22px; border-radius: 6px;
+  border: 2px solid var(--border-strong);
+  background: var(--bg-elevated);
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--duration-fast);
+}
+.terms-label.checked .terms-box { background: var(--primary-500); border-color: var(--primary-500); }
+
+/* ── Divider ── */
+.kyc-hr {
+  display: flex; align-items: center; gap: 0.875rem;
+  color: var(--text-disabled); font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  margin: 1.5rem 0;
+}
+.kyc-hr::before, .kyc-hr::after {
+  content: ''; flex: 1; height: 1px; background: var(--border-subtle);
+}
+
+/* ── Upload Zone ── */
+.upload-zone {
+  border: 2px dashed var(--border-default);
+  border-radius: var(--r-lg); padding: 2.5rem 1.5rem;
+  text-align: center; cursor: pointer;
+  background: var(--bg-surface);
+  transition: all var(--duration-base); position: relative; overflow: hidden;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--primary-500);
+  background: var(--primary-glow-soft);
+  transform: scale(1.01);
+}
+.upload-zone.has-file { border-style: solid; border-color: var(--success); background: var(--success-bg); }
+.upload-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0;
+}
+
+/* ── KTP Preview ── */
+.photo-preview {
+  border-radius: var(--r-md); overflow: hidden;
+  background: var(--bg-elevated);
+  position: relative; display: none;
+}
+.photo-preview.show { display: block; }
+.photo-preview img { width: 100%; height: auto; display: block; }
+.photo-preview canvas {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%; pointer-events: none;
+}
+
+/* ── Face Status Badge ── */
+.face-badge {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  padding: 0.4rem 0.875rem; border-radius: var(--r-full);
+  font-size: 0.78rem; font-weight: 700; transition: all 0.3s;
+}
+.face-badge.detecting { background: var(--info-bg); color: var(--info); border: 1px solid rgba(59,130,246,0.2); }
+.face-badge.detected  { background: var(--success-bg); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+.face-badge.failed    { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+.face-badge .bdot { width: 7px; height: 7px; border-radius: 50%; }
+.face-badge.detecting .bdot { background: var(--info); animation: bdot-pulse 1.2s infinite; }
+.face-badge.detected .bdot  { background: var(--success); }
+.face-badge.failed .bdot    { background: var(--danger); }
+@keyframes bdot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+/* ── Form Inputs ── */
+.kyc-label {
+  font-size: 0.78rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-tertiary);
+  display: block; margin-bottom: 0.4rem;
+}
+.kyc-required { color: var(--danger); }
+.kyc-input {
+  width: 100%; background: var(--bg-surface); border: 1px solid var(--border-default);
+  border-radius: var(--r-md); padding: 0.75rem 1rem;
+  color: var(--text-primary); font-size: 0.9rem; font-family: inherit;
+  outline: none; transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.kyc-input:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-glow-soft);
+}
+.kyc-input::placeholder { color: var(--text-disabled); }
+.kyc-input.nik-input { font-family: 'Courier New', monospace; font-size: 1.05rem; letter-spacing: 0.12em; }
+.kyc-input-wrap { position: relative; }
+.kyc-input-ico {
+  position: absolute; right: 0.875rem; top: 50%; transform: translateY(-50%);
+  color: var(--text-disabled); font-size: 1rem; pointer-events: none;
+}
+.kyc-input.valid-input ~ .kyc-input-ico { color: var(--success); }
+select.kyc-input {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2394a3b8'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 0.85rem center; background-size: 1rem;
+  padding-right: 2.5rem; cursor: pointer;
+}
+select.kyc-input option { background: var(--bg-elevated); color: var(--text-primary); }
+.kyc-input-prefix { position: relative; }
+.kyc-input-prefix span {
+  position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+  color: var(--text-tertiary); font-size: 0.9rem; font-weight: 700; pointer-events: none;
+}
+.kyc-input-prefix .kyc-input { padding-left: 2.4rem; }
+
+/* ── Camera ── */
+.cam-container {
+  position: relative; background: #000;
+  border-radius: var(--r-lg); overflow: hidden;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  max-height: min(480px, 65vh);
+  max-height: min(480px, calc(var(--kyc-vh, 1vh) * 65));
+  max-height: min(480px, 65dvh);
+  min-height: 260px;
+}
+.cam-video {
+  width: 100%; height: 100%; object-fit: cover;
+  transform: scaleX(-1); border-radius: var(--r-lg);
+  display: block;
+}
+.cam-canvas {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%; pointer-events: none;
+  transform: scaleX(-1);
+}
+.face-oval-wrap {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.face-oval {
+  width: min(280px, 70%); height: min(370px, 88%);
+  border: 3px solid rgba(255,255,255,0.3);
+  border-radius: 50%; transition: all 0.3s;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);
+}
+.face-oval.inside { border-color: rgba(16,185,129,0.85); box-shadow: 0 0 0 9999px rgba(0,0,0,0.3), 0 0 24px rgba(16,185,129,0.4); }
+.face-oval.close  { border-color: rgba(245,158,11,0.85); }
+.face-oval.too-far   { border-color: rgba(59,130,246,0.85);  box-shadow: 0 0 0 9999px rgba(0,0,0,0.35), 0 0 24px rgba(59,130,246,0.35); }
+.face-oval.too-close { border-color: rgba(245,158,11,0.85);  box-shadow: 0 0 0 9999px rgba(0,0,0,0.30), 0 0 24px rgba(245,158,11,0.35); }
+.face-oval.off-angle { border-color: rgba(245,158,11,0.85);  box-shadow: 0 0 0 9999px rgba(0,0,0,0.30), 0 0 24px rgba(245,158,11,0.35); }
+.face-oval.capturing {
+  border-color: rgba(16,185,129,0.95);
+  box-shadow:
+    0 0 0 9999px rgba(0,0,0,0.28),
+    0 0 30px rgba(16,185,129,0.55),
+    0 0 60px rgba(16,185,129,0.25),
+    inset 0 0 30px rgba(16,185,129,0.15);
+  animation: oval-capture-pulse 0.7s ease-in-out infinite;
+}
+@keyframes oval-capture-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.02); }
+}
+.cam-hint {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.72); backdrop-filter: blur(8px);
+  color: #fff; font-size: 0.78rem; font-weight: 600;
+  padding: 0.45rem 1rem; border-radius: var(--r-full);
+  white-space: nowrap; transition: all 0.3s; max-width: 90%;
+  text-align: center;
+}
+.cam-hint.holding {
+  background: rgba(16,185,129,0.85);
+  box-shadow: 0 0 20px rgba(16,185,129,0.5);
+}
+.cam-permission {
+  position: absolute; inset: 0;
+  background: var(--bg-elevated);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.875rem; padding: 1.5rem; text-align: center; border-radius: var(--r-lg);
+}
+.countdown-layer {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(3px);
+  display: none; align-items: center; justify-content: center; border-radius: var(--r-lg);
+}
+.countdown-layer.show { display: flex; }
+.count-num {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 7rem; font-weight: 900; color: #fff;
+  text-shadow: 0 6px 32px rgba(0,0,0,0.8);
+  animation: count-anim 1s ease-out;
+}
+@keyframes count-anim {
+  0% { transform: scale(1.6); opacity: 0; }
+  20% { transform: scale(1); opacity: 1; }
+  80% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.4); opacity: 0; }
+}
+.auto-cap-pill {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  background: rgba(16,185,129,0.92);
+  color: #fff; font-size: 0.72rem; font-weight: 800;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0.35rem 0.85rem; border-radius: var(--r-full);
+  display: none; align-items: center; gap: 0.4rem;
+  box-shadow: 0 8px 24px rgba(16,185,129,0.45);
+  z-index: 3;
+  animation: auto-cap-pop 0.3s ease-out;
+}
+.auto-cap-pill.show { display: inline-flex; }
+.auto-cap-pill .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #fff;
+  animation: auto-cap-dot 0.6s ease-in-out infinite;
+}
+@keyframes auto-cap-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(0.7); }
+}
+@keyframes auto-cap-pop {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Liveness checks */
+.liveness-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+.liveness-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md); padding: 0.7rem 1rem; font-size: 0.84rem;
+  transition: all 0.3s;
+}
+.liveness-row.ok { border-color: rgba(16,185,129,0.3); background: var(--success-bg); }
+.liveness-row.ok i { color: var(--success); }
+.liveness-row .lico { font-size: 1rem; color: var(--text-disabled); flex-shrink: 0; transition: color 0.3s; }
+
+/* ── Capture Button ── */
+.capture-ring {
+  display: flex; align-items: center; justify-content: center;
+  gap: 1.5rem; margin: 1.25rem 0 0.5rem;
+}
+.btn-capture {
+  width: 70px; height: 70px; border-radius: 50%;
+  border: 4px solid rgba(255,255,255,0.25);
+  background: transparent;
+  cursor: pointer; position: relative; transition: all var(--duration-fast);
+  flex-shrink: 0;
+}
+.btn-capture::after {
+  content: ''; position: absolute;
+  width: 54px; height: 54px; border-radius: 50%;
+  background: #fff; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all var(--duration-fast);
+}
+.btn-capture:hover::after { background: var(--primary-400); transform: translate(-50%, -50%) scale(0.88); }
+.btn-capture:active::after { transform: translate(-50%, -50%) scale(0.76); }
+.btn-capture:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-capture:disabled::after { background: #aaa; }
+
+/* ── Buttons ── */
+.btn-kp {
+  padding: 0.875rem 1.75rem; border: none; border-radius: var(--r-md);
+  font-weight: 700; font-size: 0.9rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  width: 100%; justify-content: center; transition: all var(--duration-fast);
+  font-family: inherit;
+}
+.btn-kp-primary {
+  background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+  color: #fff;
+}
+.btn-kp-primary:hover:not(:disabled) {
+  filter: brightness(1.1); transform: translateY(-1px); box-shadow: var(--shadow-primary);
+}
+.btn-kp-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; filter: none; }
+.btn-kp-ghost {
+  background: var(--bg-surface); color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  width: auto; padding: 0.75rem 1.25rem;
+}
+.btn-kp-ghost:hover { background: var(--bg-surface-hover); border-color: var(--border-strong); }
+.btn-kp-sm { padding: 0.5rem 1rem; font-size: 0.8rem; width: auto; }
+
+/* ── Processing / Result States ── */
+.result-panel { text-align: center; padding: 2.5rem 1.5rem; display: none; }
+.result-panel.show { display: block; }
+.result-icon {
+  width: 88px; height: 88px; border-radius: 50%;
+  margin: 0 auto 1.25rem;
+  display: flex; align-items: center; justify-content: center; font-size: 2.5rem;
+}
+.result-icon.spinning {
+  background: var(--info-bg); border: 2px solid rgba(59,130,246,0.2);
+  animation: ri-spin 1.8s linear infinite;
+}
+@keyframes ri-spin {
+  from { box-shadow: 0 0 0 0 var(--info-bg); }
+  50%  { box-shadow: 0 0 0 10px rgba(59,130,246,0.06); }
+  to   { box-shadow: 0 0 0 0 var(--info-bg); }
+}
+.result-icon.ok      { background: var(--success-bg); border: 2px solid rgba(16,185,129,0.25); }
+.result-icon.err     { background: var(--danger-bg);  border: 2px solid rgba(239,68,68,0.25); }
+.result-icon.pending {
+  background: var(--warning-bg); border: 2px solid rgba(245,158,11,0.25);
+  animation: ri-pending-pulse 2.2s ease-in-out infinite;
+}
+@keyframes ri-pending-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.12); }
+  50%       { box-shadow: 0 0 0 12px rgba(245,158,11,0.04); }
+}
+.proc-badges { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+.proc-badge {
+  padding: 0.4rem 0.875rem; border-radius: var(--r-full);
+  font-size: 0.75rem; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: var(--bg-surface); color: var(--text-disabled);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.4s;
+}
+.proc-badge.active { background: var(--info-bg); color: var(--info); border-color: rgba(59,130,246,0.25); }
+.proc-badge.done   { background: var(--success-bg); color: var(--success); border-color: rgba(16,185,129,0.25); }
+
+.score-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg); overflow: hidden; margin: 1.25rem 0 1.5rem;
+}
+.score-cell { padding: 1rem 0.75rem; text-align: center; }
+.score-cell:not(:last-child) { border-right: 1px solid var(--border-subtle); }
+.score-label-sm { font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.score-value { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.04em; }
+
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
+.compare-card {
+  border-radius: var(--r-md); overflow: hidden;
+  border: 1px solid var(--border-default); background: var(--bg-elevated);
+}
+.compare-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; }
+.compare-label {
+  padding: 0.5rem; text-align: center;
+  font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-tertiary); background: var(--bg-elevated);
+}
+
+.tip-retry {
+  background: var(--warning-bg); border: 1px solid rgba(245,158,11,0.25);
+  border-radius: var(--r-md); padding: 1rem 1.25rem; text-align: left; margin: 1rem 0 1.5rem;
+}
+.tip-title { font-size: 0.85rem; font-weight: 800; color: var(--warning); margin-bottom: 0.5rem; }
+
+.btn-row { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+.btn-row > .btn-kp-primary { flex: 1; }
+
+.verified-chip,
+.pending-chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  border-radius: var(--r-full); font-size: 0.75rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  padding: 0.35rem 0.875rem; margin-bottom: 0.875rem;
+}
+.verified-chip {
+  background: var(--success-bg); color: var(--success);
+  border: 1px solid rgba(16,185,129,0.25);
+}
+.pending-chip {
+  background: var(--warning-bg); color: var(--warning);
+  border: 1px solid rgba(245,158,11,0.25);
+  animation: chip-blink 2.5s ease-in-out infinite;
+}
+@keyframes chip-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STEP 3 PROFESSIONAL FACE DETECTION — Quality & Feedback UI
+   ══════════════════════════════════════════════════════════════ */
+
+.face-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+}
+.metric-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  font-size: 0.75rem;
+  transition: border-color 0.25s, background 0.25s;
+}
+.metric-row.pass {
+  background: var(--success-bg);
+  border-color: rgba(16,185,129,0.28);
+}
+.metric-row.warn {
+  background: var(--warning-bg);
+  border-color: rgba(245,158,11,0.28);
+}
+.metric-row .m-ico {
+  width: 22px; height: 22px; min-width: 22px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem;
+  background: var(--bg-elevated);
+  color: var(--text-disabled);
+  transition: all 0.25s;
+}
+.metric-row.pass .m-ico { background: var(--success); color: #fff; }
+.metric-row.warn .m-ico { background: var(--warning); color: #fff; }
+.metric-row .m-label {
+  flex: 1; min-width: 0;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.metric-row.pass .m-label { color: var(--success); }
+.metric-row.warn .m-label { color: var(--warning); }
+
+.quality-bar-wrap {
+  margin-bottom: 0.875rem;
+}
+.quality-bar-head {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.72rem; font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 0.35rem;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.quality-bar-head strong { color: var(--text-primary); font-weight: 800; }
+.quality-bar {
+  height: 6px;
+  background: var(--border-default);
+  border-radius: var(--r-full);
+  overflow: hidden;
+  position: relative;
+}
+.quality-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: var(--r-full);
+  background: linear-gradient(90deg, var(--danger), var(--warning), var(--success));
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  transition: width 0.3s ease, background-position 0.3s ease;
+}
+
+.distance-tag {
+  position: absolute; top: 14px; left: 50%;
+  transform: translateX(-50%);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--r-full);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  backdrop-filter: blur(10px);
+  z-index: 3;
+  white-space: nowrap;
+}
+.distance-tag.show { display: inline-flex; }
+.distance-tag.too-far  { background: rgba(59,130,246,0.88);  color: #fff; box-shadow: 0 8px 24px rgba(59,130,246,0.45); }
+.distance-tag.too-close{ background: rgba(245,158,11,0.92);  color: #fff; box-shadow: 0 8px 24px rgba(245,158,11,0.45); }
+.distance-tag.off-center{ background: rgba(245,158,11,0.92); color: #fff; box-shadow: 0 8px 24px rgba(245,158,11,0.45); }
+
+.liveness-progress {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-left: auto;
+}
+.liveness-progress .lp-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border-default);
+  transition: all 0.3s;
+}
+.liveness-progress .lp-dot.filled { background: var(--success); box-shadow: 0 0 8px rgba(16,185,129,0.6); }
+
+.live-score-wrap {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+}
+.live-score-wrap .ls-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--success);
+  transition: color 0.3s;
+}
+.live-score-wrap .ls-value.low { color: var(--warning); }
+
+/* ══════════════════════════════════════════════════════════════
+   NEW: KTP DETECTION ENHANCEMENTS
+   ══════════════════════════════════════════════════════════════ */
+
+/* Scan progress overlay — step-by-step detection indicator */
+.ktp-scan-progress {
+  position: absolute;
+  bottom: 8px; left: 8px; right: 8px;
+  background: rgba(0,0,0,0.78);
+  backdrop-filter: blur(10px);
+  border-radius: var(--r-md);
+  padding: 0.65rem 0.85rem;
+  display: none;
+  z-index: 3;
+}
+.ktp-scan-progress.show { display: block; }
+.ktp-scan-steps {
+  display: flex; flex-direction: column; gap: 0.3rem;
+}
+.ktp-scan-step {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.55);
+  transition: color 0.25s;
+}
+.ktp-scan-step.active { color: #fff; font-weight: 700; }
+.ktp-scan-step.done   { color: var(--success); }
+.ktp-scan-step .ks-ico {
+  width: 14px; height: 14px; min-width: 14px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.55rem;
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.55);
+  transition: all 0.25s;
+}
+.ktp-scan-step.active .ks-ico {
+  background: rgba(59,130,246,0.9);
+  color: #fff;
+  animation: ks-ico-pulse 1.2s infinite;
+}
+@keyframes ks-ico-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.15); opacity: 0.75; }
+}
+.ktp-scan-step.done .ks-ico {
+  background: var(--success);
+  color: #fff;
+}
+
+/* NIK parsed info — shows region, birthdate, gender after detection */
+.nik-parsed-info {
+  display: none;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.nik-parsed-info.show { display: flex; }
+.nik-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  background: var(--info-bg);
+  border: 1px solid rgba(59,130,246,0.22);
+  border-radius: var(--r-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--info);
+}
+.nik-chip i { font-size: 0.75rem; }
+.nik-chip.warn {
+  background: var(--warning-bg);
+  border-color: rgba(245,158,11,0.25);
+  color: var(--warning);
+}
+
+/* Face quality assessment — shown after KTP face detection */
+.ktp-face-quality {
+  display: none;
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  font-size: 0.75rem;
+}
+.ktp-face-quality.show { display: block; }
+.ktp-face-quality .qf-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+}
+.ktp-face-quality .qf-head strong { color: var(--text-primary); }
+.ktp-face-quality .qf-rows {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+.ktp-face-quality .qf-row {
+  text-align: center;
+  padding: 0.35rem;
+  background: var(--bg-elevated);
+  border-radius: var(--r-sm);
+}
+.ktp-face-quality .qf-row.pass { background: var(--success-bg); }
+.ktp-face-quality .qf-row.warn { background: var(--warning-bg); }
+.ktp-face-quality .qf-row .qfr-label {
+  font-size: 0.62rem;
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 0.15rem;
+}
+.ktp-face-quality .qf-row .qfr-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+.ktp-face-quality .qf-row.pass .qfr-value { color: var(--success); }
+.ktp-face-quality .qf-row.warn .qfr-value { color: var(--warning); }
+
+/* OCR modal — field confidence badges */
+.field-wrap { position: relative; }
+.field-confidence {
+  position: absolute;
+  top: -6px; right: 0;
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--r-full);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: none;
+  align-items: center;
+  gap: 0.2rem;
+}
+.field-confidence.show { display: inline-flex; }
+.field-confidence.high   { background: var(--success-bg); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+.field-confidence.medium { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+.field-confidence.low    { background: var(--danger-bg);  color: var(--danger);  border: 1px solid rgba(239,68,68,0.3); }
+.field-confidence.manual { background: var(--bg-surface-hover); color: var(--text-tertiary); border: 1px solid var(--border-default); }
+
+/* OCR modal — separated sections */
+.ocr-section-title {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 1rem 0 0.6rem;
+}
+.ocr-section-title:first-child { margin-top: 0; }
+.ocr-section-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--border-subtle);
+}
+
+/* KTP tips at bottom */
+.ktp-tips-collapsible {
+  margin-top: 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.ktp-tips-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ktp-tips-toggle:hover { background: var(--bg-surface-hover); }
+.ktp-tips-toggle .tgi { transition: transform 0.25s; }
+.ktp-tips-toggle.expanded .tgi { transform: rotate(180deg); }
+.ktp-tips-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding: 0 0.9rem;
+}
+.ktp-tips-content.expanded {
+  max-height: 400px;
+  padding-bottom: 0.75rem;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 576px) {
+  .kyc-wrap { padding: 0 0.75rem 4rem; }
+  .kyc-header-icon { width: 64px; height: 64px; font-size: 1.75rem; margin-bottom: 1rem; }
+  .kyc-header-title { font-size: 1.35rem; }
+  .kyc-header-sub { font-size: 0.85rem; max-width: 100%; padding: 0 0.5rem; }
+
+  .kyc-stepper { margin-bottom: 1.5rem; }
+  .kyc-step-item { max-width: 72px; }
+  .step-circle { width: 34px; height: 34px; font-size: 0.8rem; }
+  .step-label { font-size: 0.55rem; letter-spacing: 0.04em; margin-top: 0.35rem; line-height: 1.2; }
+  .step-line { max-width: 36px; margin-bottom: 1.1rem; }
+  .kyc-step-item.active .step-circle { box-shadow: 0 0 0 3px var(--primary-glow-soft), 0 2px 8px var(--primary-glow); }
+
+  .kyc-card-body { padding: 1rem; }
+  .kyc-card::before { height: 2px; }
+  .step-badge { font-size: 0.65rem; padding: 0.25rem 0.6rem; margin-bottom: 0.5rem; }
+  .kyc-step-title { font-size: 1.1rem; }
+  .kyc-step-sub { font-size: 0.82rem; margin-bottom: 1rem; }
+
+  .benefit-row { padding: 0.75rem 0.875rem; gap: 0.625rem; }
+  .benefit-ico { width: 36px; height: 36px; min-width: 36px; font-size: 1rem; }
+  .benefit-row .fw-bold.small { font-size: 0.85rem; }
+  .benefit-row .small { font-size: 0.8rem; }
+
+  .req-check { font-size: 0.8rem; padding: 0.15rem 0; }
+  .model-status-box { padding: 0.875rem 1rem; }
+  .model-progress-bar { margin-top: 0.5rem; }
+
+  .privacy-note { padding: 0.75rem 0.875rem; font-size: 0.75rem; gap: 0.5rem; }
+  .privacy-note i { font-size: 0.9rem; }
+
+  .terms-label { padding: 0.875rem; gap: 0.625rem; }
+  .terms-label .small { font-size: 0.78rem; line-height: 1.5; }
+  .terms-box { width: 20px; height: 20px; min-width: 20px; }
+
+  .btn-kp { padding: 0.75rem 1.25rem; font-size: 0.88rem; min-height: 48px; }
+  .btn-kp-ghost { padding: 0.625rem 1rem; }
+  .btn-kp-sm { padding: 0.45rem 0.875rem; font-size: 0.78rem; min-height: 40px; }
+
+  .kyc-hr { margin: 1.25rem 0; font-size: 0.68rem; }
+
+  .upload-zone { padding: 1.75rem 1rem; border-width: 2px; }
+  .upload-zone #uzContent i { font-size: 2rem !important; margin-bottom: 0.5rem !important; }
+  .upload-zone #uzContent .fw-bold { font-size: 0.9rem; }
+  .upload-zone #uzContent .small { font-size: 0.78rem; }
+
+  .photo-preview.show { margin-bottom: 0.75rem; }
+  .face-badge { padding: 0.3rem 0.625rem; font-size: 0.72rem; }
+
+  .kyc-label { font-size: 0.72rem; margin-bottom: 0.3rem; }
+  .kyc-input { padding: 0.625rem 0.875rem; font-size: 0.88rem; min-height: 48px; }
+  .kyc-input.nik-input { font-size: 0.95rem; letter-spacing: 0.08em; }
+  select.kyc-input { background-position: right 0.65rem center; padding-right: 2.25rem; }
+  .kyc-input-prefix span { left: 0.875rem; font-size: 0.85rem; }
+  .kyc-input-prefix .kyc-input { padding-left: 2.2rem; }
+  .kyc-input-ico { right: 0.75rem; font-size: 0.9rem; }
+  textarea.kyc-input { min-height: 80px; }
+
+  .cam-container {
+    aspect-ratio: 3 / 4;
+    max-height: min(560px, 72vh);
+    max-height: min(560px, calc(var(--kyc-vh, 1vh) * 72));
+    max-height: min(560px, 72dvh);
+    border-radius: var(--r-md);
+    min-height: 320px;
+  }
+  .cam-video { border-radius: var(--r-md); }
+  .face-oval { width: min(240px, 76%); height: min(320px, 82%); border-width: 2px; }
+  .cam-hint { bottom: 10px; font-size: 0.72rem; padding: 0.35rem 0.75rem; max-width: 95%; }
+  .auto-cap-pill { top: 10px; font-size: 0.65rem; padding: 0.3rem 0.7rem; }
+  .cam-permission { padding: 1rem; gap: 0.625rem; }
+  .cam-permission i { font-size: 2.25rem !important; }
+  .cam-permission .fw-bold { font-size: 0.9rem; }
+  .cam-permission .small { font-size: 0.78rem; max-width: 200px; }
+  .count-num { font-size: 5rem; }
+
+  .liveness-row { padding: 0.6rem 0.875rem; font-size: 0.8rem; }
+  .liveness-row .lico { font-size: 0.9rem; }
+
+  .capture-ring { gap: 1rem; margin: 1rem 0 0.5rem; }
+  .btn-capture { width: 58px; height: 58px; border-width: 3px; }
+  .btn-capture::after { width: 44px; height: 44px; }
+
+  .result-panel { padding: 1.5rem 1rem; }
+  .result-icon { width: 72px; height: 72px; font-size: 2rem; }
+  .proc-badges { margin-top: 0.75rem; gap: 0.375rem; }
+  .proc-badge { padding: 0.3rem 0.625rem; font-size: 0.7rem; }
+
+  .score-grid { grid-template-columns: 1fr; margin: 1rem 0 1.25rem; }
+  .score-cell { padding: 0.75rem 0.5rem; border-right: none !important; border-bottom: 1px solid var(--border-subtle); }
+  .score-cell:last-child { border-bottom: none; }
+  .score-label-sm { font-size: 0.68rem; }
+  .score-value { font-size: 1.4rem; }
+
+  .compare-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+  .compare-card img { aspect-ratio: 4/3; }
+  .compare-label { font-size: 0.68rem; padding: 0.4rem; }
+
+  .tip-retry { padding: 0.875rem 1rem; margin: 0.875rem 0 1.25rem; }
+  .tip-title { font-size: 0.8rem; }
+  .tip-retry .req-check { font-size: 0.78rem; }
+
+  .btn-row { flex-direction: column; gap: 0.625rem; margin-top: 1.25rem; }
+  .btn-row > .btn-kp-primary { width: 100%; }
+  .btn-row > .btn-kp-ghost { width: 100% !important; }
+
+  .verified-chip, .pending-chip { font-size: 0.7rem; padding: 0.3rem 0.75rem; }
+
+  .alert { font-size: 0.85rem; padding: 0.75rem 1rem; }
+  .alert .btn-close { padding: 0.5rem; }
+
+  .face-metrics { grid-template-columns: 1fr; gap: 0.4rem; }
+  .metric-row { padding: 0.5rem 0.65rem; font-size: 0.72rem; }
+  .quality-bar-head { font-size: 0.68rem; }
+
+  .ktp-scan-progress { padding: 0.55rem 0.75rem; bottom: 6px; left: 6px; right: 6px; }
+  .ktp-scan-step { font-size: 0.68rem; }
+  .ktp-scan-step .ks-ico { width: 12px; height: 12px; min-width: 12px; font-size: 0.5rem; }
+
+  .nik-parsed-info { gap: 0.35rem; }
+  .nik-chip { font-size: 0.68rem; padding: 0.25rem 0.55rem; }
+
+  .ktp-face-quality { padding: 0.55rem 0.7rem; font-size: 0.72rem; }
+  .ktp-face-quality .qf-rows { grid-template-columns: repeat(3, 1fr); gap: 0.3rem; }
+  .ktp-face-quality .qf-row { padding: 0.3rem 0.2rem; }
+  .ktp-face-quality .qf-row .qfr-label { font-size: 0.58rem; }
+  .ktp-face-quality .qf-row .qfr-value { font-size: 0.75rem; }
+
+  .field-confidence { font-size: 0.55rem; padding: 0.1rem 0.4rem; }
+  .ocr-section-title { font-size: 0.68rem; margin: 0.875rem 0 0.5rem; }
+}
+
+@media (max-width: 480px) {
+  .kyc-step-item { max-width: 60px; }
+  .step-circle { width: 30px; height: 30px; font-size: 0.75rem; }
+  .step-label { font-size: 0.5rem; }
+  .step-line { max-width: 24px; }
+  .kyc-header-title { font-size: 1.25rem; }
+  .kyc-header-sub { font-size: 0.82rem; }
+  .kyc-card-body { padding: 0.875rem; }
+  .benefit-row { padding: 0.625rem 0.75rem; }
+  .benefit-ico { width: 32px; height: 32px; min-width: 32px; font-size: 0.9rem; }
+  .upload-zone { padding: 1.5rem 0.75rem; }
+
+  .cam-container {
+    max-height: min(500px, 68vh);
+    max-height: min(500px, calc(var(--kyc-vh, 1vh) * 68));
+    max-height: min(500px, 68dvh);
+    min-height: 300px;
+  }
+  .face-oval { width: min(220px, 74%); height: min(290px, 80%); }
+  .cam-hint { font-size: 0.68rem; padding: 0.3rem 0.625rem; }
+  .count-num { font-size: 4rem; }
+
+  .capture-ring { gap: 0.75rem; }
+  .btn-capture { width: 52px; height: 52px; }
+  .btn-capture::after { width: 38px; height: 38px; }
+
+  .kyc-input { padding: 0.55rem 0.75rem; font-size: 0.85rem; min-height: 44px; }
+  .kyc-input.nik-input { font-size: 0.9rem; letter-spacing: 0.06em; }
+
+  .result-panel { padding: 1.25rem 0.75rem; }
+  .result-icon { width: 64px; height: 64px; font-size: 1.75rem; }
+  .score-value { font-size: 1.25rem; }
+  .btn-kp { padding: 0.625rem 1rem; font-size: 0.85rem; min-height: 44px; }
+}
+
+@media (max-width: 360px) {
+  .kyc-step-item { max-width: 52px; }
+  .step-circle { width: 26px; height: 26px; font-size: 0.7rem; }
+  .step-label { font-size: 0.45rem; letter-spacing: 0.02em; }
+  .step-line { max-width: 16px; margin-bottom: 0.9rem; }
+  .kyc-header-icon { width: 56px; height: 56px; font-size: 1.5rem; }
+  .kyc-header-title { font-size: 1.15rem; }
+
+  .cam-container {
+    max-height: min(440px, 64vh);
+    max-height: min(440px, calc(var(--kyc-vh, 1vh) * 64));
+    max-height: min(440px, 64dvh);
+    min-height: 280px;
+  }
+  .face-oval { width: min(200px, 72%); height: min(260px, 78%); }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .kyc-header { margin-bottom: 1.25rem; }
+  .kyc-header-icon { width: 48px; height: 48px; font-size: 1.5rem; margin-bottom: 0.75rem; }
+  .kyc-stepper { margin-bottom: 1rem; }
+  .cam-container {
+    max-height: min(320px, 70vh);
+    max-height: min(320px, calc(var(--kyc-vh, 1vh) * 70));
+    max-height: min(320px, 70dvh);
+    aspect-ratio: 16/9;
+    min-height: 200px;
+  }
+  .face-oval { width: min(220px, 22%); height: min(220px, 72%); }
+  .capture-ring { margin: 0.75rem 0 0.25rem; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .btn-kp { min-height: 48px; }
+  .btn-kp-sm { min-height: 40px; }
+  .kyc-input { min-height: 48px; }
+  .terms-label { padding: 1rem; }
+  .upload-zone { min-height: 140px; display: flex; align-items: center; justify-content: center; }
+  .benefit-row { padding: 1rem; }
+  .liveness-row { padding: 0.875rem 1rem; }
+  .face-badge { padding: 0.4rem 0.75rem; }
+}
+
+/* ── OCR scanning overlay ── */
+.ocr-scan-overlay {
+  position: absolute; inset: 0; z-index: 2; display: none;
+  align-items: center; justify-content: center; flex-direction: column; gap: 0.6rem;
+  background: linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.55));
+  border-radius: var(--r-lg);
+}
+.ocr-scan-overlay.show { display: flex; }
+.ocr-scan-overlay .scan-line {
+  position: absolute; left: 6%; right: 6%; top: 8%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary-400), transparent);
+  box-shadow: 0 0 10px var(--primary-400);
+  animation: ocr-scan 1.6s ease-in-out infinite;
+}
+@keyframes ocr-scan {
+  0%   { top: 8%;  opacity: 0; }
+  10%  { opacity: 1; }
+  50%  { top: 88%; opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 8%;  opacity: 0; }
+}
+.ocr-scan-overlay span {
+  background: rgba(0,0,0,0.72); color: #fff; font-size: 0.75rem; font-weight: 600;
+  padding: 0.35rem 0.85rem; border-radius: var(--r-full); backdrop-filter: blur(6px);
+}
+
+/* ── OCR Modal ── */
+.kyc-modal-overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(4,7,15,0.72); backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center;
+  padding: 1.25rem; opacity: 0; transition: opacity 0.2s ease;
+}
+.kyc-modal-overlay.show { display: flex; opacity: 1; }
+.kyc-modal-card {
+  background: var(--bg-elevated); border: 1px solid var(--border-default);
+  border-radius: var(--r-xl); width: 100%; max-width: 480px;
+  max-height: min(720px, 88vh);
+  max-height: min(720px, calc(var(--kyc-vh, 1vh) * 88));
+  max-height: min(720px, 88dvh);
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  transform: translateY(16px) scale(0.98); transition: transform 0.22s ease;
+}
+.kyc-modal-overlay.show .kyc-modal-card { transform: translateY(0) scale(1); }
+.kyc-modal-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;
+  padding: 1.25rem 1.25rem 1rem; border-bottom: 1px solid var(--border-subtle); flex-shrink: 0;
+}
+.kyc-modal-head h3 {
+  font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 800;
+  color: var(--text-primary); margin: 0 0 0.25rem;
+}
+.kyc-modal-head p { margin: 0; font-size: 0.82rem; color: var(--text-tertiary); line-height: 1.5; }
+.kyc-modal-close {
+  background: var(--bg-surface); border: 1px solid var(--border-default); color: var(--text-secondary);
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem;
+}
+.kyc-modal-body { padding: 1.1rem 1.25rem; overflow-y: auto; flex: 1; }
+.kyc-modal-hint {
+  display: flex; gap: 0.6rem; align-items: flex-start;
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md); padding: 0.7rem 0.85rem; margin-bottom: 1rem; font-size: 0.78rem;
+  color: var(--text-secondary); line-height: 1.5;
+}
+.kyc-modal-hint i { color: var(--primary-400); font-size: 1rem; margin-top: 0.1rem; flex-shrink: 0; }
+.kyc-modal-foot {
+  display: flex; gap: 0.75rem; padding: 1rem 1.25rem; border-top: 1px solid var(--border-subtle); flex-shrink: 0;
+}
+.kyc-modal-foot .btn-kp { width: auto; flex: 1; }
+
+@media (max-width: 576px) {
+  .kyc-modal-overlay { padding: 0; align-items: flex-end; }
+  .kyc-modal-card {
+    max-width: 100%;
+    max-height: 90vh;
+    max-height: calc(var(--kyc-vh, 1vh) * 90);
+    max-height: 90dvh;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    transform: translateY(100%);
+  }
+  .kyc-modal-overlay.show .kyc-modal-card { transform: translateY(0); }
+  .kyc-modal-foot { flex-direction: column-reverse; }
+  .kyc-modal-foot .btn-kp { width: 100%; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{# ── Flash Messages ── #}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="mb-4">
+  {% for category, message in messages %}
+  <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert" style="border-radius: var(--r-md);">
+    <i class="bi bi-{{ 'check-circle-fill' if category == 'success' else 'info-circle-fill' if category == 'info' else 'exclamation-triangle-fill' }} me-2"></i>
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="kyc-wrap reveal">
+
+  {# ── Page Header ── #}
+  <div class="kyc-header">
+    <div class="kyc-header-icon"><i class="bi bi-shield-check"></i></div>
+    <h1 class="kyc-header-title">Verifikasi Identitas KYC</h1>
+    <p class="kyc-header-sub">Konfirmasi identitas Anda dengan teknologi pengenalan wajah untuk mengaktifkan fasilitas kredit &amp; cicilan.</p>
+  </div>
+
+  {# ── Progress Stepper ── #}
+  <div class="kyc-stepper" id="kycStepper">
+    <div class="kyc-step-item active" id="si1">
+      <div class="step-circle" id="sc1">1</div>
+      <span class="step-label">Panduan</span>
+    </div>
+    <div class="step-line" id="sl1"></div>
+    <div class="kyc-step-item" id="si2">
+      <div class="step-circle" id="sc2">2</div>
+      <span class="step-label">Upload KTP</span>
+    </div>
+    <div class="step-line" id="sl2"></div>
+    <div class="kyc-step-item" id="si3">
+      <div class="step-circle" id="sc3">3</div>
+      <span class="step-label">Foto Selfie</span>
+    </div>
+    <div class="step-line" id="sl3"></div>
+    <div class="kyc-step-item" id="si4">
+      <div class="step-circle" id="sc4">4</div>
+      <span class="step-label">Hasil</span>
+    </div>
+  </div>
+
+  {# ╔══════════════════════════════════════
+     ║  STEP 1 — PANDUAN & SYARAT
+     ╚══════════════════════════════════════ #}
+  <div id="panel1">
+    <div class="kyc-card">
+      <div class="kyc-card-body">
+        <h2 class="kyc-step-title">Sebelum Memulai</h2>
+        <p class="kyc-step-sub">Baca panduan berikut agar proses verifikasi berjalan lancar dan berhasil dalam satu kali percobaan.</p>
+
+        <div class="benefit-grid mb-4">
+          <div class="benefit-row">
+            <div class="benefit-ico ico-success"><i class="bi bi-credit-card-2-front-fill"></i></div>
+            <div>
+              <div class="fw-bold small mb-0">Akses Kredit &amp; Cicilan</div>
+              <div class="small" style="color:var(--text-tertiary);">Ajukan pembelian dengan cicilan 3–24 bulan setelah verifikasi berhasil.</div>
+            </div>
+          </div>
+          <div class="benefit-row">
+            <div class="benefit-ico ico-primary"><i class="bi bi-shield-lock-fill"></i></div>
+            <div>
+              <div class="fw-bold small mb-0">Keamanan Akun Lebih Tinggi</div>
+              <div class="small" style="color:var(--text-tertiary);">Proteksi biometrik wajah memastikan hanya Anda yang bisa mengajukan kredit.</div>
+            </div>
+          </div>
+          <div class="benefit-row">
+            <div class="benefit-ico ico-info"><i class="bi bi-clock-history"></i></div>
+            <div>
+              <div class="fw-bold small mb-0">Pengambilan Data ± 2 Menit</div>
+              <div class="small" style="color:var(--text-tertiary);">Ambil foto KTP &amp; selfie dalam hitungan menit. Tim kami akan meninjau dan mengkonfirmasi dalam 1×24 jam.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kyc-hr">Yang Perlu Disiapkan</div>
+
+        <div class="row g-1 mb-4">
+          <div class="col-12 col-sm-6">
+            <div class="req-check"><i class="bi bi-check-circle-fill"></i> KTP yang masih berlaku</div>
+            <div class="req-check"><i class="bi bi-check-circle-fill"></i> Pencahayaan yang cukup terang</div>
+            <div class="req-check"><i class="bi bi-check-circle-fill"></i> Izin akses kamera perangkat</div>
+          </div>
+          <div class="col-12 col-sm-6">
+            <div class="req-check"><i class="bi bi-check-circle-fill"></i> Wajah tanpa masker &amp; kacamata hitam</div>
+            <div class="req-check"><i class="bi bi-check-circle-fill"></i> Foto tidak buram atau gelap</div>
+            <div class="req-check"><i class="bi bi-check-circle-fill"></i> Koneksi internet stabil</div>
+          </div>
+        </div>
+
+        <div id="mdLoading" class="model-status-box mb-3">
+          <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+            <div class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></div>
+            <span class="small fw-bold" id="mdText">Memuat sistem pengenalan wajah...</span>
+          </div>
+          <div class="model-progress-bar"><div class="model-progress-fill" id="mdBar"></div></div>
+        </div>
+        <div id="mdReady" class="model-status-box success-box mb-3 d-none">
+          <div class="d-flex align-items-center justify-content-center gap-2">
+            <i class="bi bi-check-circle-fill text-success"></i>
+            <span class="small fw-bold text-success">Sistem pengenalan wajah siap digunakan</span>
+          </div>
+        </div>
+        <div id="mdError" class="model-status-box warn-box mb-3 d-none">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+            <span class="small fw-bold text-warning">Model tidak dapat dimuat secara otomatis</span>
+          </div>
+          <p class="small mb-0" style="color:var(--text-tertiary);">Verifikasi tetap dapat dilanjutkan — foto akan ditinjau secara manual oleh admin.</p>
+        </div>
+
+        <div class="privacy-note mb-4">
+          <i class="bi bi-lock-fill"></i>
+          <span>Data foto KTP dan selfie Anda dienkripsi menggunakan TLS dan hanya digunakan untuk verifikasi identitas. Kami tidak membagikan data biometrik kepada pihak ketiga manapun.</span>
+        </div>
+
+        <label class="terms-label mb-4" id="termsLabel" onclick="kycToggleTerms()">
+          <div class="terms-box" id="termsBox">
+            <i class="bi bi-check-lg text-white" id="termsIco" style="font-size:0.8rem;display:none;"></i>
+          </div>
+          <div class="small" style="color:var(--text-secondary);">
+            Saya menyetujui <a href="#" class="text-primary" onclick="event.stopPropagation()">syarat &amp; ketentuan</a> dan <a href="#" class="text-primary" onclick="event.stopPropagation()">kebijakan privasi</a> {{ site_name }}, serta mengizinkan penggunaan data biometrik untuk keperluan verifikasi KYC.
+          </div>
+        </label>
+
+        <button type="button" class="btn-kp btn-kp-primary" id="btnStart" onclick="kycGoTo(2)" disabled>
+          <i class="bi bi-arrow-right-circle-fill"></i> Mulai Verifikasi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {# ╔══════════════════════════════════════
+     ║  STEP 2 — UPLOAD KTP (ENHANCED)
+     ╚══════════════════════════════════════ #}
+  <div id="panel2" class="d-none">
+    <div class="kyc-card">
+      <div class="kyc-card-body">
+        <div class="step-badge"><i class="bi bi-card-image"></i> Langkah 2 / 4</div>
+        <h2 class="kyc-step-title">Upload Foto KTP</h2>
+        <p class="kyc-step-sub">Ambil foto KTP Anda yang jelas. Sistem akan otomatis mendeteksi teks dan wajah di KTP untuk mengisi form di bawah.</p>
+
+        {# Upload zone #}
+        <div id="uploadZone" class="upload-zone mb-3"
+             ondragover="kycDragOver(event)" ondragleave="kycDragLeave(event)" ondrop="kycDropKTP(event)">
+          <input type="file" id="ktpFileIn" accept="image/*" onchange="kycHandleKTP(this.files[0])">
+          <div id="uzContent">
+            <i class="bi bi-cloud-arrow-up-fill" style="font-size:2.75rem;color:var(--primary-400);display:block;margin-bottom:0.75rem;"></i>
+            <div class="fw-bold mb-1">Klik untuk upload atau seret &amp; lepas</div>
+            <div class="small" style="color:var(--text-tertiary);">Format JPG, PNG, HEIC — maks. 10 MB</div>
+            <div class="mt-3">
+              <span class="badge" style="background:var(--bg-elevated);color:var(--text-secondary);border:1px solid var(--border-default);">
+                <i class="bi bi-magic me-1"></i> Auto-detect teks &amp; wajah
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {# KTP Preview #}
+        <div id="ktpPreviewRow" style="display:none;" class="mb-3">
+          <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+            <span id="ktpBadge" class="face-badge detecting"><span class="bdot"></span> Mendeteksi wajah...</span>
+            <button type="button" class="btn-kp btn-kp-ghost btn-kp-sm" onclick="kycResetKTP()">
+              <i class="bi bi-arrow-counterclockwise"></i> Ganti Foto
+            </button>
+          </div>
+          <div class="photo-preview show" id="ktpPrev">
+            <img id="ktpImg" src="" alt="Preview KTP">
+            <canvas id="ktpCanvas"></canvas>
+            <div class="ocr-scan-overlay" id="ktpOcrScan">
+              <div class="scan-line"></div>
+              <span><i class="bi bi-magic me-1"></i> Membaca data KTP...</span>
+            </div>
+            {# NEW: Scan progress steps #}
+            <div class="ktp-scan-progress" id="ktpScanProgress">
+              <div class="ktp-scan-steps">
+                <div class="ktp-scan-step" id="ksStep1">
+                  <div class="ks-ico"><i class="bi bi-circle"></i></div>
+                  <span>Deteksi wajah di KTP</span>
+                </div>
+                <div class="ktp-scan-step" id="ksStep2">
+                  <div class="ks-ico"><i class="bi bi-circle"></i></div>
+                  <span>Pemrosesan gambar OCR</span>
+                </div>
+                <div class="ktp-scan-step" id="ksStep3">
+                  <div class="ks-ico"><i class="bi bi-circle"></i></div>
+                  <span>Ekstraksi &amp; validasi data</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {# NEW: Face quality assessment #}
+          <div class="ktp-face-quality" id="ktpFaceQuality">
+            <div class="qf-head">
+              <span>Kualitas Foto KTP</span>
+              <strong id="qfScore">—</strong>
+            </div>
+            <div class="qf-rows">
+              <div class="qf-row" id="qfRow1">
+                <span class="qfr-label">Ketajaman</span>
+                <span class="qfr-value" id="qfSharp">—</span>
+              </div>
+              <div class="qf-row" id="qfRow2">
+                <span class="qfr-label">Ukuran Wajah</span>
+                <span class="qfr-value" id="qfSize">—</span>
+              </div>
+              <div class="qf-row" id="qfRow3">
+                <span class="qfr-label">Pencahayaan</span>
+                <span class="qfr-value" id="qfLight">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# KTP form #}
+        <div id="ktpFormSec">
+          <div class="kyc-hr">Data Identitas dari KTP</div>
+          <div class="row g-3">
+
+            <div class="col-12">
+              <label class="kyc-label" for="ktpNIK">NIK (16 Digit) <span class="kyc-required">*</span></label>
+              <div class="kyc-input-wrap">
+                <input type="text" id="ktpNIK" class="kyc-input nik-input" inputmode="numeric"
+                       placeholder="1234567890123456" maxlength="16"
+                       oninput="this.value=this.value.replace(/\D/g,'');kycNIKInput(this.value)">
+                <i class="bi bi-check-circle-fill kyc-input-ico" id="nikIco" style="display:none;color:var(--success);"></i>
+              </div>
+              <div class="d-flex justify-content-between mt-1">
+                <small id="nikErr" class="d-none" style="color:var(--danger);"><i class="bi bi-x-circle me-1"></i>NIK harus 16 digit angka</small>
+                <small id="nikCount" class="ms-auto" style="color:var(--text-disabled);">0 / 16</small>
+              </div>
+              {# NEW: NIK parsed info — region, birthdate, gender #}
+              <div class="nik-parsed-info" id="nikParsedInfo">
+                <span class="nik-chip" id="nikRegionChip"><i class="bi bi-geo-alt-fill"></i> <span id="nikRegionText">—</span></span>
+                <span class="nik-chip" id="nikBirthChip"><i class="bi bi-calendar-event"></i> <span id="nikBirthText">—</span></span>
+                <span class="nik-chip" id="nikGenderChip"><i class="bi bi-gender-ambiguous"></i> <span id="nikGenderText">—</span></span>
+              </div>
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <label class="kyc-label" for="ktpName">Nama Lengkap Sesuai KTP <span class="kyc-required">*</span></label>
+              <input type="text" id="ktpName" class="kyc-input" placeholder="Nama lengkap" oninput="kycChkStep2()">
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <label class="kyc-label" for="ktpBirth">Tempat Lahir</label>
+              <input type="text" id="ktpBirth" class="kyc-input" placeholder="Kota kelahiran">
+            </div>
+
+            <div class="col-12">
+              <label class="kyc-label" for="ktpAddr">Alamat Sesuai KTP <span class="kyc-required">*</span></label>
+              <textarea id="ktpAddr" class="kyc-input" rows="2" style="resize:none;"
+                        placeholder="Jl. Contoh No.1, Kel. Contoh, Kec. Contoh, Kota/Kab."
+                        oninput="kycChkStep2()"></textarea>
+            </div>
+
+          </div>
+
+          <div class="kyc-hr">Data Pekerjaan &amp; Penghasilan</div>
+          <div class="row g-3">
+
+            <div class="col-12 col-sm-6">
+              <label class="kyc-label" for="ktpBirthDate">Tanggal Lahir <span class="kyc-required">*</span></label>
+              <input type="date" id="ktpBirthDate" class="kyc-input" oninput="kycChkStep2()">
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <label class="kyc-label" for="ktpEmpStatus">Status Pekerjaan <span class="kyc-required">*</span></label>
+              <select id="ktpEmpStatus" class="kyc-input" onchange="kycChkStep2()">
+                <option value="">Pilih status pekerjaan</option>
+                <option value="karyawan_tetap">Karyawan Tetap</option>
+                <option value="karyawan_kontrak">Karyawan Kontrak</option>
+                <option value="wiraswasta">Wiraswasta / Pengusaha</option>
+                <option value="freelance">Freelance / Pekerja Lepas</option>
+                <option value="ibu_rumah_tangga">Ibu Rumah Tangga</option>
+                <option value="pelajar_mahasiswa">Pelajar / Mahasiswa</option>
+                <option value="belum_bekerja">Belum Bekerja</option>
+                <option value="lainnya">Lainnya</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <label class="kyc-label" for="ktpIncome">Penghasilan Bulanan <span class="kyc-required">*</span></label>
+              <div class="kyc-input-prefix">
+                <span>Rp</span>
+                <input type="text" id="ktpIncome" class="kyc-input" inputmode="numeric"
+                       placeholder="3.000.000"
+                       oninput="kycIncomeInput(this)">
+              </div>
+            </div>
+
+          </div>
+
+          <div class="kyc-hr">Kontak Darurat</div>
+          <div class="row g-3">
+
+            <div class="col-12 col-sm-6">
+              <label class="kyc-label" for="ktpEmergName">Nama Kontak Darurat <span class="kyc-required">*</span></label>
+              <input type="text" id="ktpEmergName" class="kyc-input" placeholder="Nama lengkap" oninput="kycChkStep2()">
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <label class="kyc-label" for="ktpEmergPhone">No. Telepon <span class="kyc-required">*</span></label>
+              <input type="text" id="ktpEmergPhone" class="kyc-input" inputmode="numeric"
+                     placeholder="08xxxxxxxxxx"
+                     oninput="this.value=this.value.replace(/\D/g,'');kycChkStep2()">
+            </div>
+
+            <div class="col-12">
+              <label class="kyc-label" for="ktpEmergRelation">Hubungan dengan Anda <span class="kyc-required">*</span></label>
+              <select id="ktpEmergRelation" class="kyc-input" onchange="kycChkStep2()">
+                <option value="">Pilih hubungan</option>
+                <option value="orang_tua">Orang Tua</option>
+                <option value="pasangan">Suami / Istri</option>
+                <option value="saudara_kandung">Saudara Kandung</option>
+                <option value="anak">Anak</option>
+                <option value="kerabat">Kerabat Lain</option>
+                <option value="teman">Teman</option>
+                <option value="lainnya">Lainnya</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        {# Collapsible Tips #}
+        <div class="ktp-tips-collapsible mt-4">
+          <button type="button" class="ktp-tips-toggle" onclick="kycToggleTips(this)">
+            <span><i class="bi bi-lightbulb me-2"></i> Tips foto KTP agar terbaca sempurna</span>
+            <i class="bi bi-chevron-down tgi"></i>
+          </button>
+          <div class="ktp-tips-content">
+            <div class="row g-1 pt-2">
+              <div class="col-12 col-sm-6">
+                <div class="req-check"><i class="bi bi-check-circle-fill"></i> Seluruh KTP masuk dalam frame</div>
+                <div class="req-check"><i class="bi bi-check-circle-fill"></i> Teks dan angka terbaca jelas</div>
+                <div class="req-check"><i class="bi bi-check-circle-fill"></i> Foto tidak miring &gt; 15°</div>
+              </div>
+              <div class="col-12 col-sm-6">
+                <div class="req-check"><i class="bi bi-check-circle-fill"></i> Tidak ada pantulan cahaya</div>
+                <div class="req-check"><i class="bi bi-check-circle-fill"></i> Foto wajah di KTP terlihat jelas</div>
+                <div class="req-check"><i class="bi bi-check-circle-fill"></i> Latar belakang tidak terlalu ramai</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button type="button" class="btn-kp btn-kp-ghost" onclick="kycGoTo(1)" style="width:auto;">
+            <i class="bi bi-arrow-left"></i> Kembali
+          </button>
+          <button type="button" class="btn-kp btn-kp-primary" id="btnStep2" onclick="kycGoTo(3)" disabled>
+            Lanjut ke Selfie <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  {# ╔══════════════════════════════════════
+     ║  STEP 3 — SELFIE
+     ╚══════════════════════════════════════ #}
+  <div id="panel3" class="d-none">
+    <div class="kyc-card">
+      <div class="kyc-card-body">
+        <div class="step-badge"><i class="bi bi-camera"></i> Langkah 3 / 4</div>
+        <h2 class="kyc-step-title">Foto Selfie</h2>
+        <p class="kyc-step-sub">Posisikan wajah Anda di dalam bingkai oval. Foto akan diambil otomatis saat wajah Anda terdeteksi dengan baik.</p>
+
+        <div class="cam-container mb-3" id="camBox">
+          <video id="camVideo" class="cam-video" autoplay muted playsinline></video>
+          <canvas id="camCanvas" class="cam-canvas"></canvas>
+          <div class="face-oval-wrap">
+            <div class="face-oval" id="faceOval"></div>
+          </div>
+          <div class="distance-tag" id="distanceTag"></div>
+          <div class="auto-cap-pill" id="autoCapPill">
+            <span class="dot"></span> Tahan posisi — auto ambil
+          </div>
+          <div class="cam-hint" id="camHint">Posisikan wajah Anda dalam bingkai</div>
+          <div class="countdown-layer" id="countLayer">
+            <span class="count-num" id="countNum">3</span>
+          </div>
+          <div class="cam-permission" id="camPerm">
+            <i class="bi bi-camera-video-off" style="font-size:3rem;color:var(--text-disabled);"></i>
+            <div class="fw-bold">Kamera belum aktif</div>
+            <p class="small" style="color:var(--text-tertiary);max-width:240px;">Izinkan akses kamera lalu klik tombol di bawah ini.</p>
+            <button type="button" class="btn-kp btn-kp-primary" style="width:auto;padding:0.75rem 1.5rem;" onclick="kycStartCam()">
+              <i class="bi bi-camera-video-fill"></i> Aktifkan Kamera
+            </button>
+          </div>
+        </div>
+
+        <div class="photo-preview mb-3" id="selfiePrev">
+          <img id="selfieImg" src="" alt="Selfie" style="transform:scaleX(-1);">
+        </div>
+
+        <div class="face-metrics" id="faceMetrics">
+          <div class="metric-row" id="mFace">
+            <div class="m-ico"><i class="bi bi-person-bounding-box"></i></div>
+            <div class="m-label">Ukuran wajah</div>
+          </div>
+          <div class="metric-row" id="mCenter">
+            <div class="m-ico"><i class="bi bi-bullseye"></i></div>
+            <div class="m-label">Posisi</div>
+          </div>
+          <div class="metric-row" id="mAngle">
+            <div class="m-ico"><i class="bi bi-compass"></i></div>
+            <div class="m-label">Sudut wajah</div>
+          </div>
+          <div class="metric-row" id="mLight">
+            <div class="m-ico"><i class="bi bi-brightness-high"></i></div>
+            <div class="m-label">Pencahayaan</div>
+          </div>
+        </div>
+
+        <div class="quality-bar-wrap" id="qualityBarWrap">
+          <div class="quality-bar-head">
+            <span>Kualitas Frame</span>
+            <strong id="qualityPct">0%</strong>
+          </div>
+          <div class="quality-bar">
+            <div class="quality-bar-fill" id="qualityBarFill"></div>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2" id="camStatusRow">
+          <span id="selfieBadge" class="face-badge detecting"><span class="bdot"></span> Mendeteksi wajah...</span>
+          <div class="liveness-progress" id="livProgress">
+            <span class="lp-dot" data-step="1"></span>
+            <span class="lp-dot" data-step="2"></span>
+          </div>
+          <span class="live-score-wrap">
+            <span style="font-size:0.75rem;color:var(--text-tertiary);">Liveness:</span>
+            <span class="ls-value" id="livScoreDisp">—</span>
+          </span>
+        </div>
+
+        <div class="liveness-grid mb-4" id="livPanel">
+          <div class="liveness-row" id="liv1">
+            <i class="bi bi-circle lico"></i>
+            <span class="small">Wajah terdeteksi di kamera</span>
+          </div>
+          <div class="liveness-row" id="liv2">
+            <i class="bi bi-circle lico"></i>
+            <span class="small">Kedipkan mata atau gerakkan sedikit untuk memulai</span>
+          </div>
+        </div>
+
+        <div class="capture-ring" id="captureArea">
+          <button type="button" class="btn-kp btn-kp-ghost btn-kp-sm" id="btnRetake" style="display:none;" onclick="kycRetake()">
+            <i class="bi bi-arrow-counterclockwise"></i> Ulangi
+          </button>
+          <button type="button" class="btn-capture" id="btnCapture" onclick="kycCountdown()" disabled title="Ambil Foto Selfie (manual)"></button>
+          <button type="button" class="btn-kp btn-kp-ghost btn-kp-sm" id="btnUploadSelfie" onclick="document.getElementById('selfieFileIn').click()">
+            <i class="bi bi-image"></i> Upload
+          </button>
+          <input type="file" id="selfieFileIn" accept="image/*" capture="user" style="display:none;" onchange="kycHandleSelfieFile(this.files[0])">
+        </div>
+        <p class="text-center small mt-2 mb-0" id="captureHelp" style="color:var(--text-disabled);">Foto akan diambil otomatis saat wajah Anda berada di posisi yang tepat</p>
+
+        <div class="btn-row mt-4">
+          <button type="button" class="btn-kp btn-kp-ghost" onclick="kycBackFromCam()" style="width:auto;">
+            <i class="bi bi-arrow-left"></i> Kembali
+          </button>
+          <button type="button" class="btn-kp btn-kp-primary" id="btnStep3" onclick="kycGoTo(4)" disabled>
+            Verifikasi Sekarang <i class="bi bi-shield-check"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  {# ╔══════════════════════════════════════
+     ║  STEP 4 — HASIL VERIFIKASI
+     ╚══════════════════════════════════════ #}
+  <div id="panel4" class="d-none">
+    <div class="kyc-card">
+      <div class="kyc-card-body" style="padding:0;">
+
+        <div class="result-panel show" id="stateProcessing">
+          <div class="result-icon spinning"><i class="bi bi-shield text-info"></i></div>
+          <h4 class="fw-bold mb-1" style="font-family:'Space Grotesk',sans-serif;">Memproses Verifikasi...</h4>
+          <p class="small mb-0" style="color:var(--text-tertiary);">Sedang mencocokkan data biometrik wajah Anda. Harap tunggu sebentar.</p>
+          <div class="proc-badges">
+            <span class="proc-badge active" id="pb1"><span class="spinner-border" style="width:10px;height:10px;border-width:1.5px;" role="status"></span> Menganalisis KTP</span>
+            <span class="proc-badge" id="pb2">Mencocokkan wajah</span>
+            <span class="proc-badge" id="pb3">Menyimpan data</span>
+          </div>
+        </div>
+
+        <div class="result-panel" id="stateSuccess">
+          <div class="result-icon pending">
+            <i class="bi bi-hourglass-split" style="color:var(--warning);"></i>
+          </div>
+          <div class="pending-chip">
+            <i class="bi bi-clock-history"></i> Menunggu Review
+          </div>
+          <h4 class="fw-bold mb-1" style="font-family:'Space Grotesk',sans-serif;">Data Berhasil Dikirim</h4>
+          <p class="small mb-3" style="color:var(--text-tertiary);">
+            Data KTP dan foto selfie Anda telah kami terima dan sedang dalam antrian review oleh tim verifikasi.
+            Proses biasanya selesai dalam <strong style="color:var(--text-secondary);">1×24 jam</strong>.
+          </p>
+
+          <div class="score-grid">
+            <div class="score-cell">
+              <div class="score-label-sm">Kecocokan Wajah</div>
+              <div class="score-value" id="scoreMatch" style="color:var(--text-secondary);">—</div>
+            </div>
+            <div class="score-cell">
+              <div class="score-label-sm">Skor Liveness</div>
+              <div class="score-value" id="scoreLiveness" style="color:var(--text-secondary);">—</div>
+            </div>
+            <div class="score-cell">
+              <div class="score-label-sm">Status</div>
+              <div class="score-value" style="font-size:0.95rem;color:var(--warning);">
+                <i class="bi bi-hourglass-split"></i><br>Review
+              </div>
+            </div>
+          </div>
+
+          <div class="tip-retry" style="background:var(--info-bg);border-color:rgba(59,130,246,0.2);margin-bottom:1.5rem;">
+            <div class="tip-title" style="color:var(--info);">
+              <i class="bi bi-info-circle-fill me-1"></i> Yang Terjadi Selanjutnya
+            </div>
+            <div class="req-check" style="color:var(--text-secondary);">
+              <i class="bi bi-check-circle-fill" style="color:var(--info);"></i>
+              Tim kami akan memverifikasi keaslian data KTP Anda
+            </div>
+            <div class="req-check" style="color:var(--text-secondary);">
+              <i class="bi bi-check-circle-fill" style="color:var(--info);"></i>
+              Anda akan mendapat notifikasi setelah review selesai
+            </div>
+            <div class="req-check" style="color:var(--text-secondary);">
+              <i class="bi bi-check-circle-fill" style="color:var(--info);"></i>
+              Fitur kredit &amp; cicilan aktif otomatis jika disetujui
+            </div>
+          </div>
+
+          <div class="compare-grid mb-4" id="compareGrid">
+            <div class="compare-card">
+              <img id="cmpKtp" src="" alt="Foto KTP">
+              <div class="compare-label"><i class="bi bi-card-image me-1"></i> Foto KTP</div>
+            </div>
+            <div class="compare-card">
+              <img id="cmpSelfie" src="" alt="Selfie" style="transform:scaleX(-1);">
+              <div class="compare-label"><i class="bi bi-person-bounding-box me-1"></i> Selfie</div>
+            </div>
+          </div>
+
+          <div class="d-flex flex-column gap-2">
+            <a href="{{ url_for('user_profile') }}" class="btn-kp btn-kp-primary">
+              <i class="bi bi-person-circle"></i> Pantau Status di Profil Saya
+            </a>
+            {% if redirect_url %}
+            <a href="{{ redirect_url }}" class="btn-kp btn-kp-ghost" style="width:100%;">
+              <i class="bi bi-arrow-left"></i> Kembali ke Halaman Sebelumnya
+            </a>
+            {% else %}
+            <a href="{{ url_for('index') }}" class="btn-kp btn-kp-ghost" style="width:100%;">
+              <i class="bi bi-house"></i> Kembali ke Beranda
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="result-panel" id="stateFailed">
+          <div class="result-icon err"><i class="bi bi-shield-x" style="color:var(--danger);"></i></div>
+          <h4 class="fw-bold mb-1" style="font-family:'Space Grotesk',sans-serif;color:var(--danger);">Verifikasi Gagal</h4>
+          <p class="small mb-0" id="failMsg" style="color:var(--text-tertiary);"></p>
+
+          <div class="tip-retry">
+            <div class="tip-title"><i class="bi bi-lightbulb-fill me-1"></i> Tips agar berhasil:</div>
+            <div class="req-check"><i class="bi bi-check-circle-fill" style="color:var(--warning);"></i> Pastikan pencahayaan ruangan cukup terang</div>
+            <div class="req-check"><i class="bi bi-check-circle-fill" style="color:var(--warning);"></i> Foto KTP jelas, teks terbaca, tidak buram</div>
+            <div class="req-check"><i class="bi bi-check-circle-fill" style="color:var(--warning);"></i> Selfie tanpa masker, topi, atau kacamatan hitam</div>
+            <div class="req-check"><i class="bi bi-check-circle-fill" style="color:var(--warning);"></i> Lepas kacamata jika memungkinkan</div>
+            <div class="req-check"><i class="bi bi-check-circle-fill" style="color:var(--warning);"></i> Hadapi kamera langsung, jangan miring</div>
+          </div>
+
+          <div class="d-flex flex-column gap-2">
+            <button type="button" class="btn-kp btn-kp-primary" onclick="kycReset()">
+              <i class="bi bi-arrow-counterclockwise"></i> Coba Lagi
+            </button>
+            <a href="{{ url_for('user_profile') }}" class="btn-kp btn-kp-ghost" style="width:100%;">
+              <i class="bi bi-house"></i> Kembali ke Profil
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ╔══════════════════════════════════════
+   ║  OCR AUTO-FILL CONFIRMATION MODAL (ENHANCED)
+   ╚══════════════════════════════════════ #}
+<div class="kyc-modal-overlay" id="ktpOcrModal">
+  <div class="kyc-modal-card">
+    <div class="kyc-modal-head">
+      <div>
+        <h3><i class="bi bi-magic me-1"></i> Data Terbaca Otomatis</h3>
+        <p>Periksa hasil pembacaan foto KTP Anda sebelum digunakan mengisi form.</p>
+      </div>
+      <button type="button" class="kyc-modal-close" onclick="kycDismissOcrModal()" aria-label="Tutup">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="kyc-modal-body">
+      <div class="kyc-modal-hint">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>Setiap field dilengkapi badge tingkat akurasi. Field dengan akurasi rendah perlu Anda periksa lebih teliti.</span>
+      </div>
+
+      <div class="ocr-section-title">
+        <i class="bi bi-card-heading"></i> Identitas Utama
+      </div>
+      <div class="row g-3">
+        <div class="col-12">
+          <div class="field-wrap">
+            <label class="kyc-label" for="ocrNIK">NIK (16 Digit)</label>
+            <div class="field-confidence" id="fcNIK"></div>
+            <input type="text" id="ocrNIK" class="kyc-input nik-input" inputmode="numeric" maxlength="16"
+                   placeholder="1234567890123456" oninput="this.value=this.value.replace(/\D/g,'')">
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="field-wrap">
+            <label class="kyc-label" for="ocrName">Nama Lengkap</label>
+            <div class="field-confidence" id="fcName"></div>
+            <input type="text" id="ocrName" class="kyc-input" placeholder="Nama lengkap">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="field-wrap">
+            <label class="kyc-label" for="ocrBirth">Tempat Lahir</label>
+            <div class="field-confidence" id="fcBirth"></div>
+            <input type="text" id="ocrBirth" class="kyc-input" placeholder="Kota kelahiran">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="field-wrap">
+            <label class="kyc-label" for="ocrBirthDate">Tanggal Lahir</label>
+            <div class="field-confidence" id="fcBirthDate"></div>
+            <input type="date" id="ocrBirthDate" class="kyc-input">
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="field-wrap">
+            <label class="kyc-label" for="ocrAddr">Alamat</label>
+            <div class="field-confidence" id="fcAddr"></div>
+            <textarea id="ocrAddr" class="kyc-input" rows="2" style="resize:none;" placeholder="Alamat sesuai KTP"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="ocr-section-title">
+        <i class="bi bi-info-square"></i> Data Tambahan (Opsional)
+      </div>
+      <div class="row g-3">
+        <div class="col-12 col-sm-6">
+          <div class="field-wrap">
+            <label class="kyc-label" for="ocrGender">Jenis Kelamin</label>
+            <div class="field-confidence" id="fcGender"></div>
+            <select id="ocrGender" class="kyc-input">
+              <option value="">—</option>
+              <option value="L">Laki-laki</option>
+              <option value="P">Perempuan</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="field-wrap">
+            <label class="kyc-label" for="ocrReligion">Agama</label>
+            <div class="field-confidence" id="fcReligion"></div>
+            <input type="text" id="ocrReligion" class="kyc-input" placeholder="Agama">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="field-wrap">
+            <label class="kyc-label" for="ocrMarital">Status Perkawinan</label>
+            <div class="field-confidence" id="fcMarital"></div>
+            <input type="text" id="ocrMarital" class="kyc-input" placeholder="Belum Kawin / Kawin">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="field-wrap">
+            <label class="kyc-label" for="ocrJob">Pekerjaan</label>
+            <div class="field-confidence" id="fcJob"></div>
+            <input type="text" id="ocrJob" class="kyc-input" placeholder="Pekerjaan">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="kyc-modal-foot">
+      <button type="button" class="btn-kp btn-kp-ghost" onclick="kycDismissOcrModal()">Isi Manual</button>
+      <button type="button" class="btn-kp btn-kp-primary" onclick="kycConfirmOcrModal()">
+        <i class="bi bi-check2"></i> Gunakan Data Ini
+      </button>
+    </div>
+  </div>
+</div>
+
+{# Hidden capture canvas #}
+<canvas id="snapCanvas" style="display:none;"></canvas>
+{# Hidden preprocessed canvas for OCR #}
+<canvas id="preprocessCanvas" style="display:none;"></canvas>
+{# Hidden face-crop canvas #}
+<canvas id="faceCropCanvas" style="display:none;"></canvas>
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js" onerror="kycHandleModelLoadError('cdn_fail')"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+
+<script>
+/* ================================================================
+   KYC VERIFICATION CONTROLLER — Pusat Gadai HP
+   Step 2 Enhanced: Auto-detect text + face di KTP
+   ================================================================ */
+
+const KYC_MODEL_CDN = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
+const CSRF = '{{ csrf_token() }}';
+
+const KYC_PENDING_DATA = {% if kyc_pending %}{
+  matchScore: {{ (kyc_pending.face_match_confidence or 0) | tojson }},
+  livenessScore: {{ (kyc_pending.liveness_score or 0) | tojson }},
+  ktpUrl: {{ (url_for('uploaded_kyc_doc', filename=kyc_pending.ktp_photo_path) if kyc_pending.ktp_photo_path else '') | tojson }},
+  selfieUrl: {{ (url_for('uploaded_kyc_doc', filename=kyc_pending.selfie_photo_path) if kyc_pending.selfie_photo_path else '') | tojson }}
+}{% else %}null{% endif %};
+
+const AUTO_CAPTURE_STABLE_MS = 1500;
+const AUTO_CAPTURE_MIN_LIVENESS = 65;
+const MIN_MATCH_SCORE = 50;
+
+const S = {
+  step: 1,
+  faceApi: false,
+  faceApiErr: false,
+
+  ktpFile: null,
+  ktpURL: null,
+  ktpDesc: null,
+  ktpFaceOk: false,
+  ktpFaceCrop: null,       // NEW: cropped face from KTP for comparison
+  ktpFaceQuality: null,    // NEW: quality metrics
+
+  selfieFile: null,
+  selfieURL: null,
+  selfieDesc: null,
+  selfieCaptured: false,
+
+  camStream: null,
+  detLoop: null,
+  livenessScore: 55,
+  blinkCnt: 0,
+  prevEAR: null,
+  stableFrames: 0,
+
+  autoStableAt: null,
+  autoCapturing: false,
+
+  lastFaceCenter: null,
+  motionEvents: 0,
+
+  termsOk: false,
+  matchScore: 0,
+
+  ocrConfidence: {},       // NEW: per-field confidence scores
+};
+
+const $  = id => document.getElementById(id);
+const sl = ms => new Promise(r => setTimeout(r, ms));
+
+/* ── Real mobile viewport height ── */
+function kycSetVH() {
+  const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+  document.documentElement.style.setProperty('--kyc-vh', (h * 0.01) + 'px');
+}
+kycSetVH();
+window.addEventListener('resize', kycSetVH);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', kycSetVH);
+
+window.addEventListener('orientationchange', () => {
+  kycSetVH();
+  if (S.step === 3 && S.camStream) {
+    setTimeout(() => { kycStopCam(); kycStartCam(); }, 300);
+  }
+});
+
+/* ================================================================
+   BOOTSTRAP
+   ================================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  if (KYC_PENDING_DATA) {
+    kycShowExistingPending(KYC_PENDING_DATA);
+  } else {
+    kycLoadModels();
+  }
+});
+window.addEventListener('beforeunload', kycStopCam);
+
+function kycShowExistingPending(info) {
+  if (S.step === 3) kycStopCam();
+  $('panel' + S.step).classList.add('d-none');
+  $('panel4').classList.remove('d-none');
+  S.step = 4;
+  kycUpdateStepper();
+  if (info.ktpUrl) $('cmpKtp').src = info.ktpUrl;
+  if (info.selfieUrl) $('cmpSelfie').src = info.selfieUrl;
+  $('scoreMatch').textContent = info.matchScore > 0 ? info.matchScore.toFixed(1) + '%' : '—';
+  $('scoreLiveness').textContent = info.livenessScore > 0 ? Math.round(info.livenessScore) + '%' : '—';
+  kycShowState('stateSuccess');
+}
+
+/* ================================================================
+   FACE-API MODEL LOADING
+   ================================================================ */
+async function kycLoadModels() {
+  if (typeof faceapi === 'undefined') {
+    kycHandleModelLoadError('faceapi_undef');
+    return;
+  }
+  const bar  = $('mdBar');
+  const text = $('mdText');
+  const setP = (p, t) => { bar.style.width = p + '%'; if (t) text.textContent = t; };
+
+  try {
+    setP(8,  'Memuat model detektor wajah...');
+    await faceapi.nets.tinyFaceDetector.loadFromUri(KYC_MODEL_CDN);
+    setP(42, 'Memuat model landmark wajah...');
+    await faceapi.nets.faceLandmark68Net.loadFromUri(KYC_MODEL_CDN);
+    setP(78, 'Memuat model pengenalan wajah...');
+    await faceapi.nets.faceRecognitionNet.loadFromUri(KYC_MODEL_CDN);
+    setP(100, 'Siap!');
+    S.faceApi = true;
+    await sl(450);
+    $('mdLoading').classList.add('d-none');
+    $('mdReady').classList.remove('d-none');
+  } catch (e) {
+    console.warn('[KYC] Model load failed:', e);
+    kycHandleModelLoadError('load_err');
+  }
+}
+
+function kycHandleModelLoadError(reason) {
+  S.faceApiErr = true;
+  $('mdLoading')?.classList.add('d-none');
+  $('mdError')?.classList.remove('d-none');
+}
+
+/* ================================================================
+   TERMS
+   ================================================================ */
+function kycToggleTerms() {
+  S.termsOk = !S.termsOk;
+  const lbl = $('termsLabel');
+  const box = $('termsBox');
+  const ico = $('termsIco');
+  lbl.classList.toggle('checked', S.termsOk);
+  box.style.background    = S.termsOk ? 'var(--primary-500)' : '';
+  box.style.borderColor   = S.termsOk ? 'var(--primary-500)' : '';
+  ico.style.display       = S.termsOk ? 'block' : 'none';
+  $('btnStart').disabled  = !S.termsOk;
+}
+
+/* ================================================================
+   TIPS TOGGLE
+   ================================================================ */
+function kycToggleTips(btn) {
+  const content = btn.nextElementSibling;
+  btn.classList.toggle('expanded');
+  content.classList.toggle('expanded');
+}
+
+/* ================================================================
+   STEP NAVIGATION
+   ================================================================ */
+function kycGoTo(step) {
+  if (S.step === step) return;
+  if (S.step === 3 && step !== 3) kycStopCam();
+  $('panel' + S.step).classList.add('d-none');
+  $('panel' + step).classList.remove('d-none');
+  S.step = step;
+  kycUpdateStepper();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (step === 3) setTimeout(kycStartCam, 300);
+  if (step === 4) setTimeout(kycVerify, 400);
+}
+
+function kycBackFromCam() { kycStopCam(); kycGoTo(2); }
+
+function kycUpdateStepper() {
+  for (let i = 1; i <= 4; i++) {
+    const item = $('si' + i);
+    const circ = $('sc' + i);
+    item.classList.remove('active', 'done');
+    if (i < S.step) {
+      item.classList.add('done');
+      circ.innerHTML = '<i class="bi bi-check-lg" style="font-size:.9rem;"></i>';
+    } else if (i === S.step) {
+      item.classList.add('active');
+      circ.textContent = i;
+    } else {
+      circ.textContent = i;
+    }
+  }
+  for (let i = 1; i <= 3; i++) {
+    $('sl' + i).classList.toggle('filled', i < S.step);
+  }
+}
+
+/* ================================================================
+   STEP 2 — KTP UPLOAD (ENHANCED)
+   ================================================================ */
+function kycDragOver(e)   { e.preventDefault(); $('uploadZone').classList.add('drag-over'); }
+function kycDragLeave(e)  { $('uploadZone').classList.remove('drag-over'); }
+function kycDropKTP(e)    {
+  e.preventDefault(); $('uploadZone').classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) kycHandleKTP(f);
+}
+
+function kycHandleKTP(file) {
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { kycToast('Ukuran file terlalu besar. Maks 10 MB.', 'error'); return; }
+
+  S.ktpFile = file;
+  if (S.ktpURL) URL.revokeObjectURL(S.ktpURL);
+  S.ktpURL = URL.createObjectURL(file);
+
+  $('uploadZone').style.display = 'none';
+  $('ktpPreviewRow').style.display = '';
+  $('ktpFormSec').style.display = '';
+
+  const img = $('ktpImg');
+  img.src = S.ktpURL;
+  kycBadge('ktpBadge', 'detecting', 'Memulai deteksi...');
+
+  // Reset scan progress
+  kycResetScanProgress();
+  $('ktpScanProgress').classList.add('show');
+
+  img.onload = async () => {
+    try {
+      // Step 1: face detection (fast, needed for mask & crop)
+      kycScanStep(1, 'active');
+      if (S.faceApi) {
+        await kycDetectKTP(img);
+      } else {
+        S.ktpFaceOk = true;
+        S.ktpFaceCrop = null;
+        kycScanStep(1, 'done');
+        kycBadge('ktpBadge', 'detected', 'Foto KTP diterima');
+      }
+
+      // Step 2 + 3: OCR & parsing
+      kycScanStep(2, 'active');
+      await kycAutoFillKTP(img);
+
+      // Cleanup
+      await sl(500);
+      $('ktpScanProgress').classList.remove('show');
+      kycChkStep2();
+    } catch (err) {
+      console.warn('[KYC] KTP processing error:', err);
+      $('ktpScanProgress').classList.remove('show');
+      kycChkStep2();
+    }
+  };
+}
+
+function kycResetScanProgress() {
+  [1, 2, 3].forEach(i => {
+    const el = $('ksStep' + i);
+    if (!el) return;
+    el.classList.remove('active', 'done');
+    el.querySelector('.ks-ico').innerHTML = '<i class="bi bi-circle"></i>';
+  });
+}
+
+function kycScanStep(idx, state) {
+  const el = $('ksStep' + idx);
+  if (!el) return;
+  if (state === 'active') {
+    el.classList.add('active');
+    el.classList.remove('done');
+    el.querySelector('.ks-ico').innerHTML = '<i class="bi bi-dot"></i>';
+  } else if (state === 'done') {
+    el.classList.remove('active');
+    el.classList.add('done');
+    el.querySelector('.ks-ico').innerHTML = '<i class="bi bi-check"></i>';
+  }
+}
+
+/* ================================================================
+   NEW: PREPROCESSING — enhance image for OCR
+   Returns a data URL of the processed image.
+   Pipeline: grayscale → contrast stretch → adaptive threshold (Otsu).
+   ================================================================ */
+function kycPreprocessForOCR(imgEl, mode = 'auto') {
+  const cv = $('preprocessCanvas');
+  const MAX_W = 1600;
+  let W = imgEl.naturalWidth;
+  let H = imgEl.naturalHeight;
+
+  // Downscale very large images (OCR faster + Tesseract works better at ~1k-2k)
+  if (W > MAX_W) {
+    H = Math.round(H * (MAX_W / W));
+    W = MAX_W;
+  }
+  cv.width = W;
+  cv.height = H;
+
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(imgEl, 0, 0, W, H);
+
+  const imgData = ctx.getImageData(0, 0, W, H);
+  const d = imgData.data;
+
+  // 1) Grayscale conversion
+  for (let i = 0; i < d.length; i += 4) {
+    const gray = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+    d[i] = d[i + 1] = d[i + 2] = gray;
+  }
+
+  // 2) Histogram → find min/max for contrast stretch
+  const hist = new Array(256).fill(0);
+  for (let i = 0; i < d.length; i += 4) hist[d[i]]++;
+  let minV = 0, maxV = 255;
+  const total = d.length / 4;
+  let cum = 0;
+  for (let v = 0; v < 256; v++) {
+    cum += hist[v];
+    if (cum > total * 0.02) { minV = v; break; }
+  }
+  cum = 0;
+  for (let v = 255; v >= 0; v--) {
+    cum += hist[v];
+    if (cum > total * 0.02) { maxV = v; break; }
+  }
+  const range = Math.max(1, maxV - minV);
+
+  // 3) Contrast stretch + adaptive threshold via Otsu
+  //    First compute Otsu threshold on stretched histogram.
+  const stretch = new Array(256);
+  for (let i = 0; i < 256; i++) {
+    stretch[i] = Math.max(0, Math.min(255, ((i - minV) / range) * 255));
+  }
+  const hist2 = new Array(256).fill(0);
+  for (let i = 0; i < d.length; i += 4) {
+    const s = Math.round(stretch[d[i]]);
+    hist2[s]++;
+  }
+  let sum = 0;
+  for (let i = 0; i < 256; i++) sum += i * hist2[i];
+  let sumB = 0, wB = 0, maxVar = 0, otsuT = 128;
+  for (let t = 0; t < 256; t++) {
+    wB += hist2[t];
+    if (wB === 0) continue;
+    const wF = total - wB;
+    if (wF === 0) break;
+    sumB += t * hist2[t];
+    const mB = sumB / wB;
+    const mF = (sum - sumB) / wF;
+    const between = wB * wF * (mB - mF) * (mB - mF);
+    if (between > maxVar) {
+      maxVar = between;
+      otsuT = t;
+    }
+  }
+
+  // Apply: either keep grayscale-stretched (better for Tesseract) or threshold.
+  // For KTP, we get better results with grayscale-stretched than pure binary.
+  if (mode === 'binary') {
+    for (let i = 0; i < d.length; i += 4) {
+      const v = stretch[d[i]] > otsuT ? 255 : 0;
+      d[i] = d[i + 1] = d[i + 2] = v;
+    }
+  } else {
+    for (let i = 0; i < d.length; i += 4) {
+      const v = Math.round(stretch[d[i]]);
+      d[i] = d[i + 1] = d[i + 2] = v;
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  return cv.toDataURL('image/png');
+}
+
+/* ================================================================
+   NEW: NIK PARSER — extract region, birthdate, gender from NIK
+   NIK structure:
+     6 digits = region code (province+city+district)
+     6 digits = DDMMYY (DD+40 for female)
+     4 digits = sequence
+   ================================================================ */
+const NIK_REGION_CODES = {
+  '11': 'Aceh', '12': 'Sumatera Utara', '13': 'Sumatera Barat',
+  '14': 'Riau', '15': 'Jambi', '16': 'Sumatera Selatan',
+  '17': 'Bengkulu', '18': 'Lampung', '19': 'Kep. Bangka Belitung',
+  '21': 'Kep. Riau', '31': 'DKI Jakarta', '32': 'Jawa Barat',
+  '33': 'Jawa Tengah', '34': 'DI Yogyakarta', '35': 'Jawa Timur',
+  '36': 'Banten', '51': 'Bali', '52': 'NTB', '53': 'NTT',
+  '61': 'Kalimantan Barat', '62': 'Kalimantan Tengah',
+  '63': 'Kalimantan Selatan', '64': 'Kalimantan Timur',
+  '65': 'Kalimantan Utara', '71': 'Sulawesi Utara',
+  '72': 'Sulawesi Tengah', '73': 'Sulawesi Selatan',
+  '74': 'Sulawesi Tenggara', '75': 'Gorontalo',
+  '76': 'Sulawesi Barat', '81': 'Maluku', '82': 'Maluku Utara',
+  '91': 'Papua', '92': 'Papua Barat',
+};
+
+function kycParseNIK(nik) {
+  if (!nik || nik.length !== 16) return null;
+  const region = NIK_REGION_CODES[nik.substring(0, 2)] || 'Tidak diketahui';
+
+  let dd = parseInt(nik.substring(6, 8), 10);
+  const mm = parseInt(nik.substring(8, 10), 10);
+  let yy = parseInt(nik.substring(10, 12), 10);
+
+  // Female: dd + 40
+  let gender = 'L';
+  if (dd > 40) {
+    gender = 'P';
+    dd -= 40;
+  }
+
+  // Determine century: yy <= current 2-digit year → 20xx, else 19xx
+  const currentYY = new Date().getFullYear() % 100;
+  const yyyy = yy <= currentYY ? 2000 + yy : 1900 + yy;
+
+  // Validate DD/MM
+  if (dd < 1 || dd > 31 || mm < 1 || mm > 12) {
+    return { region, gender, valid: false };
+  }
+
+  const pad = n => String(n).padStart(2, '0');
+  const birthDate = `${yyyy}-${pad(mm)}-${pad(dd)}`;
+
+  return {
+    region,
+    gender,
+    birthDate,
+    day: dd,
+    month: mm,
+    year: yyyy,
+    valid: true,
+  };
+}
+
+function kycUpdateNIKParsedInfo(nik) {
+  const container = $('nikParsedInfo');
+  if (!container) return;
+
+  if (!nik || nik.length !== 16) {
+    container.classList.remove('show');
+    return;
+  }
+
+  const parsed = kycParseNIK(nik);
+  if (!parsed) {
+    container.classList.remove('show');
+    return;
+  }
+
+  $('nikRegionText').textContent = parsed.region;
+  $('nikGenderText').textContent = parsed.gender === 'L' ? 'Laki-laki' : 'Perempuan';
+
+  if (parsed.valid) {
+    const d = new Date(parsed.birthDate);
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    $('nikBirthText').textContent = `${parsed.day} ${months[parsed.month - 1]} ${parsed.year}`;
+    $('nikBirthChip').classList.remove('warn');
+  } else {
+    $('nikBirthText').textContent = 'Tidak valid';
+    $('nikBirthChip').classList.add('warn');
+  }
+
+  container.classList.add('show');
+
+  // Auto-fill birthdate if empty (cross-check OCR)
+  if (parsed.valid && !$('ktpBirthDate').value) {
+    $('ktpBirthDate').value = parsed.birthDate;
+    kycChkStep2();
+  }
+
+  // Auto-fill gender in OCR modal if open
+  if (parsed.gender && $('ocrGender') && !$('ocrGender').value) {
+    $('ocrGender').value = parsed.gender;
+  }
+}
+
+/* ================================================================
+   NIK INPUT HANDLER
+   ================================================================ */
+function kycNIKInput(v) {
+  v = (v || '').replace(/\D/g, '').slice(0, 16);
+  $('nikCount').textContent = v.length + ' / 16';
+  const ok = v.length === 16;
+  $('nikIco').style.display = ok ? 'inline-block' : 'none';
+  const err = $('nikErr');
+  if (v.length > 0 && !ok) {
+    err.classList.remove('d-none');
+    err.innerHTML = '<i class="bi bi-x-circle me-1"></i>NIK harus 16 digit angka (' + v.length + '/16)';
+  } else {
+    err.classList.add('d-none');
+  }
+
+  // NEW: parse & show info
+  kycUpdateNIKParsedInfo(v);
+
+  kycChkStep2();
+}
+
+/* ================================================================
+   INCOME FORMATTER
+   ================================================================ */
+function kycIncomeInput(el) {
+  let v = el.value.replace(/\D/g, '').slice(0, 12);
+  if (v.length > 0) {
+    el.value = parseInt(v, 10).toLocaleString('id-ID');
+  } else {
+    el.value = '';
+  }
+  kycChkStep2();
+}
+
+/* ================================================================
+   STEP 2 READINESS CHECK
+   ================================================================ */
+function kycChkStep2() {
+  const nik   = $('ktpNIK').value.trim();
+  const name  = $('ktpName').value.trim();
+  const addr  = $('ktpAddr').value.trim();
+  const birth = $('ktpBirthDate').value;
+  const emp   = $('ktpEmpStatus').value;
+  const inc   = $('ktpIncome').value.trim();
+  const en    = $('ktpEmergName').value.trim();
+  const ep    = $('ktpEmergPhone').value.trim();
+  const er    = $('ktpEmergRelation').value;
+
+  const ok = S.ktpFile && S.ktpFaceOk
+          && nik.length === 16
+          && name.length >= 2
+          && addr.length >= 5
+          && birth
+          && emp
+          && inc.length > 0
+          && en.length >= 2
+          && ep.length >= 8
+          && er;
+
+  $('btnStep2').disabled = !ok;
+}
+
+/* ================================================================
+   KTP FACE DETECTION — Multi-pass with quality assessment
+   ================================================================ */
+const KTP_DETECT_ATTEMPTS = [
+  { inputSize: 608, scoreThreshold: 0.25 },
+  { inputSize: 720, scoreThreshold: 0.15 },
+  { inputSize: 416, scoreThreshold: 0.10 },
+];
+
+async function kycDetectKTP(imgEl) {
+  kycBadge('ktpBadge', 'detecting', 'Mendeteksi wajah di KTP...');
+
+  let det = null;
+  let usedAttempt = null;
+
+  for (let i = 0; i < KTP_DETECT_ATTEMPTS.length; i++) {
+    const params = KTP_DETECT_ATTEMPTS[i];
+    try {
+      const opts = new faceapi.TinyFaceDetectorOptions(params);
+      const result = await faceapi
+        .detectSingleFace(imgEl, opts)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+      if (result) {
+        det = result;
+        usedAttempt = i + 1;
+        break;
+      }
+    } catch (err) {
+      console.warn(`[KYC] KTP detect pass ${i + 1} error:`, err);
+    }
+  }
+
+  try {
+    if (det) {
+      S.ktpDesc   = Array.from(det.descriptor);
+      S.ktpFaceOk = true;
+
+      // Draw detection box
+      const cv  = $('ktpCanvas');
+      const W   = imgEl.naturalWidth, H = imgEl.naturalHeight;
+      cv.width  = W; cv.height = H;
+      const ctx = cv.getContext('2d');
+      const box = det.detection.box;
+
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth   = Math.max(2, W * 0.003);
+      ctx.shadowColor = '#10b981';
+      ctx.shadowBlur  = 12;
+      kycRoundRect(ctx, box.x, box.y, box.width, box.height, 8);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      const resized = faceapi.resizeResults(det, { width: W, height: H });
+      faceapi.draw.drawFaceLandmarks(cv, resized);
+
+      // NEW: crop face region for later comparison
+      await kycCropFaceFromKTP(imgEl, box);
+
+      // NEW: assess quality
+      kycAssessKTPFaceQuality(imgEl, box);
+
+      const label = usedAttempt === 1
+        ? 'Wajah di KTP terdeteksi ✓'
+        : `Wajah terdeteksi ✓ (mode ${usedAttempt})`;
+      kycBadge('ktpBadge', 'detected', label);
+      kycScanStep(1, 'done');
+
+    } else {
+      S.ktpFaceOk = true;
+      S.ktpDesc = null;
+      S.ktpFaceCrop = null;
+      kycBadge('ktpBadge', 'detected', 'Foto KTP diterima (verifikasi manual)');
+      kycToast('Wajah pada KTP tidak dapat terdeteksi otomatis. Foto tetap diterima dan akan diverifikasi manual oleh admin.', 'warning');
+      kycScanStep(1, 'done');
+    }
+  } catch (err) {
+    console.warn('[KYC] KTP detect final error:', err);
+    S.ktpFaceOk = true;
+    S.ktpDesc = null;
+    S.ktpFaceCrop = null;
+    kycBadge('ktpBadge', 'detected', 'Foto KTP diterima (verifikasi manual)');
+    kycScanStep(1, 'done');
+  }
+}
+
+/* ── NEW: Crop face region from KTP ── */
+async function kycCropFaceFromKTP(imgEl, box) {
+  try {
+    const pad = Math.round(Math.min(box.width, box.height) * 0.15);
+    const x = Math.max(0, box.x - pad);
+    const y = Math.max(0, box.y - pad);
+    const w = Math.min(imgEl.naturalWidth - x, box.width + pad * 2);
+    const h = Math.min(imgEl.naturalHeight - y, box.height + pad * 2);
+
+    const cv = $('faceCropCanvas');
+    cv.width = 200;
+    cv.height = 250;
+    const ctx = cv.getContext('2d');
+    ctx.drawImage(imgEl, x, y, w, h, 0, 0, 200, 250);
+
+    S.ktpFaceCrop = cv.toDataURL('image/jpeg', 0.85);
+  } catch (e) {
+    console.warn('[KYC] Face crop error:', e);
+    S.ktpFaceCrop = null;
+  }
+}
+
+/* ── NEW: KTP face quality assessment ── */
+function kycAssessKTPFaceQuality(imgEl, box) {
+  try {
+    const imgW = imgEl.naturalWidth;
+    const imgH = imgEl.naturalHeight;
+
+    // Face size ratio (relative to image short side)
+    const faceSizeRatio = box.width / Math.min(imgW, imgH);
+    const sizeOk = faceSizeRatio >= 0.08;   // face should be at least 8% of short side
+
+    // Sharpness — quick Laplacian variance on face region only
+    const cv = $('faceCropCanvas');
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    const pad = Math.round(Math.min(box.width, box.height) * 0.15);
+    const x = Math.max(0, box.x - pad);
+    const y = Math.max(0, box.y - pad);
+    const w = Math.min(imgW - x, box.width + pad * 2);
+    const h = Math.min(imgH - y, box.height + pad * 2);
+
+    // Use a small off-screen canvas for sharpness calc
+    const sc = document.createElement('canvas');
+    sc.width = 100;
+    sc.height = 100;
+    const sctx = sc.getContext('2d', { willReadFrequently: true });
+    sctx.drawImage(imgEl, x, y, w, h, 0, 0, 100, 100);
+    const data = sctx.getImageData(0, 0, 100, 100).data;
+
+    // Convert to grayscale array
+    const gray = new Float32Array(100 * 100);
+    for (let i = 0; i < gray.length; i++) {
+      gray[i] = data[i * 4] * 0.299 + data[i * 4 + 1] * 0.587 + data[i * 4 + 2] * 0.114;
+    }
+
+    // Laplacian variance
+    let lapSum = 0, lapSumSq = 0, n = 0;
+    for (let y2 = 1; y2 < 99; y2++) {
+      for (let x2 = 1; x2 < 99; x2++) {
+        const idx = y2 * 100 + x2;
+        const lap = 4 * gray[idx]
+                  - gray[idx - 1] - gray[idx + 1]
+                  - gray[idx - 100] - gray[idx + 100];
+        lapSum += lap;
+        lapSumSq += lap * lap;
+        n++;
+      }
+    }
+    const lapVar = (lapSumSq / n) - Math.pow(lapSum / n, 2);
+    const sharpOk = lapVar > 100;    // threshold tuned for KTP face size
+
+    // Brightness — average of face region
+    let bright = 0;
+    for (let i = 0; i < gray.length; i++) bright += gray[i];
+    bright /= gray.length;
+    const lightOk = bright >= 60 && bright <= 220;
+
+    // Compute overall score
+    const sharpScore = Math.min(100, Math.round(lapVar / 5));
+    const sizeScore  = Math.min(100, Math.round(faceSizeRatio * 500));
+    const lightScore = Math.max(0, Math.round(100 - Math.abs(bright - 140) / 1.2));
+
+    const overall = Math.round((sharpScore + sizeScore + lightScore) / 3);
+
+    // Update UI
+    $('qfScore').textContent = overall + '%';
+    $('qfSharp').textContent = sharpOk ? 'Baik' : (lapVar > 50 ? 'Sedang' : 'Kabur');
+    $('qfSize').textContent  = sizeOk ? 'Baik' : 'Kecil';
+    $('qfLight').textContent = lightOk ? 'Baik' : (bright < 60 ? 'Gelap' : 'Terang');
+
+    $('qfRow1').className = 'qf-row ' + (sharpOk ? 'pass' : 'warn');
+    $('qfRow2').className = 'qf-row ' + (sizeOk ? 'pass' : 'warn');
+    $('qfRow3').className = 'qf-row ' + (lightOk ? 'pass' : 'warn');
+
+    $('ktpFaceQuality').classList.add('show');
+
+    S.ktpFaceQuality = { overall, sharp: sharpOk, size: sizeOk, light: lightOk };
+
+  } catch (e) {
+    console.warn('[KYC] Quality assess error:', e);
+  }
+}
+
+function kycRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y); ctx.closePath();
+}
+
+/* ================================================================
+   OCR KTP — Multi-pass with preprocessing
+   ================================================================ */
+async function kycAutoFillKTP(imgEl) {
+  if (typeof Tesseract === 'undefined') {
+    console.warn('[KYC] Tesseract.js gagal dimuat, lewati OCR.');
+    kycScanStep(2, 'done');
+    kycScanStep(3, 'done');
+    return;
+  }
+
+  kycOcrScanToggle(true);
+
+  try {
+    // Pass 1: preprocessed (grayscale + contrast stretch) — best for most KTP
+    const processedURL = kycPreprocessForOCR(imgEl, 'auto');
+    const { data: { text } } = await Tesseract.recognize(
+      processedURL,
+      'ind',
+      {
+        logger: () => {},
+        tessedit_pageseg_mode: '6', // Uniform block of text
+      }
+    );
+
+    kycScanStep(2, 'done');
+    kycScanStep(3, 'active');
+
+    const ocr = kycParseOCRText(text);
+
+    // If critical fields missing, try binary preprocessing pass
+    const criticalMissing = !ocr.nik || !ocr.name || !ocr.addr;
+    if (criticalMissing) {
+      try {
+        const binaryURL = kycPreprocessForOCR(imgEl, 'binary');
+        const { data: { text: text2 } } = await Tesseract.recognize(
+          binaryURL,
+          'ind',
+          { logger: () => {}, tessedit_pageseg_mode: '4' }
+        );
+        const ocr2 = kycParseOCRText(text2);
+
+        // Merge: keep whatever's better on a per-field basis
+        ['nik','name','birth','birthDate','addr','gender','religion','marital','job'].forEach(k => {
+          if (!ocr[k] && ocr2[k]) ocr[k] = ocr2[k];
+        });
+      } catch (e) {
+        console.warn('[KYC] OCR binary pass failed:', e);
+      }
+    }
+
+    kycScanStep(3, 'done');
+
+    const foundAny = Object.keys(ocr).some(k => ocr[k]);
+    if (foundAny) {
+      kycShowOcrModal(ocr);
+    } else {
+      kycToast('KTP terupload, tapi data tidak berhasil terbaca otomatis. Silakan isi manual.', 'warning');
+    }
+  } catch (err) {
+    console.warn('[KYC] OCR error:', err);
+    kycScanStep(2, 'done');
+    kycScanStep(3, 'done');
+    kycToast('Gagal membaca data KTP secara otomatis. Silakan isi manual.', 'warning');
+  } finally {
+    kycOcrScanToggle(false);
+    kycChkStep2();
+  }
+}
+
+/* ── NEW: Parse OCR text into structured fields with confidence ── */
+function kycParseOCRText(rawText) {
+  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+  const flat  = rawText.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+  const out = {};
+
+  // ── NIK: look for 16 consecutive digits (allow spaces between) ──
+  const nikCandidates = [
+    flat.match(/\b(\d[\d\s]{14,20}\d)\b/),
+    flat.match(/NIK\s*[:\-]?\s*(\d[\d\s]{14,20}\d)/i),
+  ];
+  for (const m of nikCandidates) {
+    if (m) {
+      const cleaned = m[1].replace(/\s/g, '');
+      if (cleaned.length === 16) { out.nik = cleaned; break; }
+    }
+  }
+
+  // ── Nama: line after "Nama" (exclude "Nama Lengkap") ──
+  const namaIdx = lines.findIndex(l => /^nama\b/i.test(l) && !/lengkap/i.test(l));
+  if (namaIdx !== -1) {
+    let nama = lines[namaIdx].replace(/^nama\s*[:.]?\s*/i, '').trim();
+    // If nothing after "Nama:", try next line
+    if (!nama && lines[namaIdx + 1]) nama = lines[namaIdx + 1];
+    // Clean common OCR artifacts
+    nama = nama.replace(/[^a-zA-Z\s'.,]/g, '').trim();
+    if (nama.length >= 2 && /[A-Za-z]/.test(nama)) out.name = nama.toUpperCase();
+  }
+
+  // ── Tempat/Tgl Lahir ──
+  const ttlIdx = lines.findIndex(l => /tempat.*lahir|tempat\s*\/?\s*tgl/i.test(l));
+  if (ttlIdx !== -1) {
+    const raw = lines[ttlIdx].replace(/^.*lahir\s*[:.]?\s*/i, '').trim();
+    const tempat = raw.split(/[,\-]/)[0].replace(/[^a-zA-Z\s]/g, '').trim();
+    if (tempat.length >= 2) out.birth = tempat.toUpperCase();
+
+    // Look for date DD-MM-YYYY or DD/MM/YYYY
+    const dateMatch = raw.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+    if (dateMatch) {
+      const [, dd, mm, yyyy] = dateMatch;
+      out.birthDate = `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+    }
+  }
+
+  // ── Alamat: gather multi-line ──
+  const alamatIdx = lines.findIndex(l => /^alamat\b/i.test(l));
+  if (alamatIdx !== -1) {
+    let alamat = lines[alamatIdx].replace(/^alamat\s*[:.]?\s*/i, '').trim();
+    // Add next lines that aren't field markers
+    for (let i = alamatIdx + 1; i < Math.min(alamatIdx + 4, lines.length); i++) {
+      const next = lines[i];
+      if (/^(rt\s*\/?\s*rw|kel|desa|kecamatan|agama|status|pekerjaan|kewarganegaraan|berlaku|gol\.?\s*darah|jenis)/i.test(next)) {
+        break;
+      }
+      if (next.length > 2) alamat += ' ' + next;
+    }
+    alamat = alamat.replace(/\s+/g, ' ').trim();
+    if (alamat.length >= 5) out.addr = alamat.toUpperCase();
+  }
+
+  // ── Jenis Kelamin ──
+  if (/laki[\s-]*laki/i.test(flat)) out.gender = 'L';
+  else if (/perempuan/i.test(flat)) out.gender = 'P';
+
+  // ── Agama ──
+  const agamaMatch = flat.match(/agama\s*[:.]?\s*(islam|kristen|katolik|hindu|buddha|konghucu)/i);
+  if (agamaMatch) out.religion = agamaMatch[1].charAt(0).toUpperCase() + agamaMatch[1].slice(1).toLowerCase();
+
+  // ── Status Perkawinan ──
+  const statusMatch = flat.match(/(belum\s*kawin|kawin|cerai\s*hidup|cerai\s*mati)/i);
+  if (statusMatch) out.marital = statusMatch[1].toUpperCase();
+
+  // ── Pekerjaan ──
+  const jobIdx = lines.findIndex(l => /^pekerjaan\b/i.test(l));
+  if (jobIdx !== -1) {
+    let job = lines[jobIdx].replace(/^pekerjaan\s*[:.]?\s*/i, '').trim();
+    if (!job && lines[jobIdx + 1]) job = lines[jobIdx + 1];
+    job = job.replace(/[^a-zA-Z\s/]/g, '').trim();
+    if (job.length >= 3) out.job = job.toUpperCase();
+  }
+
+  return out;
+}
+
+function kycOcrScanToggle(show) {
+  const el = $('ktpOcrScan'); if (!el) return;
+  el.classList.toggle('show', show);
+}
+
+/* ── NEW: Set confidence badge for a field ── */
+function kycSetFieldConfidence(fieldKey, level, text = null) {
+  const el = $('fc' + fieldKey);
+  if (!el) return;
+
+  if (!level) {
+    el.classList.remove('show', 'high', 'medium', 'low', 'manual');
+    return;
+  }
+
+  el.className = 'field-confidence show ' + level;
+  const labels = { high: 'Akurat', medium: 'Periksa', low: 'Rendah', manual: 'Manual' };
+  const icons = {
+    high: 'bi-check-circle-fill',
+    medium: 'bi-exclamation-circle-fill',
+    low: 'bi-x-circle-fill',
+    manual: 'bi-pencil-fill'
+  };
+  el.innerHTML = `<i class="bi ${icons[level]}"></i> ${text || labels[level]}`;
+}
+
+/* ── NEW: Show OCR modal with confidence per field ── */
+function kycShowOcrModal(ocr) {
+  $('ocrNIK').value       = ocr.nik || '';
+  $('ocrName').value      = ocr.name || '';
+  $('ocrBirth').value     = ocr.birth || '';
+  $('ocrBirthDate').value = ocr.birthDate || '';
+  $('ocrAddr').value      = ocr.addr || '';
+  $('ocrGender').value    = ocr.gender || '';
+  $('ocrReligion').value  = ocr.religion || '';
+  $('ocrMarital').value   = ocr.marital || '';
+  $('ocrJob').value       = ocr.job || '';
+
+  // Confidence heuristics
+  kycSetFieldConfidence('NIK',       ocr.nik && ocr.nik.length === 16 ? 'high' : (ocr.nik ? 'medium' : 'manual'));
+  kycSetFieldConfidence('Name',      ocr.name && ocr.name.length >= 4 ? 'high' : (ocr.name ? 'medium' : 'manual'));
+  kycSetFieldConfidence('Birth',     ocr.birth && ocr.birth.length >= 3 ? 'medium' : 'manual');
+  kycSetFieldConfidence('BirthDate', ocr.birthDate ? 'high' : 'manual');
+  kycSetFieldConfidence('Addr',      ocr.addr && ocr.addr.length >= 15 ? 'high' : (ocr.addr ? 'medium' : 'manual'));
+  kycSetFieldConfidence('Gender',    ocr.gender ? 'high' : 'manual');
+  kycSetFieldConfidence('Religion',  ocr.religion ? 'medium' : 'manual');
+  kycSetFieldConfidence('Marital',   ocr.marital ? 'medium' : 'manual');
+  kycSetFieldConfidence('Job',       ocr.job ? 'medium' : 'manual');
+
+  $('ktpOcrModal').classList.add('show');
+}
+
+function kycConfirmOcrModal() {
+  const nik  = $('ocrNIK').value.trim();
+  const name = $('ocrName').value.trim();
+  const addr = $('ocrAddr').value.trim();
+
+  if (nik.length === 16) { $('ktpNIK').value = nik; kycNIKInput(nik); }
+  if (name)               $('ktpName').value = name;
+  if ($('ocrBirth').value.trim())     $('ktpBirth').value = $('ocrBirth').value.trim();
+  if ($('ocrBirthDate').value)        $('ktpBirthDate').value = $('ocrBirthDate').value;
+  if (addr)                $('ktpAddr').value = addr;
+
+  $('ktpOcrModal').classList.remove('show');
+  kycToast('Data KTP berhasil diisi otomatis. Silakan periksa kembali.', 'success');
+  kycChkStep2();
+}
+
+function kycDismissOcrModal() {
+  $('ktpOcrModal').classList.remove('show');
+}
+
+function kycResetKTP() {
+  S.ktpFile = null;
+  S.ktpDesc = null;
+  S.ktpFaceOk = false;
+  S.ktpFaceCrop = null;
+  S.ktpFaceQuality = null;
+  if (S.ktpURL) { URL.revokeObjectURL(S.ktpURL); S.ktpURL = null; }
+
+  $('uploadZone').style.display = '';
+  $('ktpPreviewRow').style.display = 'none';
+  $('ktpFileIn').value = '';
+
+  const ctx = $('ktpCanvas').getContext('2d');
+  ctx.clearRect(0, 0, $('ktpCanvas').width, $('ktpCanvas').height);
+
+  kycOcrScanToggle(false);
+  $('ktpScanProgress').classList.remove('show');
+  $('ktpFaceQuality').classList.remove('show');
+  $('nikParsedInfo').classList.remove('show');
+
+  kycDismissOcrModal();
+  kycChkStep2();
+}
+
+/* ================================================================
+   STEP 3 — PROFESSIONAL FACE DETECTION & LIVENESS
+   ================================================================ */
+
+const FACE_DETECT_PASSES = [
+  { inputSize: 320, scoreThreshold: 0.55 },
+  { inputSize: 416, scoreThreshold: 0.35 },
+  { inputSize: 224, scoreThreshold: 0.22 },
+];
+
+const Q = {
+  minFaceRatio:   0.20,
+  maxFaceRatio:   0.72,
+  centerTolX:     0.22,
+  centerTolY:     0.22,
+  minBrightness:  42,
+  maxBrightness:  235,
+  maxYawDeg:      22,
+  maxPitchDeg:    22,
+};
+
+const LIVENESS = {
+  blinkEAR: 0.22,
+  blinkFramesRequired: 1,
+  motionThreshold: 0.014,
+  motionEventsRequired: 3,
+};
+
+async function kycStartCam() {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      kycToast('Browser Anda tidak mendukung akses kamera. Gunakan tombol Upload sebagai alternatif.', 'warning');
+      return;
+    }
+
+    kycSetVH();
+
+    const constraints = [
+      { video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 960 }, frameRate: { ideal: 24 } }, audio: false },
+      { video: { facingMode: 'user' }, audio: false },
+      { video: true, audio: false },
+    ];
+
+    let stream = null;
+    for (const c of constraints) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(c);
+        if (stream) break;
+      } catch (e) { }
+    }
+
+    if (!stream) throw new Error('no_stream');
+    S.camStream = stream;
+
+    const v = $('camVideo');
+    v.srcObject = stream;
+    await v.play().catch(() => {});
+    $('camPerm').style.display = 'none';
+
+    S.livenessScore = 50;
+    S.blinkCnt = 0;
+    S.prevEAR = null;
+    S.stableFrames = 0;
+    S.autoStableAt = null;
+    S.autoCapturing = false;
+    S.lastFaceCenter = null;
+    S.motionEvents = 0;
+
+    kycResetLivUI();
+    kycStartDetLoop();
+
+  } catch (err) {
+    console.warn('[KYC] Camera error:', err);
+    let msg = 'Tidak dapat mengakses kamera.';
+    if (err.name === 'NotAllowedError')  msg = 'Izin kamera ditolak. Aktifkan izin kamera di pengaturan browser.';
+    else if (err.name === 'NotFoundError') msg = 'Tidak ada kamera terdeteksi. Gunakan tombol Upload sebagai alternatif.';
+    else if (err.name === 'NotReadableError') msg = 'Kamera sedang digunakan aplikasi lain. Tutup aplikasi tersebut lalu coba lagi.';
+    kycToast(msg, 'error');
+    $('camHint').textContent = msg;
+  }
+}
+
+function kycStopCam() {
+  if (S.detLoop) { clearInterval(S.detLoop); S.detLoop = null; }
+  if (S.camStream) {
+    try { S.camStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+    S.camStream = null;
+  }
+  const v = $('camVideo');
+  if (v) v.srcObject = null;
+}
+
+function kycResetLivUI() {
+  $('liv1').classList.remove('ok');
+  $('liv1').querySelector('.lico').className = 'bi bi-circle lico';
+  $('liv2').classList.remove('ok');
+  $('liv2').querySelector('.lico').className = 'bi bi-circle lico';
+  $('livScoreDisp').textContent = '—';
+  const lpDots = document.querySelectorAll('.liveness-progress .lp-dot');
+  lpDots.forEach(d => d.classList.remove('filled'));
+}
+
+function kycStartDetLoop() {
+  if (S.detLoop) clearInterval(S.detLoop);
+
+  const video = $('camVideo');
+
+  S.detLoop = setInterval(async () => {
+    if (!S.faceApi || !video || video.readyState < 2 || S.selfieCaptured) return;
+
+    try {
+      let det = null;
+      for (const params of FACE_DETECT_PASSES) {
+        const opts = new faceapi.TinyFaceDetectorOptions(params);
+        det = await faceapi
+          .detectSingleFace(video, opts)
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+        if (det) break;
+      }
+
+      if (!det) {
+        kycHandleNoFace();
+        return;
+      }
+
+      kycEvaluateFrame(det, video);
+
+    } catch (err) { }
+  }, 220);
+}
+
+function kycHandleNoFace() {
+  S.stableFrames = 0;
+  S.autoStableAt = null;
+  S.motionEvents = 0;
+  S.blinkCnt = 0;
+  S.prevEAR = null;
+
+  kycBadge('selfieBadge', 'detecting', 'Mendeteksi wajah...');
+  $('faceOval').className = 'face-oval';
+  $('autoCapPill').classList.remove('show');
+  $('camHint').textContent = 'Posisikan wajah Anda dalam bingkai oval';
+
+  ['mFace','mCenter','mAngle','mLight'].forEach(id => {
+    const el = $(id);
+    if (el) el.classList.remove('pass', 'warn');
+  });
+  const fill = $('qualityBarFill');
+  if (fill) fill.style.width = '0%';
+  $('qualityPct') && ($('qualityPct').textContent = '0%');
+}
+
+function kycEvaluateFrame(det, video) {
+  const box = det.detection.box;
+  const vw = video.videoWidth || video.clientWidth;
+  const vh = video.videoHeight || video.clientHeight;
+
+  const faceRatio = box.width / vw;
+  const sizeOk   = faceRatio >= Q.minFaceRatio && faceRatio <= Q.maxFaceRatio;
+  const tooFar   = faceRatio < Q.minFaceRatio;
+  const tooClose = faceRatio > Q.maxFaceRatio;
+
+  const faceCx = box.x + box.width / 2;
+  const faceCy = box.y + box.height / 2;
+  const dx = Math.abs(faceCx - vw / 2) / vw;
+  const dy = Math.abs(faceCy - vh / 2) / vh;
+  const centerOk = dx <= Q.centerTolX && dy <= Q.centerTolY;
+
+  const lm = det.landmarks;
+  const { yaw, pitch } = kycEstimatePose(lm, box);
+  const angleOk = Math.abs(yaw) <= Q.maxYawDeg && Math.abs(pitch) <= Q.maxPitchDeg;
+
+  const brightness = kycSampleBrightness(video);
+  const lightOk = brightness >= Q.minBrightness && brightness <= Q.maxBrightness;
+
+  const ear = kycCalcEAR(lm);
+  if (S.prevEAR !== null && S.prevEAR > LIVENESS.blinkEAR && ear < LIVENESS.blinkEAR) {
+    S.blinkCnt++;
+  }
+  S.prevEAR = ear;
+  const blinkOk = S.blinkCnt >= LIVENESS.blinkFramesRequired;
+
+  if (S.lastFaceCenter) {
+    const moveD = Math.hypot(faceCx - S.lastFaceCenter.x, faceCy - S.lastFaceCenter.y) / Math.max(vw, vh);
+    if (moveD > LIVENESS.motionThreshold) S.motionEvents++;
+  }
+  S.lastFaceCenter = { x: faceCx, y: faceCy };
+  const motionOk = S.motionEvents >= LIVENESS.motionEventsRequired;
+
+  const livenessRaw = (blinkOk ? 55 : 0) + Math.min(45, S.motionEvents * 15);
+  S.livenessScore = Math.max(50, Math.min(100, livenessRaw));
+
+  kycUpdateFrameUI({
+    sizeOk, tooFar, tooClose, centerOk, angleOk, lightOk, blinkOk, motionOk,
+    faceRatio, brightness, yaw, pitch
+  });
+
+  const wellPositioned = sizeOk && centerOk && angleOk && lightOk;
+  kycSetLivRow(1, wellPositioned, wellPositioned
+    ? 'Wajah terdeteksi dalam posisi ideal'
+    : 'Posisikan wajah & atur pencahayaan');
+
+  const livenessPass = (blinkOk || motionOk);
+  kycSetLivRow(2, livenessPass, livenessPass
+    ? 'Liveness terkonfirmasi ✓'
+    : 'Kedipkan mata atau gerakkan kepala sedikit');
+
+  const allPass = wellPositioned && livenessPass;
+  kycAutoCaptureTick(allPass);
+
+  $('btnCapture').disabled = !wellPositioned;
+  $('livScoreDisp').textContent = Math.round(S.livenessScore) + '%';
+}
+
+function kycEstimatePose(lm, box) {
+  const leftEye  = lm.getLeftEye();
+  const rightEye = lm.getRightEye();
+  const nose     = lm.getNose();
+
+  const lEx = leftEye.reduce((s, p) => s + p.x, 0) / leftEye.length;
+  const rEx = rightEye.reduce((s, p) => s + p.x, 0) / rightEye.length;
+  const eyeCx = (lEx + rEx) / 2;
+
+  const noseCx = nose.reduce((s, p) => s + p.x, 0) / nose.length;
+  const noseCy = nose.reduce((s, p) => s + p.y, 0) / nose.length;
+
+  const yaw = ((noseCx - eyeCx) / box.width) * 90;
+
+  const eyeCy = (leftEye.reduce((s, p) => s + p.y, 0) / leftEye.length +
+                 rightEye.reduce((s, p) => s + p.y, 0) / rightEye.length) / 2;
+  const pitch = ((noseCy - eyeCy) / box.height - 0.42) * 60;
+
+  return { yaw, pitch };
+}
+
+function kycCalcEAR(lm) {
+  const left  = lm.getLeftEye();
+  const right = lm.getRightEye();
+  return (kycEyeEAR(left) + kycEyeEAR(right)) / 2;
+}
+
+function kycEyeEAR(eye) {
+  if (!eye || eye.length < 6) return 0.3;
+  const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
+  const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
+  const h  = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
+  if (h === 0) return 0.3;
+  return (v1 + v2) / (2 * h);
+}
+
+let _brightCanvas = null;
+function kycSampleBrightness(video) {
+  try {
+    if (!_brightCanvas) {
+      _brightCanvas = document.createElement('canvas');
+      _brightCanvas.width = 64;
+      _brightCanvas.height = 48;
+    }
+    const ctx = _brightCanvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(video, 0, 0, 64, 48);
+    const data = ctx.getImageData(0, 0, 64, 48).data;
+    let sum = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      sum += (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+    }
+    return sum / (data.length / 4);
+  } catch (e) {
+    return 128;
+  }
+}
+
+function kycUpdateFrameUI(s) {
+  kycSetMetric('mFace',    s.sizeOk,    s.sizeOk    ? 'Ukuran wajah sesuai'      : (s.tooFar ? 'Terlalu jauh'   : 'Terlalu dekat'));
+  kycSetMetric('mCenter',  s.centerOk,  s.centerOk  ? 'Posisi di tengah'         : 'Geser ke tengah');
+  kycSetMetric('mAngle',   s.angleOk,   s.angleOk   ? 'Sudut wajah baik'         : 'Hadap ke depan');
+  kycSetMetric('mLight',   s.lightOk,   s.lightOk   ? 'Pencahayaan cukup'        : (s.brightness < Q.minBrightness ? 'Terlalu gelap' : 'Terlalu terang'));
+
+  const score =
+    (s.sizeOk   ? 25 : 0) +
+    (s.centerOk ? 25 : 0) +
+    (s.angleOk  ? 25 : 0) +
+    (s.lightOk  ? 25 : 0);
+  const fill = $('qualityBarFill');
+  if (fill) fill.style.width = score + '%';
+  const pct = $('qualityPct'); if (pct) pct.textContent = score + '%';
+
+  const distTag = $('distanceTag');
+  if (distTag) {
+    if (s.tooFar) {
+      distTag.className = 'distance-tag show too-far';
+      distTag.innerHTML = '<i class="bi bi-arrows-angle-expand"></i> Dekatkan wajah';
+    } else if (s.tooClose) {
+      distTag.className = 'distance-tag show too-close';
+      distTag.innerHTML = '<i class="bi bi-arrows-angle-contract"></i> Jauhkan sedikit';
+    } else if (!s.centerOk) {
+      distTag.className = 'distance-tag show off-center';
+      distTag.innerHTML = '<i class="bi bi-arrows-move"></i> Geser ke tengah';
+    } else if (!s.angleOk) {
+      distTag.className = 'distance-tag show off-center';
+      distTag.innerHTML = '<i class="bi bi-person-bounding-box"></i> Hadap ke depan';
+    } else {
+      distTag.className = 'distance-tag';
+    }
+  }
+
+  const oval = $('faceOval');
+  oval.className = 'face-oval';
+  if (s.tooFar)        oval.classList.add('too-far');
+  else if (s.tooClose) oval.classList.add('too-close');
+  else if (!s.angleOk) oval.classList.add('off-angle');
+  else if (s.sizeOk && s.centerOk && s.lightOk) oval.classList.add('inside');
+
+  const hint = $('camHint');
+  if (s.tooFar)         hint.textContent = 'Dekatkan wajah Anda ke kamera';
+  else if (s.tooClose)  hint.textContent = 'Jauhkan sedikit wajah dari kamera';
+  else if (!s.centerOk) hint.textContent = 'Posisikan wajah tepat di tengah bingkai';
+  else if (!s.angleOk)  hint.textContent = 'Hadapkan wajah langsung ke kamera';
+  else if (!s.lightOk)  hint.textContent = (s.brightness < Q.minBrightness) ? 'Cari tempat yang lebih terang' : 'Kurangi cahaya berlebih';
+  else                  hint.textContent = 'Sempurna! Tahan posisi Anda';
+
+  if (s.sizeOk && s.centerOk && s.angleOk && s.lightOk) {
+    kycBadge('selfieBadge', 'detected', 'Wajah siap — tahan posisi');
+  } else {
+    kycBadge('selfieBadge', 'detecting', 'Menyesuaikan...');
+  }
+}
+
+function kycSetMetric(id, ok, label) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.toggle('pass', ok);
+  el.classList.toggle('warn', !ok);
+  const lbl = el.querySelector('.m-label');
+  if (lbl && label) lbl.textContent = label;
+}
+
+function kycSetLivRow(idx, ok, label) {
+  const row = $('liv' + idx);
+  if (!row) return;
+  row.classList.toggle('ok', ok);
+  const ico = row.querySelector('.lico');
+  if (ico) {
+    ico.className = ok
+      ? 'bi bi-check-circle-fill lico'
+      : 'bi bi-circle lico';
+  }
+  const span = row.querySelector('span');
+  if (span && label) span.textContent = label;
+
+  const lpDots = document.querySelectorAll('.liveness-progress .lp-dot');
+  if (lpDots.length >= idx) {
+    lpDots[idx - 1].classList.toggle('filled', ok);
+  }
+}
+
+function kycAutoCaptureTick(allPass) {
+  if (S.selfieCaptured) return;
+
+  if (!allPass) {
+    S.autoStableAt = null;
+    S.stableFrames = 0;
+    S.autoCapturing = false;
+    $('autoCapPill').classList.remove('show');
+    $('faceOval').classList.remove('capturing');
+    $('camHint').classList.remove('holding');
+    return;
+  }
+
+  const now = performance.now();
+  if (!S.autoStableAt) {
+    S.autoStableAt = now;
+    return;
+  }
+
+  const held = now - S.autoStableAt;
+
+  if (held >= AUTO_CAPTURE_STABLE_MS && !S.autoCapturing) {
+    S.autoCapturing = true;
+    $('autoCapPill').classList.add('show');
+    $('faceOval').classList.add('capturing');
+    $('camHint').classList.add('holding');
+    $('camHint').textContent = 'Tahan posisi...';
+    kycCountdown();
+    return;
+  }
+
+  if (held > AUTO_CAPTURE_STABLE_MS * 0.4) {
+    $('autoCapPill').classList.add('show');
+    $('faceOval').classList.add('capturing');
+  }
+}
+
+function kycCountdown() {
+  const layer = $('countLayer');
+  const numEl = $('countNum');
+  let n = 3;
+
+  layer.classList.add('show');
+  numEl.textContent = n;
+
+  const tick = () => {
+    n--;
+    if (n > 0) {
+      numEl.textContent = n;
+      numEl.style.animation = 'none';
+      void numEl.offsetWidth;
+      numEl.style.animation = 'count-anim 1s ease-out';
+      setTimeout(tick, 900);
+    } else {
+      layer.classList.remove('show');
+      kycCapture();
+    }
+  };
+  setTimeout(tick, 900);
+}
+
+async function kycCapture() {
+  if (S.selfieCaptured) return;
+  const video = $('camVideo');
+  if (!video || video.readyState < 2) {
+    kycToast('Kamera belum siap. Tunggu sebentar lalu coba lagi.', 'warning');
+    return;
+  }
+
+  const cv = $('snapCanvas');
+  const W = video.videoWidth || 640;
+  const H = video.videoHeight || 480;
+  cv.width = W;
+  cv.height = H;
+  const ctx = cv.getContext('2d');
+
+  ctx.save();
+  ctx.translate(W, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, W, H);
+  ctx.restore();
+
+  const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
+  if (!blob) { kycToast('Gagal memproses foto. Coba lagi.', 'error'); return; }
+
+  const last = await faceapi
+    .detectSingleFace(cv, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 }))
+    .withFaceLandmarks()
+    .withFaceDescriptor();
+  S.selfieDesc = last ? Array.from(last.descriptor) : null;
+
+  S.selfieFile = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
+  if (S.selfieURL) URL.revokeObjectURL(S.selfieURL);
+  S.selfieURL = URL.createObjectURL(blob);
+
+  $('selfieImg').src = S.selfieURL;
+  $('selfiePrev').classList.add('show');
+  $('camBox').style.display = 'none';
+  $('camStatusRow').style.display = 'none';
+  $('livPanel').style.display = 'none';
+  $('captureArea').style.display = 'none';
+  $('captureHelp').style.display = 'none';
+  $('faceMetrics').style.display = 'none';
+  $('qualityBarWrap').style.display = 'none';
+
+  S.selfieCaptured = true;
+  $('btnStep3').disabled = false;
+  $('autoCapPill').classList.remove('show');
+  $('faceOval').classList.remove('capturing');
+
+  kycStopCam();
+  kycToast('Foto selfie berhasil diambil', 'success');
+}
+
+function kycRetake() {
+  S.selfieCaptured = false;
+  S.selfieFile = null;
+  S.selfieDesc = null;
+  if (S.selfieURL) { URL.revokeObjectURL(S.selfieURL); S.selfieURL = null; }
+
+  $('selfiePrev').classList.remove('show');
+  $('selfieImg').src = '';
+  $('camBox').style.display = '';
+  $('camStatusRow').style.display = '';
+  $('livPanel').style.display = '';
+  $('captureArea').style.display = '';
+  $('captureHelp').style.display = '';
+  $('faceMetrics').style.display = '';
+  $('qualityBarWrap').style.display = '';
+  $('btnStep3').disabled = true;
+  $('btnCapture').disabled = true;
+  $('countLayer').classList.remove('show');
+
+  setTimeout(kycStartCam, 200);
+}
+
+async function kycHandleSelfieFile(file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { kycToast('File harus berupa gambar.', 'error'); return; }
+  if (file.size > 10 * 1024 * 1024)   { kycToast('Ukuran file terlalu besar. Maks 10 MB.', 'error'); return; }
+
+  kycStopCam();
+  S.selfieFile = file;
+  if (S.selfieURL) URL.revokeObjectURL(S.selfieURL);
+  S.selfieURL = URL.createObjectURL(file);
+  $('selfieImg').src = S.selfieURL;
+  $('selfiePrev').classList.add('show');
+  $('camBox').style.display = 'none';
+  $('camStatusRow').style.display = 'none';
+  $('livPanel').style.display = 'none';
+  $('captureArea').style.display = 'none';
+  $('captureHelp').style.display = 'none';
+  $('faceMetrics').style.display = 'none';
+  $('qualityBarWrap').style.display = 'none';
+
+  if (S.faceApi) {
+    try {
+      const img = new Image();
+      img.src = S.selfieURL;
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+      const det = await faceapi
+        .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.35 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+      S.selfieDesc = det ? Array.from(det.descriptor) : null;
+    } catch (e) {
+      console.warn('[KYC] Selfie descriptor extraction failed:', e);
+      S.selfieDesc = null;
+    }
+  }
+
+  S.selfieCaptured = true;
+  $('btnStep3').disabled = false;
+  kycToast('Foto selfie siap digunakan', 'success');
+}
+
+/* ================================================================
+   STEP 4 — VERIFICATION
+   ================================================================ */
+async function kycVerify() {
+  kycShowState('stateProcessing');
+
+  const timeline = [
+    { id: 'pb1', t: 200  },
+    { id: 'pb2', t: 900  },
+    { id: 'pb3', t: 1600 },
+  ];
+  timeline.forEach(({ id, t }) => {
+    setTimeout(() => {
+      $(id).classList.remove('active');
+      $(id).classList.add('done');
+      $(id).innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + $(id).textContent.trim();
+    }, t);
+  });
+
+  let matchScore = 0;
+  if (S.ktpDesc && S.selfieDesc) {
+    try {
+      const d1 = new Float32Array(S.ktpDesc);
+      const d2 = new Float32Array(S.selfieDesc);
+      const dist = faceapi.euclideanDistance(d1, d2);
+      matchScore = Math.max(0, Math.min(100, Math.round((1 - dist / 0.6) * 100)));
+      S.matchScore = matchScore;
+    } catch (e) { console.warn('[KYC] Match calc error:', e); }
+  }
+
+  try {
+    const result = await kycSubmit(matchScore);
+    if (!result) return;
+
+    await sl(1900);
+
+    $('scoreMatch').textContent    = matchScore > 0 ? matchScore.toFixed(0) + '%' : '—';
+    $('scoreLiveness').textContent = Math.round(S.livenessScore) + '%';
+
+    if (S.ktpURL)    $('cmpKtp').src    = S.ktpURL;
+    if (S.selfieURL) $('cmpSelfie').src = S.selfieURL;
+
+    kycShowState('stateSuccess');
+
+  } catch (err) {
+    console.error('[KYC] Verify error:', err);
+    const msg = (err && err.message) ? err.message : 'Terjadi kesalahan saat memproses verifikasi.';
+    kycShowFail(msg);
+  }
+}
+
+async function kycSubmit(matchScore) {
+  const fd = new FormData();
+  fd.append('ktp_photo', S.ktpFile);
+  fd.append('selfie_photo', S.selfieFile);
+  fd.append('ktp_nik', $('ktpNIK').value.trim());
+  fd.append('ktp_name', $('ktpName').value.trim());
+  fd.append('ktp_birth_date', $('ktpBirthDate').value);
+  fd.append('ktp_address', $('ktpAddr').value.trim());
+  fd.append('ktp_employment_status', $('ktpEmpStatus').value);
+  fd.append('ktp_monthly_income', $('ktpIncome').value.replace(/\D/g, ''));
+  fd.append('ktp_emergency_name', $('ktpEmergName').value.trim());
+  fd.append('ktp_emergency_phone', $('ktpEmergPhone').value.trim());
+  fd.append('ktp_emergency_relation', $('ktpEmergRelation').value);
+  fd.append('match_score', matchScore);
+  fd.append('liveness_score', Math.round(S.livenessScore));
+
+  const res = await fetch('{{ url_for("api_kyc_verify") }}', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF },
+    body: fd,
+  });
+
+  if (!res.ok) {
+    let msg = 'Server menolak data verifikasi. Coba lagi dalam beberapa saat.';
+    try {
+      const j = await res.json();
+      if (j && j.message) msg = j.message;
+    } catch (e) {}
+    throw new Error(msg);
+  }
+
+  let json = {};
+  try { json = await res.json(); } catch (e) {}
+
+  if (json && json.success === false) {
+    throw new Error(json.message || 'Verifikasi gagal diproses.');
+  }
+
+  return json;
+}
+
+function kycShowState(id) {
+  ['stateProcessing', 'stateSuccess', 'stateFailed'].forEach(s => {
+    const el = $(s);
+    if (el) el.classList.toggle('show', s === id);
+  });
+}
+
+function kycShowFail(msg) {
+  $('failMsg').textContent = msg;
+  kycShowState('stateFailed');
+}
+
+function kycReset() {
+  kycStopCam();
+
+  S.ktpFile = null;
+  S.ktpURL = null;
+  S.ktpDesc = null;
+  S.ktpFaceOk = false;
+  S.ktpFaceCrop = null;
+  S.ktpFaceQuality = null;
+  S.selfieFile = null;
+  S.selfieURL = null;
+  S.selfieDesc = null;
+  S.selfieCaptured = false;
+  S.termsOk = false;
+  S.matchScore = 0;
+
+  $('termsLabel').classList.remove('checked');
+  $('termsBox').style.background = '';
+  $('termsBox').style.borderColor = '';
+  $('termsIco').style.display = 'none';
+  $('btnStart').disabled = true;
+
+  $('uploadZone').style.display = '';
+  $('ktpPreviewRow').style.display = 'none';
+  $('ktpFileIn').value = '';
+  ['ktpNIK', 'ktpName', 'ktpBirth', 'ktpBirthDate', 'ktpAddr',
+   'ktpIncome', 'ktpEmergName', 'ktpEmergPhone'].forEach(id => {
+    const el = $(id); if (el) el.value = '';
+  });
+  ['ktpEmpStatus', 'ktpEmergRelation'].forEach(id => {
+    const el = $(id); if (el) el.value = '';
+  });
+  $('nikIco').style.display = 'none';
+  $('nikErr').classList.add('d-none');
+  $('nikCount').textContent = '0 / 16';
+  $('nikParsedInfo').classList.remove('show');
+  $('ktpFaceQuality').classList.remove('show');
+  $('ktpScanProgress').classList.remove('show');
+
+  $('selfiePrev').classList.remove('show');
+  $('selfieImg').src = '';
+  $('camBox').style.display = '';
+  $('camStatusRow').style.display = '';
+  $('livPanel').style.display = '';
+  $('captureArea').style.display = '';
+  $('captureHelp').style.display = '';
+  $('faceMetrics').style.display = '';
+  $('qualityBarWrap').style.display = '';
+  $('btnStep3').disabled = true;
+  $('btnCapture').disabled = true;
+
+  kycChkStep2();
+  kycGoTo(1);
+}
+
+/* ================================================================
+   TOAST
+   ================================================================ */
+function kycToast(message, type = 'info') {
+  let container = document.getElementById('kycToastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'kycToastContainer';
+    container.style.cssText = `
+      position: fixed; top: 1rem; right: 1rem; z-index: 9999;
+      display: flex; flex-direction: column; gap: 0.5rem;
+      pointer-events: none; max-width: 340px;
+    `;
+    document.body.appendChild(container);
+  }
+
+  const palette = {
+    success: { bg: 'rgba(16,185,129,0.96)', ico: 'bi-check-circle-fill' },
+    error:   { bg: 'rgba(239,68,68,0.96)',  ico: 'bi-exclamation-triangle-fill' },
+    warning: { bg: 'rgba(245,158,11,0.96)', ico: 'bi-exclamation-circle-fill' },
+    info:    { bg: 'rgba(59,130,246,0.96)', ico: 'bi-info-circle-fill' },
+  };
+  const p = palette[type] || palette.info;
+
+  const el = document.createElement('div');
+  el.style.cssText = `
+    background: ${p.bg}; color: #fff;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-size: 0.85rem; font-weight: 600;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+    display: flex; align-items: flex-start; gap: 0.5rem;
+    transform: translateX(120%); opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.3s;
+    pointer-events: auto;
+    line-height: 1.5;
+  `;
+  el.innerHTML = `<i class="bi ${p.ico}" style="flex-shrink:0;margin-top:2px;"></i><span>${message}</span>`;
+  container.appendChild(el);
+
+  requestAnimationFrame(() => {
+    el.style.transform = 'translateX(0)';
+    el.style.opacity = '1';
+  });
+
+  setTimeout(() => {
+    el.style.transform = 'translateX(120%)';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 320);
+  }, 4200);
+}
+
+/* ================================================================
+   BADGE HELPER
+   ================================================================ */
+function kycBadge(id, state, text) {
+  const el = $(id); if (!el) return;
+  el.className = 'face-badge ' + state;
+  el.innerHTML = '<span class="bdot"></span> ' + text;
+}
+</script>
+{% endblock %}

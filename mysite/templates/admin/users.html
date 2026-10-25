@@ -1,0 +1,589 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}Manajemen Pengguna — {{ global_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div x-data="userManagement()" x-init="init()" class="relative">
+    <!-- Toast Notification -->
+    <div x-show="toast.show" x-transition
+         class="fixed top-6 right-6 z-50 px-6 py-3 rounded-xl shadow-lg flex items-center gap-3"
+         :class="toast.type === 'success' ? 'bg-green-600 text-white' : (toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white')">
+        <i class="fas" :class="toast.type === 'success' ? 'fa-check-circle' : (toast.type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle')"></i>
+        <span x-text="toast.message"></span>
+    </div>
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center gap-3">
+            <i class="fas fa-users text-2xl text-blue-600"></i>
+            Daftar Pelanggan
+        </h1>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('admin_users_export', q=request.args.get('q', '')) }}"
+               class="flex items-center gap-2 px-4 py-2 admin-card backdrop-blur-sm border border-gray-700/50 text-gray-700 text-sm font-medium rounded-xl hover:bg-dark-800/50 hover:text-blue-600 transition-all shadow-sm">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistik Sederhana -->
+    <div class="grid grid-cols-3 gap-4 mb-8">
+        {% set total_users = users|length if users else 0 %}
+        {% set active_count = users|selectattr('is_active', 'equalto', true)|list|length %}
+        {% set inactive_count = users|selectattr('is_active', 'equalto', false)|list|length %}
+
+        <div class="admin-card p-5 flex flex-col relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-blue-400 rounded-full opacity-10"></div>
+            <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">Total Pelanggan</div>
+            <div class="text-3xl font-bold text-gray-800">{{ total_users }}</div>
+        </div>
+
+        <div class="admin-card p-5 flex flex-col relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-green-400 rounded-full opacity-10"></div>
+            <div class="text-xs text-green-600 font-semibold uppercase tracking-wider mb-1">Aktif</div>
+            <div class="text-3xl font-bold text-green-600">{{ active_count }}</div>
+        </div>
+
+        <div class="admin-card p-5 flex flex-col relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-red-400 rounded-full opacity-10"></div>
+            <div class="text-xs text-red-600 font-semibold uppercase tracking-wider mb-1">Nonaktif</div>
+            <div class="text-3xl font-bold text-red-600">{{ inactive_count }}</div>
+        </div>
+    </div>
+
+    <!-- Pencarian Sederhana -->
+    <div class="admin-card p-5 mb-6">
+        <form method="GET" action="{{ url_for('admin_users') }}" class="flex flex-col sm:flex-row gap-4">
+            <div class="flex-1 relative">
+                <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-search text-blue-500 mr-1"></i> Pencarian</label>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="Cari nama, email, atau telepon..."
+                           class="w-full pl-11 pr-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm">
+                </div>
+            </div>
+            <div class="flex gap-2 items-end">
+                <button type="submit" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-xl transition-all transform hover:-translate-y-0.5">
+                    <i class="fas fa-filter"></i> Cari
+                </button>
+                <a href="{{ url_for('admin_users') }}" class="flex-shrink-0 flex items-center justify-center w-11 h-11 bg-white border border-gray-700/50 text-gray-600 rounded-xl hover:bg-dark-800/50 hover:text-red-500 transition-all shadow-sm" title="Reset">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabel Pengguna -->
+    <div class="admin-card relative overflow-hidden">
+        <div class="absolute -top-20 -right-20 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl z-0 pointer-events-none"></div>
+        <div class="absolute -bottom-20 -left-20 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl z-0 pointer-events-none"></div>
+
+        <div class="relative z-10 overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-700/50 border-collapse">
+                <thead class="bg-dark-800/50/50 backdrop-blur-sm">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Pengguna</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Kontak</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Bergabung</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 admin-card">
+                    {% for user in users %}
+                    <tr class="hover:admin-card transition-colors duration-200 group">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold shadow-sm">
+                                    {{ user.full_name[0]|upper if user.full_name else '?' }}
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-semibold text-gray-800">{{ user.full_name }}</div>
+                                    <div class="text-xs text-gray-400">ID: #{{ user.id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-800 flex items-center gap-2">
+                                <i class="fas fa-envelope text-gray-400 w-4"></i> {{ user.email }}
+                            </div>
+                            <div class="text-sm text-gray-400 mt-1 flex items-center gap-2">
+                                <i class="fas fa-phone text-gray-400 w-4"></i> {{ user.phone or 'Tidak ada nomor' }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if user.is_active is not none %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border {% if user.is_active %}bg-green-50 text-green-700 border-green-200 {% else %}bg-red-50 text-red-700 border-red-200{% endif %}">
+                                    {% if user.is_active %}<i class="fas fa-check-circle mr-1.5"></i> Aktif
+                                    {% else %}<i class="fas fa-ban mr-1.5"></i> Nonaktif{% endif %}
+                                </span>
+                            {% else %}
+                                <span class="text-gray-400 text-xs">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                            <div class="flex items-center gap-1.5">
+                                <i class="far fa-calendar-alt text-xs text-gray-400"></i>
+                                {{ user.created_at | format_date if user.created_at else '-' }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                <!-- Edit -->
+                                <a href="{{ url_for('admin_user_edit', user_id=user.id) }}"
+                                   class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors" title="Edit">
+                                    <i class="fas fa-edit text-sm"></i>
+                                </a>
+                                <!-- Toggle Status -->
+                                <button @click="toggleUserStatus({{ user.id }}, {{ 'true' if user.is_active else 'false' }})"
+                                        class="flex items-center justify-center w-8 h-8 rounded-lg {% if user.is_active %}bg-blue-50 text-blue-600 hover:bg-blue-600{% else %}bg-green-50 text-green-600 hover:bg-green-600{% endif %} hover:text-white transition-colors"
+                                        title="{% if user.is_active %}Nonaktifkan{% else %}Aktifkan{% endif %}">
+                                    <i class="fas {% if user.is_active %}fa-user-slash{% else %}fa-user-check{% endif %} text-sm"></i>
+                                </button>
+                                <!-- Reset Password -->
+                                <button @click="openResetModal({{ user.id }}, '{{ user.full_name|escape }}', '{{ user.email|escape }}')"
+                                        class="flex items-center justify-center w-8 h-8 rounded-lg bg-yellow-50 text-yellow-600 hover:bg-yellow-600 hover:text-white transition-colors" title="Reset Password">
+                                    <i class="fas fa-key text-sm"></i>
+                                </button>
+                                <!-- Riwayat -->
+                                <button @click="openHistoryModal({{ user.id }}, '{{ user.full_name|escape }}', '{{ user.email|escape }}', '{{ user.phone|escape }}', '{{ user.created_at | format_date }}', {{ 'true' if user.is_active else 'false' }})"
+                                        class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors" title="Riwayat Aktivitas">
+                                    <i class="fas fa-history text-sm"></i>
+                                </button>
+                                <!-- Delete -->
+                                <button @click="openDeleteModal({{ user.id }}, '{{ user.full_name|escape }}')"
+                                        class="flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors" title="Hapus">
+                                    <i class="fas fa-trash text-sm"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                    <i class="fas fa-users-slash text-2xl text-gray-400"></i>
+                                </div>
+                                <h3 class="text-base font-semibold text-gray-800">Tidak ada pengguna ditemukan</h3>
+                                <p class="text-sm text-gray-400 mt-1">Coba sesuaikan filter pencarian Anda.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginasi -->
+    {% if pagination and pagination.pages > 1 %}
+    <div class="mt-8 flex justify-center">
+        <nav class="inline-flex rounded-xl shadow-sm overflow-hidden" aria-label="Pagination">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('admin_users', page=pagination.prev_num, q=request.args.get('q', '')) }}" class="relative inline-flex items-center px-4 py-2.5 bg-white border border-gray-700/50 text-sm font-medium text-gray-400 hover:bg-dark-800/50 hover:text-blue-600 transition-colors">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num == pagination.page %}
+                    <span class="relative inline-flex items-center px-4 py-2.5 bg-blue-600 border border-blue-600 text-sm font-bold text-white z-10">
+                        {{ page_num }}
+                    </span>
+                    {% else %}
+                    <a href="{{ url_for('admin_users', page=page_num, q=request.args.get('q', '')) }}" class="relative inline-flex items-center px-4 py-2.5 bg-white border border-gray-700/50 text-sm font-medium text-gray-700 hover:bg-dark-800/50 hover:text-blue-600 transition-colors">
+                        {{ page_num }}
+                    </a>
+                    {% endif %}
+                {% else %}
+                    <span class="relative inline-flex items-center px-4 py-2.5 bg-white border border-gray-700/50 text-sm font-medium text-gray-400">...</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+            <a href="{{ url_for('admin_users', page=pagination.next_num, q=request.args.get('q', '')) }}" class="relative inline-flex items-center px-4 py-2.5 bg-white border border-gray-700/50 text-sm font-medium text-gray-400 hover:bg-dark-800/50 hover:text-blue-600 transition-colors">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+
+
+    <!-- History Modal / Drawer -->
+    <div x-show="showHistoryModal" class="fixed inset-0 z-50 overflow-hidden" x-transition style="display: none;">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" @click="showHistoryModal = false"></div>
+
+        <!-- Drawer Panel -->
+        <div class="absolute inset-y-0 right-0 max-w-lg w-full bg-white shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col"
+             :class="showHistoryModal ? 'translate-x-0' : 'translate-x-full'">
+
+            <!-- Header -->
+            <div class="px-6 py-5 border-b border-gray-100 bg-dark-800/50/50">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold shadow-sm">
+                            <span x-text="historyData.userName ? historyData.userName[0].toUpperCase() : '?'"></span>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800" x-text="historyData.userName"></h3>
+                            <p class="text-xs text-gray-400">Riwayat Aktivitas</p>
+                        </div>
+                    </div>
+                    <button @click="showHistoryModal = false" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-700 flex items-center justify-center transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-3 gap-3 mt-4">
+                    <div class="bg-white rounded-xl p-3 border border-gray-100 shadow-sm text-center">
+                        <div class="text-lg font-bold text-blue-600" x-text="historyData.totalOrders"></div>
+                        <div class="text-[10px] text-gray-400 uppercase font-semibold">Total Pesanan</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-3 border border-gray-100 shadow-sm text-center">
+                        <div class="text-lg font-bold text-green-600" x-text="historyData.totalSpent"></div>
+                        <div class="text-[10px] text-gray-400 uppercase font-semibold">Total Belanja</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-3 border border-gray-100 shadow-sm text-center">
+                        <div class="text-lg font-bold text-blue-600" x-text="historyData.completedOrders"></div>
+                        <div class="text-[10px] text-gray-400 uppercase font-semibold">Selesai</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Info -->
+            <div class="px-6 py-4 border-b border-gray-100">
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center gap-3 text-gray-600">
+                        <i class="fas fa-envelope w-4 text-gray-400"></i>
+                        <span x-text="historyData.userEmail"></span>
+                    </div>
+                    <div class="flex items-center gap-3 text-gray-600">
+                        <i class="fas fa-phone w-4 text-gray-400"></i>
+                        <span x-text="historyData.userPhone || 'Tidak ada nomor'"></span>
+                    </div>
+                    <div class="flex items-center gap-3 text-gray-600">
+                        <i class="fas fa-calendar w-4 text-gray-400"></i>
+                        <span>Bergabung: <span x-text="historyData.joinDate"></span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-circle w-4 text-[10px]" :class="historyData.isActive ? 'text-green-400' : 'text-red-400'"></i>
+                        <span :class="historyData.isActive ? 'text-green-600' : 'text-red-600'" x-text="historyData.isActive ? 'Aktif' : 'Nonaktif'"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Timeline -->
+            <div class="flex-1 overflow-y-auto px-6 py-4">
+                <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+                    <i class="fas fa-shopping-bag text-blue-500"></i> Riwayat Pesanan
+                </h4>
+
+                <div x-show="historyLoading" class="flex items-center justify-center py-8">
+                    <i class="fas fa-circle-notch fa-spin text-blue-500 text-2xl"></i>
+                </div>
+
+                <div x-show="!historyLoading && historyData.orders.length === 0" class="text-center py-8">
+                    <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-inbox text-gray-400 text-xl"></i>
+                    </div>
+                    <p class="text-sm text-gray-400">Belum ada riwayat pesanan</p>
+                </div>
+
+                <div x-show="!historyLoading && historyData.orders.length > 0" class="space-y-4">
+                    <template x-for="order in historyData.orders" :key="order.id">
+                        <div class="relative pl-6 pb-4 border-l-2 border-gray-700/50 last:border-0">
+                            <!-- Timeline dot -->
+                            <div class="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm"
+                                 :class="{ 'bg-yellow-400': order.status === 'Pending', 'bg-green-400': order.status === 'Paid', 'bg-blue-400': order.status === 'Processing', 'bg-blue-400': order.status === 'Ready_to_Ship', 'bg-cyan-400': order.status === 'Shipped', 'bg-teal-400': order.status === 'Out_for_Delivery', 'bg-emerald-500': order.status === 'Completed', 'bg-red-400': order.status === 'Cancelled' || order.status === 'Returned' }"></div>
+
+                            <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div>
+                                        <div class="text-sm font-bold text-gray-800" x-text="order.order_number"></div>
+                                        <div class="text-xs text-gray-400 mt-0.5" x-text="order.created_at"></div>
+                                    </div>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
+                                          :class="{ 'bg-yellow-100 text-yellow-700': order.status === 'Pending', 'bg-green-100 text-green-700': order.status === 'Paid', 'bg-blue-100 text-blue-700': order.status === 'Processing', 'bg-blue-100 text-blue-700': order.status === 'Ready_to_Ship', 'bg-cyan-100 text-cyan-700': order.status === 'Shipped', 'bg-teal-100 text-teal-700': order.status === 'Out_for_Delivery', 'bg-emerald-100 text-emerald-700': order.status === 'Completed', 'bg-red-100 text-red-700': order.status === 'Cancelled' || order.status === 'Returned' }">
+                                        <i class="fas mr-1 text-[8px]"
+                                           :class="{ 'fa-clock': order.status === 'Pending', 'fa-check-circle': order.status === 'Paid', 'fa-cog': order.status === 'Processing', 'fa-box': order.status === 'Ready_to_Ship', 'fa-shipping-fast': order.status === 'Shipped', 'fa-truck': order.status === 'Out_for_Delivery', 'fa-check-double': order.status === 'Completed', 'fa-times': order.status === 'Cancelled', 'fa-undo': order.status === 'Returned' }"></i>
+                                        <span x-text="order.status.replace('_', ' ')"></span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="text-gray-400">
+                                        <i class="fas fa-box-open mr-1 text-gray-400"></i>
+                                        <span x-text="order.items_count + ' item'"></span>
+                                    </div>
+                                    <div class="font-bold text-blue-600" x-text="order.total_formatted"></div>
+                                </div>
+                                <div class="mt-2 text-xs text-gray-400" x-text="order.payment_method"></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div x-show="showDeleteModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" x-transition>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6" @click.away="showDeleteModal = false">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-gray-800" x-text="deleteData.forceRequired ? 'Hapus Riwayat Cicilan Juga?' : 'Hapus Pengguna'"></h3>
+                    <template x-if="!deleteData.forceRequired">
+                        <p class="text-sm text-gray-400 mt-2">
+                            Apakah Anda yakin ingin menghapus pengguna <strong x-text="deleteData.userName" class="text-gray-800"></strong>?<br>
+                            Data pengguna akan dihapus permanen, namun riwayat pesanannya akan tetap tersimpan.
+                        </p>
+                    </template>
+                    <template x-if="deleteData.forceRequired">
+                        <p class="text-sm text-red-600 mt-2">
+                            <strong x-text="deleteData.userName" class="text-gray-800"></strong> memiliki riwayat pengajuan cicilan.
+                            Melanjutkan akan menghapus permanen pengguna <strong>beserta seluruh aplikasi cicilan,
+                            jadwal angsuran, dan riwayat pembayarannya</strong>. Tindakan ini tidak bisa dibatalkan.
+                        </p>
+                    </template>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6 justify-end">
+                <button @click="showDeleteModal = false; deleteData.forceRequired = false" class="px-4 py-2 border border-gray-700/50 rounded-xl text-gray-600 hover:bg-dark-800/50 transition">Batal</button>
+                <button @click="confirmDelete()" :disabled="loading"
+                        :class="deleteData.forceRequired ? 'bg-red-800 hover:bg-red-900' : 'bg-red-600 hover:bg-red-700'"
+                        class="px-4 py-2 text-white rounded-xl transition disabled:opacity-50 flex items-center gap-2">
+                    <i class="fas fa-spinner fa-spin" x-show="loading"></i>
+                    <span x-text="loading ? 'Menghapus...' : (deleteData.forceRequired ? 'Ya, Hapus Paksa Semua' : 'Hapus')"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div x-show="showResetModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" x-transition>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6" @click.away="showResetModal = false">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-key text-blue-600 text-xl"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-gray-800">Reset Password</h3>
+                    <p class="text-sm text-gray-400 mt-2">
+                        Reset password untuk <strong x-text="resetData.userName" class="text-gray-800"></strong>.<br>
+                        Password baru akan dikirim ke <span x-text="resetData.userEmail" class="text-gray-700"></span>.
+                    </p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Password Baru (kosongkan untuk generate otomatis)</label>
+                <input x-model="resetData.newPassword" type="text" class="w-full px-4 py-2 border border-gray-700/50 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="Biarkan kosong untuk password acak">
+            </div>
+            <div class="flex gap-3 mt-6 justify-end">
+                <button @click="showResetModal = false" class="px-4 py-2 border border-gray-700/50 rounded-xl text-gray-600 hover:bg-dark-800/50 transition">Batal</button>
+                <button @click="confirmReset()" :disabled="loading" class="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2">
+                    <i class="fas fa-spinner fa-spin" x-show="loading"></i>
+                    <span x-text="loading ? 'Memproses...' : 'Reset Password'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function userManagement() {
+    return {
+        showDeleteModal: false,
+        showResetModal: false,
+        loading: false,
+        deleteData: {
+            userId: null,
+            userName: '',
+            forceRequired: false
+        },
+        resetData: {
+            userId: null,
+            userName: '',
+            userEmail: '',
+            newPassword: ''
+        },
+        historyData: {
+            userId: null,
+            userName: '',
+            userEmail: '',
+            userPhone: '',
+            joinDate: '',
+            isActive: true,
+            orders: [],
+            totalOrders: 0,
+            totalSpent: 0,
+            completedOrders: 0
+        },
+        showHistoryModal: false,
+        historyLoading: false,
+        toast: {
+            show: false,
+            message: '',
+            type: 'success'
+        },
+
+        init() {
+            this.$watch('toast.show', value => {
+                if (value) {
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, 4000);
+                }
+            });
+        },
+
+        showToast(message, type = 'success') {
+            this.toast.message = message;
+            this.toast.type = type;
+            this.toast.show = true;
+        },
+
+        openDeleteModal(userId, userName) {
+            this.deleteData.userId = userId;
+            this.deleteData.userName = userName;
+            this.deleteData.forceRequired = false;
+            this.showDeleteModal = true;
+        },
+
+        openHistoryModal(userId, userName, userEmail, userPhone, joinDate, isActive) {
+            this.historyData = {
+                userId: userId,
+                userName: userName,
+                userEmail: userEmail,
+                userPhone: userPhone,
+                joinDate: joinDate,
+                isActive: isActive,
+                orders: [],
+                totalOrders: 0,
+                totalSpent: 0,
+                completedOrders: 0
+            };
+            this.showHistoryModal = true;
+            this.historyLoading = true;
+
+            fetch(`/api/admin/user/${userId}/orders`)
+                .then(res => res.json())
+                .then(data => {
+                    this.historyLoading = false;
+                    if (data.success) {
+                        this.historyData.orders = data.orders || [];
+                        this.historyData.totalOrders = data.orders ? data.orders.length : 0;
+                        this.historyData.totalSpent = data.orders ? data.orders.reduce((sum, o) => sum + (o.total || 0), 0) : 0;
+                        this.historyData.completedOrders = data.orders ? data.orders.filter(o => o.status === 'Completed').length : 0;
+                    } else {
+                        this.showToast('Gagal memuat riwayat: ' + data.message, 'error');
+                    }
+                })
+                .catch(err => {
+                    this.historyLoading = false;
+                    this.showToast('Terjadi kesalahan saat memuat riwayat.', 'error');
+                });
+        },
+
+        confirmDelete() {
+            if (!this.deleteData.userId) return;
+            this.loading = true;
+
+            fetch(`/admin/user/${this.deleteData.userId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ force: this.deleteData.forceRequired })
+            })
+            .then(res => res.json())
+            .then(data => {
+                this.loading = false;
+                if (data.success) {
+                    this.showDeleteModal = false;
+                    this.deleteData.forceRequired = false;
+                    this.showToast(data.message || 'Pengguna berhasil dihapus', 'success');
+                    setTimeout(() => location.reload(), 1200);
+                } else if (data.has_installment_history && !this.deleteData.forceRequired) {
+                    // Belum di-force: tampilkan peringatan tahap kedua, jangan tutup modal.
+                    this.deleteData.forceRequired = true;
+                } else {
+                    this.showToast('Gagal: ' + data.message, 'error');
+                }
+            })
+            .catch(err => {
+                this.loading = false;
+                this.showToast('Terjadi kesalahan jaringan.', 'error');
+            });
+        },
+
+        openResetModal(userId, userName, userEmail) {
+            this.resetData.userId = userId;
+            this.resetData.userName = userName;
+            this.resetData.userEmail = userEmail;
+            this.resetData.newPassword = '';
+            this.showResetModal = true;
+        },
+
+        confirmReset() {
+            if (!this.resetData.userId) return;
+            this.loading = true;
+
+            fetch(`/admin/user/${this.resetData.userId}/reset-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ password: this.resetData.newPassword })
+            })
+            .then(res => res.json())
+            .then(data => {
+                this.loading = false;
+                if (data.success) {
+                    this.showResetModal = false;
+                    this.showToast(data.message || 'Password berhasil direset', 'success');
+                } else {
+                    this.showToast('Gagal: ' + data.message, 'error');
+                }
+            })
+            .catch(err => {
+                this.loading = false;
+                this.showToast('Terjadi kesalahan.', 'error');
+            });
+        },
+
+        toggleUserStatus(userId, currentStatus) {
+            if (!confirm(`Apakah Anda yakin ingin ${currentStatus ? 'menonaktifkan' : 'mengaktifkan'} akun ini?`)) return;
+
+            fetch(`/admin/user/${userId}/toggle-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    this.showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    this.showToast('Gagal: ' + data.message, 'error');
+                }
+            })
+            .catch(err => this.showToast('Terjadi kesalahan.', 'error'));
+        }
+    }
+}
+</script>
+{% endblock %}

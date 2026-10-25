@@ -1,0 +1,177 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Pengajuan Kredit — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-credit-card-2-front me-2"></i>Pengajuan Kredit
+        </h1>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-2 col-6">
+            <div class="admin-card p-3 text-center" style="border-bottom: 3px solid #3b82f6;">
+                <h4 class="mb-0 text-primary">{{ stats.total }}</h4>
+                <small class="text-muted">Total Pengajuan</small>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="admin-card p-3 text-center" style="border-bottom: 3px solid #f59e0b;">
+                <h4 class="mb-0 text-warning">{{ stats.pending }}</h4>
+                <small class="text-muted">Menunggu Review</small>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="admin-card p-3 text-center" style="border-bottom: 3px solid #10b981;">
+                <h4 class="mb-0 text-success">{{ stats.approved }}</h4>
+                <small class="text-muted">Disetujui</small>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="admin-card p-3 text-center" style="border-bottom: 3px solid #0dcaf0;">
+                <h4 class="mb-0 text-info">{{ stats.active }}</h4>
+                <small class="text-muted">Aktif</small>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="admin-card p-3 text-center" style="border-bottom: 3px solid #ef4444;">
+                <h4 class="mb-0 text-danger">{{ stats.rejected }}</h4>
+                <small class="text-muted">Ditolak</small>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="admin-card p-3 text-center" style="border-bottom: 3px solid #6b7280;">
+                <h4 class="mb-0 text-secondary">{{ stats.defaulted }}</h4>
+                <small class="text-muted">Default</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="admin-card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Cari nama, email, NIK..." value="{{ search_q }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">Semua Status</option>
+                        <option value="pending" {{ 'selected' if current_status == 'pending' }}>Pending</option>
+                        <option value="approved" {{ 'selected' if current_status == 'approved' }}>Approved</option>
+                        <option value="active" {{ 'selected' if current_status == 'active' }}>Active</option>
+                        <option value="completed" {{ 'selected' if current_status == 'completed' }}>Completed</option>
+                        <option value="rejected" {{ 'selected' if current_status == 'rejected' }}>Rejected</option>
+                        <option value="defaulted" {{ 'selected' if current_status == 'defaulted' }}>Defaulted</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search me-1"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Applications Table -->
+    <div class="admin-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background: rgba(255,255,255,0.03);">
+                        <tr>
+                            <th>ID</th>
+                            <th>Pengaju</th>
+                            <th>Produk</th>
+                            <th>Jumlah</th>
+                            <th>Angsuran</th>
+                            <th>Tenor</th>
+                            <th>Status</th>
+                            <th>Verifikasi</th>
+                            <th>Tanggal</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in applications %}
+                        <tr>
+                            <td>#{{ app.id }}</td>
+                            <td>
+                                <strong>{{ (app.user.full_name if app.user else app.full_name) or '-' }}</strong><br>
+                                <small class="text-muted">{{ (app.user.phone if app.user else app.phone) or '-' }}</small>
+                            </td>
+                            <td>{{ app.product.name if app.product else '-' }}</td>
+                            <td>{{ format_price(app.total_payment) }}</td>
+                            <td>{{ format_price(app.monthly_installment) }}/bln</td>
+                            <td>{{ app.tenor_months }} bln</td>
+                            <td>
+                                {% if app.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif app.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif app.status == 'active' %}
+                                    <span class="badge bg-info">Active</span>
+                                {% elif app.status == 'completed' %}
+                                    <span class="badge bg-primary">Completed</span>
+                                {% elif app.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% elif app.status == 'defaulted' %}
+                                    <span class="badge bg-dark">Defaulted</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if app.face_verified and app.ktp_verified %}
+                                    <span class="badge bg-success"><i class="bi bi-shield-check"></i> Full</span>
+                                {% elif app.face_verified %}
+                                    <span class="badge bg-info"><i class="bi bi-person-check"></i> Face</span>
+                                {% elif app.ktp_verified %}
+                                    <span class="badge bg-primary"><i class="bi bi-card-text"></i> KTP</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Manual</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.created_at | format_date if app.created_at else '-' }}</td>
+                            <td>
+                                <a href="{{ url_for('admin_credit_application_detail', app_id=app.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Detail
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% for page_num in pagination.iter_pages() %}
+                {% if page_num %}
+                    <li class="page-item {{ 'active' if page_num == pagination.page }}">
+                        <a class="page-link" href="{{ url_for('admin_credit_applications', page=page_num, status=current_status, search=search_q) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

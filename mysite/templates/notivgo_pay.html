@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}Bayar Pesanan {{ order.order_number }} — QRIS{% endblock %}
+
+{% block extra_css %}
+<style>
+.pay-wrap { max-width: 560px; margin: 0 auto; padding: 2.5rem 0 4rem; }
+
+/* Stepper */
+.pay-steps { display: flex; align-items: center; justify-content: center; gap: .5rem; margin-bottom: 1.75rem; font-size: .75rem; font-weight: 600; color: var(--text-tertiary); }
+.pay-step { display: inline-flex; align-items: center; gap: .45rem; }
+.pay-step .dot { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .7rem; background: var(--bg-glass); border: 1px solid var(--border-default); }
+.pay-step.done { color: var(--success); }
+.pay-step.done .dot { background: var(--success-bg); border-color: rgba(52,211,153,.4); color: var(--success); }
+.pay-step.active { color: var(--text-primary); }
+.pay-step.active .dot { background: var(--primary-500); border-color: var(--primary-500); color: #fff; box-shadow: 0 0 0 4px var(--primary-glow-soft); }
+.pay-step-line { width: 28px; height: 1px; background: var(--border-strong); }
+
+/* Card */
+.pay-card { background: var(--bg-glass-strong); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--border-default); border-radius: var(--r-xl); box-shadow: var(--shadow-card); overflow: hidden; }
+.pay-head { padding: 1.5rem 1.75rem 1.1rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--border-subtle); }
+.pay-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.3rem; letter-spacing: -.02em; margin: 0; color: var(--text-primary); }
+.pay-sub { color: var(--text-tertiary); font-size: .82rem; margin: .2rem 0 0; }
+.pay-sub strong { color: var(--text-secondary); font-family: 'Space Grotesk', sans-serif; letter-spacing: .02em; }
+.pay-timer { text-align: right; flex-shrink: 0; }
+.pay-timer .lbl { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: var(--text-tertiary); font-weight: 700; }
+.pay-timer .val { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--warning); font-variant-numeric: tabular-nums; }
+.pay-timer .val.expired { color: var(--danger); }
+
+.pay-body { padding: 1.75rem; text-align: center; }
+
+/* QR */
+.qr-stage { position: relative; display: inline-block; padding: 14px; border-radius: var(--r-lg); background: #fff; box-shadow: var(--shadow-md), 0 0 60px var(--primary-glow-soft); }
+.qr-stage img, .qr-stage #qr-canvas img, .qr-stage #qr-canvas canvas { display: block; width: 260px; height: 260px; max-width: 100%; }
+.qr-stage::before, .qr-stage::after { content: ''; position: absolute; width: 26px; height: 26px; border: 3px solid var(--primary-500); pointer-events: none; }
+.qr-stage::before { top: -6px; left: -6px; border-right: 0; border-bottom: 0; border-top-left-radius: 14px; }
+.qr-stage::after { bottom: -6px; right: -6px; border-left: 0; border-top: 0; border-bottom-right-radius: 14px; }
+.qr-brand { margin-top: .85rem; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-tertiary); font-weight: 700; }
+.qr-actions { display: flex; gap: .5rem; justify-content: center; margin-top: .85rem; flex-wrap: wrap; }
+
+/* Amount */
+.amount-box { margin-top: 1.5rem; padding: 1.1rem 1.25rem; border-radius: var(--r-lg); background: var(--bg-glass); border: 1px solid var(--border-default); box-shadow: var(--glass-highlight); }
+.amount-box .lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--text-tertiary); font-weight: 700; }
+.amount-box .val { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 2.1rem; letter-spacing: -.03em; line-height: 1.15; margin: .2rem 0; color: var(--text-primary); }
+.amount-box .breakdown { font-size: .78rem; color: var(--text-tertiary); }
+.amount-box .breakdown b { color: var(--text-secondary); font-weight: 600; }
+
+.pay-btn { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem .95rem; border-radius: var(--r-md); font-size: .78rem; font-weight: 700; font-family: inherit; color: var(--text-primary); background: var(--bg-glass); border: 1px solid var(--border-default); cursor: pointer; transition: all var(--duration-fast) var(--ease-out-expo); text-decoration: none; }
+.pay-btn:hover { background: var(--bg-surface-hover); border-color: var(--border-strong); color: var(--text-primary); transform: translateY(-1px); }
+.pay-btn.primary { background: var(--primary-500); border-color: var(--primary-500); color: #fff; box-shadow: var(--shadow-primary); }
+.pay-btn.primary:hover { background: var(--primary-600); color: #fff; }
+.pay-btn.copied { color: var(--success); border-color: rgba(52,211,153,.4); background: var(--success-bg); }
+
+/* Status */
+.pay-status { margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: .6rem; padding: .75rem 1rem; border-radius: var(--r-md); background: var(--info-bg); border: 1px solid rgba(77,168,255,.18); color: var(--info); font-size: .85rem; font-weight: 600; }
+.pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--info); position: relative; flex-shrink: 0; }
+.pulse::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--info); animation: pay-pulse 1.6s ease-out infinite; }
+@keyframes pay-pulse { 0% { transform: scale(1); opacity: .6; } 100% { transform: scale(3); opacity: 0; } }
+.pay-status.ok { background: var(--success-bg); border-color: rgba(52,211,153,.25); color: var(--success); }
+.pay-status.ok .pulse { display: none; }
+.pay-status.warn { background: var(--warning-bg); border-color: rgba(251,191,36,.25); color: var(--warning); }
+
+/* How-to + footer */
+.pay-howto { padding: 1.25rem 1.75rem 1.5rem; border-top: 1px solid var(--border-subtle); background: var(--bg-glass-soft); }
+.pay-howto h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--text-tertiary); font-weight: 700; margin: 0 0 .75rem; }
+.pay-howto ol { margin: 0; padding-left: 1.2rem; color: var(--text-secondary); font-size: .85rem; line-height: 1.7; }
+.pay-howto li::marker { color: var(--primary-400); font-weight: 700; }
+.pay-howto .note { margin-top: .8rem; font-size: .78rem; color: var(--text-tertiary); display: flex; gap: .5rem; align-items: flex-start; }
+.pay-howto .note i { color: var(--warning); margin-top: 2px; }
+.pay-foot { text-align: center; margin-top: 1.25rem; }
+
+/* Result states */
+.pay-result { padding: 2.5rem 1.75rem; text-align: center; }
+.pay-result .ico { width: 72px; height: 72px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 1rem; }
+.pay-result .ico.ok { background: var(--success-bg); color: var(--success); box-shadow: 0 0 0 8px rgba(52,211,153,.06); }
+.pay-result .ico.err { background: var(--danger-bg); color: var(--danger); box-shadow: 0 0 0 8px rgba(248,113,113,.06); }
+.pay-result h2 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.3rem; margin-bottom: .4rem; color: var(--text-primary); }
+.pay-result p { color: var(--text-tertiary); font-size: .88rem; }
+
+@media (max-width: 480px) {
+  .pay-head { flex-direction: column; }
+  .pay-timer { text-align: left; }
+  .pay-body { padding: 1.25rem; }
+  .amount-box .val { font-size: 1.75rem; }
+  .qr-stage img, .qr-stage #qr-canvas img, .qr-stage #qr-canvas canvas { width: 220px; height: 220px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% set is_paid = order.status != 'Pending' %}
+<div class="pay-wrap">
+
+  <div class="pay-steps" aria-label="Langkah pembayaran">
+    <span class="pay-step done"><span class="dot"><i class="bi bi-check-lg"></i></span>Pesanan</span>
+    <span class="pay-step-line"></span>
+    <span class="pay-step {{ 'done' if is_paid else 'active' }}" id="step-pay"><span class="dot">{% if is_paid %}<i class="bi bi-check-lg"></i>{% else %}2{% endif %}</span>Bayar</span>
+    <span class="pay-step-line"></span>
+    <span class="pay-step {{ 'done' if is_paid }}" id="step-done"><span class="dot">{% if is_paid %}<i class="bi bi-check-lg"></i>{% else %}3{% endif %}</span>Selesai</span>
+  </div>
+
+  <div class="pay-card">
+    {% if is_paid %}
+      <div class="pay-result" id="paid-box">
+        <div class="ico ok"><i class="bi bi-check-lg"></i></div>
+        <h2>Pembayaran Diterima</h2>
+        <p>Pesanan <strong>{{ order.order_number }}</strong> sedang diproses. Status: <strong>{{ order.status }}</strong>.</p>
+        <a href="{{ url_for('user_orders') }}" class="pay-btn primary mt-2"><i class="bi bi-bag-check"></i> Lihat Pesanan Saya</a>
+      </div>
+
+    {% elif error %}
+      <div class="pay-result">
+        <div class="ico err"><i class="bi bi-exclamation-triangle"></i></div>
+        <h2>QRIS Belum Bisa Dibuat</h2>
+        <p>{{ error }}</p>
+        <a href="{{ url_for('user_orders') }}" class="pay-btn mt-2"><i class="bi bi-arrow-left"></i> Kembali ke Pesanan</a>
+      </div>
+
+    {% else %}
+      <div class="pay-head">
+        <div>
+          <h1 class="pay-title">Bayar dengan QRIS</h1>
+          <p class="pay-sub">Pesanan <strong>{{ order.order_number }}</strong></p>
+        </div>
+        {% if expires_at_ms %}
+        <div class="pay-timer">
+          <div class="lbl">Batas bayar</div>
+          <div class="val" id="countdown" data-expires="{{ expires_at_ms }}">--:--:--</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="pay-body">
+        <div class="qr-stage">
+          {% if qr_png %}
+            <img id="qr-img" src="data:image/png;base64,{{ qr_png }}" alt="Kode QRIS pembayaran">
+          {% elif qr_payload %}
+            <div id="qr-canvas"></div>
+          {% endif %}
+        </div>
+        <div class="qr-brand">GoPay · OVO · DANA · ShopeePay · Mobile Banking</div>
+        {% if qr_png %}
+        <div class="qr-actions">
+          <a class="pay-btn" id="dl-qr" href="data:image/png;base64,{{ qr_png }}" download="QRIS-{{ order.order_number }}.png"><i class="bi bi-download"></i> Simpan QR</a>
+        </div>
+        {% endif %}
+
+        <div class="amount-box">
+          <div class="lbl">Total yang harus dibayar</div>
+          <div class="val" id="amount-val">Rp {{ '{:,}'.format(amount).replace(',', '.') }}</div>
+          {% if unique_code %}
+          <div class="breakdown">Rp {{ '{:,}'.format(base_amount).replace(',', '.') }} + kode unik <b>{{ unique_code }}</b> = <b>Rp {{ '{:,}'.format(amount).replace(',', '.') }}</b></div>
+          {% endif %}
+          <div class="qr-actions">
+            <button type="button" class="pay-btn" id="copy-amount" data-amount="{{ amount }}"><i class="bi bi-clipboard"></i> Salin Nominal</button>
+          </div>
+        </div>
+
+        <div class="pay-status" id="pay-status" role="status" aria-live="polite">
+          <span class="pulse"></span><span id="status-text">Menunggu pembayaran…</span>
+        </div>
+      </div>
+
+      <div class="pay-howto">
+        <h2>Cara membayar</h2>
+        <ol>
+          <li>Buka aplikasi bank atau e-wallet, pilih <b>Scan / QRIS</b>.</li>
+          <li>Scan kode di atas, lalu pastikan nominal <b>persis sama</b>.</li>
+          <li>Selesaikan pembayaran. Halaman ini otomatis berpindah setelah terdeteksi.</li>
+        </ol>
+        <div class="note"><i class="bi bi-info-circle"></i><span>Jangan membulatkan nominal. Kode unik dipakai agar pembayaran Anda dikenali otomatis.</span></div>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if not is_paid %}
+  <div class="pay-foot"><a href="{{ url_for('user_orders') }}" class="pay-btn"><i class="bi bi-arrow-left"></i> Kembali ke Pesanan</a></div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if order.status == 'Pending' and not error %}
+{% if qr_payload and not qr_png %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  try { new QRCode(document.getElementById('qr-canvas'), {text: {{ qr_payload|tojson }}, width: 260, height: 260, correctLevel: QRCode.CorrectLevel.M}); } catch (e) {}
+</script>
+{% endif %}
+<script>
+(function () {
+  var statusBox = document.getElementById('pay-status');
+  var statusText = document.getElementById('status-text');
+  var done = false, busy = false;
+
+  // Salin nominal
+  var copyBtn = document.getElementById('copy-amount');
+  if (copyBtn) copyBtn.addEventListener('click', function () {
+    var v = copyBtn.dataset.amount, orig = copyBtn.innerHTML;
+    function ok() { copyBtn.classList.add('copied'); copyBtn.innerHTML = '<i class="bi bi-check2"></i> Tersalin'; setTimeout(function () { copyBtn.classList.remove('copied'); copyBtn.innerHTML = orig; }, 1800); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(ok).catch(function () { prompt('Salin nominal:', v); });
+    else prompt('Salin nominal:', v);
+  });
+
+  // Hitung mundur
+  var cd = document.getElementById('countdown');
+  if (cd) {
+    var exp = parseInt(cd.dataset.expires, 10);
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function tick() {
+      var s = Math.floor((exp - Date.now()) / 1000);
+      if (s <= 0) {
+        cd.textContent = 'Kedaluwarsa'; cd.classList.add('expired');
+        if (!done) { statusBox.className = 'pay-status warn'; statusText.textContent = 'Batas waktu habis. Jika sudah membayar, tunggu — pembayaran tetap dicek.'; }
+        return;
+      }
+      cd.textContent = pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
+      setTimeout(tick, 1000);
+    }
+    tick();
+  }
+
+  // Polling status
+  async function check() {
+    if (busy || done || document.hidden) return;
+    busy = true;
+    try {
+      var res = await fetch('/api/payment/notivgo/status/{{ order.id }}', {credentials: 'same-origin'});
+      if (res.ok) {
+        var d = await res.json();
+        if (d.success && d.paid) {
+          done = true;
+          statusBox.className = 'pay-status ok';
+          statusText.innerHTML = '<i class="bi bi-check-circle-fill"></i> Pembayaran diterima! Mengalihkan…';
+          document.getElementById('step-pay').className = 'pay-step done';
+          document.getElementById('step-done').className = 'pay-step active';
+          setTimeout(function () { location.reload(); }, 1600);
+          return;
+        }
+      }
+    } catch (e) {}
+    busy = false;
+  }
+  setInterval(check, 5000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+  check();
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,1380 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Detail Cicilan {{ application.application_code }} — Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════════════════
+   ADMIN INSTALLMENT DETAIL — PROFESSIONAL EDITION
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Base & Variables ── */
+:root {
+    --detail-primary: #f59e0b;
+    --detail-primary-soft: rgba(245, 158, 11, 0.12);
+    --detail-success: #10b981;
+    --detail-success-soft: rgba(16, 185, 129, 0.12);
+    --detail-warning: #f59e0b;
+    --detail-warning-soft: rgba(245, 158, 11, 0.12);
+    --detail-danger: #ef4444;
+    --detail-danger-soft: rgba(239, 68, 68, 0.12);
+    --detail-info: #3b82f6;
+    --detail-info-soft: rgba(59, 130, 246, 0.12);
+    --detail-glass: rgba(255, 255, 255, 0.03);
+    --detail-glass-border: rgba(255, 255, 255, 0.08);
+    --detail-glass-border-light: rgba(255, 255, 255, 0.12);
+    --detail-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --detail-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.3);
+    --detail-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
+    --detail-radius-sm: 10px;
+    --detail-radius-md: 14px;
+    --detail-radius-lg: 20px;
+    --detail-radius-xl: 24px;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-tertiary: #6b7280;
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-default: rgba(255, 255, 255, 0.08);
+    --bg-base: #0f0f1a;
+    --bg-elevated: rgba(255, 255, 255, 0.03);
+    --primary-400: #fbbf24;
+}
+
+/* ── Animations ── */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+@keyframes countUp {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+}
+@keyframes glow-gold {
+    0%, 100% { box-shadow: 0 0 5px rgba(245, 158, 11, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.4), 0 0 40px rgba(245, 158, 11, 0.1); }
+}
+
+.animate-in {
+    animation: fadeInUp 0.5s ease-out forwards;
+    opacity: 0;
+}
+.animate-in:nth-child(1) { animation-delay: 0.05s; }
+.animate-in:nth-child(2) { animation-delay: 0.1s; }
+.animate-in:nth-child(3) { animation-delay: 0.15s; }
+.animate-in:nth-child(4) { animation-delay: 0.2s; }
+.animate-in:nth-child(5) { animation-delay: 0.25s; }
+.animate-in:nth-child(6) { animation-delay: 0.3s; }
+
+/* ── Detail Header ── */
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(217, 119, 6, 0.04));
+    border: 1px solid var(--detail-glass-border);
+    border-radius: var(--detail-radius-lg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    animation: fadeInUp 0.5s ease-out;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.detail-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    letter-spacing: -0.02em;
+}
+.detail-title i {
+    width: 44px; height: 44px;
+    border-radius: var(--detail-radius-md);
+    background: linear-gradient(135deg, #d97706, #f59e0b, #fbbf24);
+    display: grid; place-items: center;
+    color: white;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+.detail-subtitle {
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.detail-subtitle::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--detail-success);
+    box-shadow: 0 0 8px var(--detail-success);
+}
+
+/* ── Grid Layout ── */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* ── Cards ── */
+.detail-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--detail-glass-border);
+    border-radius: var(--detail-radius-lg);
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.5s ease-out forwards;
+    opacity: 0;
+}
+.detail-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent);
+}
+.detail-card:hover {
+    border-color: rgba(99,102,241,0.2);
+    box-shadow: var(--detail-shadow-md), 0 0 30px rgba(99,102,241,0.08);
+    transform: translateY(-3px);
+}
+.detail-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.detail-card-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.detail-card-title i {
+    width: 32px; height: 32px;
+    border-radius: var(--detail-radius-sm);
+    background: linear-gradient(135deg, var(--detail-primary), #8b5cf6);
+    display: grid; place-items: center;
+    color: white;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+}
+
+/* ── Info Rows ── */
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid rgba(15,23,42,0.03);
+    font-size: 0.875rem;
+    transition: background 0.2s;
+}
+.info-row:hover {
+    background: rgba(255,255,255,0.03);
+    margin: 0 -0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    border-radius: 8px;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row .label {
+    color: var(--text-tertiary);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.info-row .label::before {
+    content: '';
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+    opacity: 0.4;
+}
+.info-row .value {
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: right;
+    max-width: 60%;
+    word-break: break-word;
+}
+.info-row .value.price {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    color: var(--primary-400);
+    font-size: 0.95rem;
+}
+
+/* ── Schedule Timeline ── */
+.schedule-timeline {
+    position: relative;
+    padding-left: 2.5rem;
+}
+.schedule-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, var(--border-default), var(--detail-primary), var(--border-default));
+    border-radius: 2px;
+}
+.schedule-item {
+    position: relative;
+    padding: 1.25rem 0 1.25rem 1.75rem;
+    border-bottom: 1px solid rgba(15,23,42,0.03);
+    transition: all 0.3s;
+}
+.schedule-item:last-child { border-bottom: none; }
+.schedule-item::before {
+    content: '';
+    position: absolute;
+    left: -2rem;
+    top: 1.5rem;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 3px solid var(--border-default);
+    background: var(--bg-base);
+    transition: all 0.3s;
+    z-index: 2;
+}
+.schedule-item.paid::before {
+    background: var(--detail-success);
+    border-color: var(--detail-success);
+    box-shadow: 0 0 0 4px var(--detail-success-soft), 0 0 15px rgba(16,185,129,0.4);
+}
+.schedule-item.overdue::before {
+    background: var(--detail-danger);
+    border-color: var(--detail-danger);
+    box-shadow: 0 0 0 4px var(--detail-danger-soft), 0 0 15px rgba(239,68,68,0.4);
+    animation: pulse-dot 2s ease infinite;
+}
+.schedule-item.current::before {
+    background: var(--detail-primary);
+    border-color: var(--detail-primary);
+    box-shadow: 0 0 0 4px var(--detail-primary-soft), 0 0 15px rgba(99,102,241,0.4);
+    animation: pulse-dot 2s ease infinite;
+}
+.schedule-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.schedule-item-title {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+.schedule-item-date {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    background: rgba(15,23,42,0.03);
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+}
+.schedule-item-amount {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--text-primary);
+}
+.schedule-item-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+}
+.schedule-item-status.paid {
+    background: var(--detail-success-soft);
+    color: var(--detail-success);
+    border: 1px solid rgba(16,185,129,0.2);
+}
+.schedule-item-status.pending {
+    background: var(--detail-warning-soft);
+    color: var(--detail-warning);
+    border: 1px solid rgba(245,158,11,0.2);
+}
+.schedule-item-status.overdue {
+    background: var(--detail-danger-soft);
+    color: var(--detail-danger);
+    border: 1px solid rgba(239,68,68,0.2);
+}
+
+/* ── Payment Progress ── */
+.progress-card {
+    background: linear-gradient(135deg, rgba(16,185,129,0.05), rgba(59,130,246,0.05));
+    border: 1px solid rgba(16,185,129,0.1);
+}
+.progress-ring-container {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 1.5rem;
+}
+.progress-ring-svg {
+    transform: rotate(-90deg);
+}
+.progress-ring-bg {
+    fill: none;
+    stroke: rgba(15,23,42,0.05);
+    stroke-width: 8;
+}
+.progress-ring-fill {
+    fill: none;
+    stroke: url(#progressGradient);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 377;
+    stroke-dashoffset: 377;
+    transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.progress-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+.progress-percent {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+}
+.progress-label {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 0.25rem;
+}
+
+/* ── Document Gallery ── */
+.doc-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+.doc-item {
+    position: relative;
+    border-radius: var(--detail-radius-md);
+    overflow: hidden;
+    border: 1px solid var(--detail-glass-border);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--bg-elevated);
+}
+.doc-item::after {
+    content: '🔍';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: 1.5rem;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 3;
+}
+.doc-item:hover {
+    border-color: var(--detail-primary);
+    box-shadow: 0 8px 30px rgba(99,102,241,0.2);
+    transform: translateY(-4px) scale(1.02);
+}
+.doc-item:hover::after {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+.doc-item:hover img {
+    filter: brightness(0.5);
+}
+.doc-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    transition: all 0.4s;
+}
+.doc-item-label {
+    padding: 0.75rem;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--detail-glass-border);
+    letter-spacing: 0.03em;
+}
+
+/* ── Action Bar ── */
+.action-bar {
+    display: flex;
+    gap: 0.75rem;
+    position: sticky;
+    bottom: 1.5rem;
+    background: rgba(15, 15, 26, 0.85);
+    padding: 1rem 1.5rem;
+    border-radius: var(--detail-radius-lg);
+    border: 1px solid var(--detail-glass-border);
+    box-shadow: var(--detail-shadow-lg), 0 0 40px rgba(99,102,241,0.1);
+    z-index: 100;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    animation: slideInRight 0.5s ease-out;
+}
+.action-bar .btn {
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+.action-bar .btn::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+}
+.action-bar .btn:active::before {
+    width: 200px; height: 200px;
+}
+
+/* ── Status Badge Enhancement ── */
+.credit-app-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: 1px solid;
+    transition: all 0.3s;
+}
+.credit-app-status.pending {
+    background: var(--detail-warning-soft);
+    color: var(--detail-warning);
+    border-color: rgba(245,158,11,0.3);
+}
+.credit-app-status.reviewing {
+    background: var(--detail-info-soft);
+    color: var(--detail-info);
+    border-color: rgba(59,130,246,0.3);
+}
+.credit-app-status.approved {
+    background: var(--detail-success-soft);
+    color: var(--detail-success);
+    border-color: rgba(16,185,129,0.3);
+    box-shadow: 0 0 15px rgba(16,185,129,0.15);
+}
+.credit-app-status.rejected {
+    background: var(--detail-danger-soft);
+    color: var(--detail-danger);
+    border-color: rgba(239,68,68,0.3);
+}
+
+/* ── Application Type Badge (Cicilan vs Kredit) ── */
+.app-type-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.8rem;
+    border-radius: 100px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid;
+    vertical-align: middle;
+    margin-left: 0.5rem;
+}
+.app-type-badge.type-cicilan {
+    background: var(--detail-info-soft);
+    color: var(--detail-info);
+    border-color: rgba(59,130,246,0.3);
+}
+.app-type-badge.type-kredit {
+    background: rgba(139,92,246,0.12);
+    color: #8b5cf6;
+    border-color: rgba(139,92,246,0.3);
+}
+
+/* ── Table Enhancement ── */
+.admin-schedule-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.admin-schedule-table thead th {
+    background: rgba(15,23,42,0.03);
+    padding: 1rem 1.25rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-default);
+    white-space: nowrap;
+}
+.admin-schedule-table tbody tr {
+    transition: all 0.2s;
+}
+.admin-schedule-table tbody tr:hover {
+    background: rgba(99,102,241,0.03);
+}
+.admin-schedule-table tbody td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(15,23,42,0.03);
+    font-size: 0.875rem;
+    vertical-align: middle;
+}
+.admin-schedule-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Pay button */
+.pay-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.pay-btn.pending {
+    background: linear-gradient(135deg, var(--detail-primary), #8b5cf6);
+    color: white;
+    box-shadow: 0 2px 10px rgba(99,102,241,0.3);
+}
+.pay-btn.pending:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(99,102,241,0.5);
+}
+.pay-btn.paid {
+    background: var(--detail-success-soft);
+    color: var(--detail-success);
+    border: 1px solid rgba(16,185,129,0.2);
+}
+
+/* ── KYC Section ── */
+.kyc-verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    background: var(--detail-success-soft);
+    color: var(--detail-success);
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid rgba(16,185,129,0.2);
+}
+.kyc-verified-badge::before {
+    content: '✓';
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--detail-success);
+    color: white;
+    display: grid;
+    place-items: center;
+    font-size: 0.6rem;
+}
+
+/* ── Modal Enhancement ── */
+.modal-content {
+    background: #1a1a2e;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--detail-radius-xl);
+    box-shadow: var(--detail-shadow-lg);
+}
+.modal-header {
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 1.5rem 2rem;
+}
+.modal-body {
+    padding: 2rem;
+}
+.modal-footer {
+    border-top: 1px solid var(--border-subtle);
+    padding: 1.25rem 2rem;
+}
+
+/* ── Buttons ── */
+.btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+.btn:hover {
+    transform: translateY(-2px);
+}
+.btn-primary {
+    background: linear-gradient(135deg, var(--detail-primary), #8b5cf6);
+    border: none;
+    box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+}
+.btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(99,102,241,0.5);
+}
+.btn-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    box-shadow: 0 4px 15px rgba(16,185,129,0.3);
+}
+.btn-success:hover {
+    box-shadow: 0 6px 20px rgba(16,185,129,0.5);
+}
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none;
+    box-shadow: 0 4px 15px rgba(239,68,68,0.3);
+}
+.btn-danger:hover {
+    box-shadow: 0 6px 20px rgba(239,68,68,0.5);
+}
+.btn-secondary {
+    background: rgba(15,23,42,0.06);
+    border: 1px solid var(--detail-glass-border);
+    color: var(--text-secondary);
+}
+.btn-secondary:hover {
+    background: rgba(15,23,42,0.1);
+    border-color: rgba(15,23,42,0.15);
+}
+
+/* ── Print Styles ── */
+@media print {
+    .action-bar, .btn, .pay-btn.pending, .dropdown { display: none !important; }
+    .detail-card { break-inside: avoid; border: 1px solid #ddd; }
+    body { background: white; color: black; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 1199px) {
+    .detail-grid { grid-template-columns: 1.8fr 1fr; gap: 1.25rem; }
+    .detail-card { padding: 1.5rem; }
+}
+
+@media (max-width: 991px) {
+    .detail-grid { grid-template-columns: 1fr; }
+    .detail-header { flex-direction: column; gap: 1.25rem; }
+    .detail-header .d-flex.gap-2 { width: 100%; }
+    .detail-header .d-flex.gap-2 .btn { flex: 1; }
+    .detail-title { font-size: 1.35rem; }
+    .detail-title i { width: 38px; height: 38px; font-size: 1rem; }
+    .doc-gallery { grid-template-columns: repeat(3, 1fr); }
+    .action-bar { position: static; margin-top: 2rem; flex-wrap: wrap; }
+    .action-bar .btn { flex: 1 1 auto; min-width: 120px; }
+    .progress-ring-container { width: 120px; height: 120px; }
+    .progress-percent { font-size: 1.6rem; }
+}
+
+@media (max-width: 768px) {
+    .detail-header { padding: 1.25rem; }
+    .detail-card { padding: 1.25rem; margin-bottom: 1rem; }
+    .detail-card-header { margin-bottom: 1rem; padding-bottom: 0.75rem; }
+    .detail-card-title { font-size: 0.95rem; }
+    .detail-card-title i { width: 28px; height: 28px; font-size: 0.8rem; }
+    .info-row { padding: 0.75rem 0; font-size: 0.82rem; }
+    .info-row .value { max-width: 55%; }
+    .doc-gallery { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    .doc-item img { height: 120px; }
+    .schedule-timeline { padding-left: 2rem; }
+    .schedule-item { padding: 1rem 0 1rem 1.25rem; }
+    .schedule-item::before { left: -1.75rem; width: 12px; height: 12px; }
+    .admin-schedule-table { font-size: 0.8rem; }
+    .admin-schedule-table thead th,
+    .admin-schedule-table tbody td { padding: 0.75rem 0.5rem; }
+    .action-bar { padding: 0.875rem; gap: 0.5rem; }
+    .action-bar .btn { padding: 0.6rem 1rem; font-size: 0.85rem; }
+}
+
+@media (max-width: 576px) {
+    .detail-title { font-size: 1.15rem; }
+    .detail-subtitle { font-size: 0.8rem; }
+    .info-row { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+    .info-row .value { max-width: 100%; text-align: left; }
+    .doc-gallery { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+    .doc-item img { height: 100px; }
+    .schedule-item-header { flex-wrap: wrap; gap: 0.4rem; }
+    .schedule-item-amount { font-size: 1rem; }
+    .pay-btn { padding: 0.4rem 0.75rem; font-size: 0.75rem; }
+    .modal-body { padding: 1.25rem; }
+    .credit-app-status { font-size: 0.65rem; padding: 0.3rem 0.7rem; }
+}
+
+@media (max-width: 400px) {
+    .detail-header { padding: 1rem; }
+    .detail-card { padding: 1rem; }
+    .doc-gallery { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .doc-item img { height: 90px; }
+    .doc-item-label { padding: 0.5rem; font-size: 0.7rem; }
+    .action-bar .btn { min-width: 100%; }
+    .schedule-timeline { padding-left: 1.5rem; }
+    .schedule-item::before { left: -1.5rem; width: 10px; height: 10px; border-width: 2px; }
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
+    50% { opacity: 0.7; transform: scale(1.15); box-shadow: 0 0 0 8px rgba(99,102,241,0); }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(15,23,42,0.02); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(15,23,42,0.2); }
+
+/* Table horizontal scroll hint */
+.table-responsive {
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+}
+.table-responsive::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 30px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.table-responsive.scrollable::after {
+    opacity: 1;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- SVG Gradient Definition for Progress Ring -->
+<svg width="0" height="0" style="position:absolute;">
+    <defs>
+        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#10b981"/>
+            <stop offset="100%" style="stop-color:#3b82f6"/>
+        </linearGradient>
+    </defs>
+</svg>
+
+<!-- Header -->
+<div class="detail-header">
+    <div>
+        <h1 class="detail-title">
+            <i class="bi bi-credit-card-2-front"></i>
+            {{ application.application_code or 'Detail Cicilan' }}
+            {% if application.plan_id %}
+            <span class="app-type-badge type-cicilan">Cicilan</span>
+            {% elif application.application_code and application.application_code.startswith('CKT') %}
+            <span class="app-type-badge type-kredit">Kredit · Checkout</span>
+            {% elif application.product_id %}
+            <span class="app-type-badge type-kredit">Kredit Langsung</span>
+            {% endif %}
+        </h1>
+        <p class="detail-subtitle">
+            Pengajuan oleh {{ application.full_name or application.user.full_name }} ·
+            {{ application.created_at.strftime('%d %B %Y %H:%M') }}
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admin_installments') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Kembali
+        </a>
+        {% if application.status == 'pending' or application.status == 'reviewing' %}
+        <button type="button" class="btn btn-success" onclick="reviewApp('approve')">
+            <i class="bi bi-check-lg"></i> Setujui
+        </button>
+        <button type="button" class="btn btn-danger" onclick="reviewApp('reject')">
+            <i class="bi bi-x-lg"></i> Tolak
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div>
+        <!-- Applicant Info -->
+        <div class="detail-card animate-in">
+            <div class="detail-card-header">
+                <div class="detail-card-title">
+                    <i class="bi bi-person"></i>
+                    Data Pemohon
+                </div>
+                <span class="credit-app-status {{ application.status }}">
+                    {% if application.status == 'pending' %}<i class="bi bi-clock"></i>{% elif application.status == 'reviewing' %}<i class="bi bi-eye"></i>{% elif application.status == 'approved' %}<i class="bi bi-check-circle"></i>{% elif application.status == 'rejected' %}<i class="bi bi-x-circle"></i>{% endif %}
+                    {{ application.status|upper }}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="label">Nama Lengkap</span>
+                <span class="value">{{ application.full_name or application.user.full_name or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">NIK</span>
+                <span class="value">{{ application.nik or application.ktp_nik or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">No. Telepon</span>
+                <span class="value">{{ application.phone or application.user.phone or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Email</span>
+                <span class="value">{{ application.email or application.user.email or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Tempat, Tgl Lahir</span>
+                <span class="value">{{ application.birth_place or '-' }}{{ ', ' + application.birth_date.strftime('%d/%m/%Y') if application.birth_date else '' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Jenis Kelamin</span>
+                <span class="value">{{ application.gender or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Status Pernikahan</span>
+                <span class="value">{{ application.marital_status or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Alamat KTP</span>
+                <span class="value">{{ application.address_ktp or application.ktp_address or '-' }}</span>
+            </div>
+        </div>
+
+        <!-- Employment Info -->
+        <div class="detail-card animate-in">
+            <div class="detail-card-header">
+                <div class="detail-card-title">
+                    <i class="bi bi-briefcase"></i>
+                    Data Pekerjaan
+                </div>
+            </div>
+            <div class="info-row">
+                <span class="label">Status Pekerjaan</span>
+                <span class="value">{{ application.employment_type or application.employment_status or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Nama Perusahaan</span>
+                <span class="value">{{ application.company_name or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Jabatan</span>
+                <span class="value">{{ application.job_title or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Penghasilan/Bulan</span>
+                <span class="value price">Rp {{ "{:,.0f}".format(application.monthly_income or 0).replace(',', '.') }}</span>
+            </div>
+        </div>
+
+        <!-- Emergency Contact -->
+        <div class="detail-card animate-in">
+            <div class="detail-card-header">
+                <div class="detail-card-title">
+                    <i class="bi bi-telephone-plus"></i>
+                    Kontak Darurat
+                </div>
+            </div>
+            <div class="info-row">
+                <span class="label">Nama</span>
+                <span class="value">{{ application.emergency_contact_name or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">No. Telepon</span>
+                <span class="value">{{ application.emergency_contact_phone or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Hubungan</span>
+                <span class="value">{{ application.emergency_contact_relation or '-' }}</span>
+            </div>
+        </div>
+
+        <!-- Documents -->
+        <div class="detail-card animate-in">
+            <div class="detail-card-header">
+                <div class="detail-card-title">
+                    <i class="bi bi-images"></i>
+                    Dokumen
+                </div>
+                <span class="badge bg-dark" style="font-size:0.7rem;">
+                    {% set doc_count = 0 %}
+                    {% if application.ktp_photo %}{% set doc_count = doc_count + 1 %}{% endif %}
+                    {% if application.selfie_photo %}{% set doc_count = doc_count + 1 %}{% endif %}
+                    {% if application.slip_gaji_photo %}{% set doc_count = doc_count + 1 %}{% endif %}
+                    {% if application.npwp_photo %}{% set doc_count = doc_count + 1 %}{% endif %}
+                    {% if application.kk_photo %}{% set doc_count = doc_count + 1 %}{% endif %}
+                    {{ doc_count }} Dokumen
+                </span>
+            </div>
+            <div class="doc-gallery">
+                {% if application.ktp_photo %}
+                <div class="doc-item" onclick="viewDoc('{{ application.ktp_photo }}')">
+                    <img src="{{ url_for('uploaded_installment_doc', filename=application.ktp_photo) }}" alt="KTP" loading="lazy">
+                    <div class="doc-item-label">KTP</div>
+                </div>
+                {% endif %}
+                {% if application.selfie_photo %}
+                <div class="doc-item" onclick="viewDoc('{{ application.selfie_photo }}')">
+                    <img src="{{ url_for('uploaded_installment_doc', filename=application.selfie_photo) }}" alt="Selfie" loading="lazy">
+                    <div class="doc-item-label">Selfie</div>
+                </div>
+                {% endif %}
+                {% if application.slip_gaji_photo %}
+                <div class="doc-item" onclick="viewDoc('{{ application.slip_gaji_photo }}')">
+                    <img src="{{ url_for('uploaded_installment_doc', filename=application.slip_gaji_photo) }}" alt="Slip Gaji" loading="lazy">
+                    <div class="doc-item-label">Slip Gaji</div>
+                </div>
+                {% endif %}
+                {% if application.npwp_photo %}
+                <div class="doc-item" onclick="viewDoc('{{ application.npwp_photo }}')">
+                    <img src="{{ url_for('uploaded_installment_doc', filename=application.npwp_photo) }}" alt="NPWP" loading="lazy">
+                    <div class="doc-item-label">NPWP</div>
+                </div>
+                {% endif %}
+                {% if application.kk_photo %}
+                <div class="doc-item" onclick="viewDoc('{{ application.kk_photo }}')">
+                    <img src="{{ url_for('uploaded_installment_doc', filename=application.kk_photo) }}" alt="KK" loading="lazy">
+                    <div class="doc-item-label">KK</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- KYC Verification -->
+        <div class="detail-card animate-in">
+            <div class="detail-card-header">
+                <div class="detail-card-title">
+                    <i class="bi bi-fingerprint"></i>
+                    Verifikasi KYC
+                </div>
+                {% if application.kyc_session %}
+                    {% if application.kyc_session.status == 'verified' and not application.kyc_session.is_expired() %}
+                    <span class="kyc-verified-badge">Terverifikasi</span>
+                    {% elif application.kyc_session.is_expired() %}
+                    <span class="credit-app-status pending"><i class="bi bi-exclamation-triangle"></i> Kedaluwarsa</span>
+                    {% else %}
+                    <span class="credit-app-status reviewing">{{ application.kyc_session.status|title }}</span>
+                    {% endif %}
+                {% elif application.biometric_verified %}
+                <span class="kyc-verified-badge">Terverifikasi</span>
+                {% else %}
+                <span class="credit-app-status rejected"><i class="bi bi-x-circle"></i> Tidak Ada</span>
+                {% endif %}
+            </div>
+            {% if application.kyc_session %}
+            <div class="info-row">
+                <span class="label">Skor Kecocokan Wajah</span>
+                <span class="value">
+                    <span style="color:{% if (application.kyc_session.face_match_confidence or 0) > 80 %}var(--detail-success){% elif (application.kyc_session.face_match_confidence or 0) > 50 %}var(--detail-warning){% else %}var(--detail-danger){% endif %};font-weight:700;">
+                        {{ "%.1f"|format(application.kyc_session.face_match_confidence or 0) }}%
+                    </span>
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="label">Skor Liveness</span>
+                <span class="value">
+                    <span style="color:{% if (application.kyc_session.liveness_score or 0) > 80 %}var(--detail-success){% elif (application.kyc_session.liveness_score or 0) > 50 %}var(--detail-warning){% else %}var(--detail-danger){% endif %};font-weight:700;">
+                        {{ "%.1f"|format(application.kyc_session.liveness_score or 0) }}%
+                    </span>
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="label">Nama pada KTP (KYC)</span>
+                <span class="value">{{ application.kyc_session.ktp_name or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">NIK (KYC)</span>
+                <span class="value">{{ application.kyc_session.ktp_nik or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Diverifikasi Pada</span>
+                <span class="value">{{ application.kyc_session.verified_at.strftime('%d %B %Y %H:%M') if application.kyc_session.verified_at else '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Metode</span>
+                <span class="value">{{ application.kyc_session.verification_method or '-' }}</span>
+            </div>
+            <div class="doc-gallery" style="margin-top:1rem;">
+                {% if application.kyc_session.ktp_photo_path %}
+                <div class="doc-item" onclick="viewKycDoc('{{ application.kyc_session.ktp_photo_path }}')">
+                    <img src="{{ url_for('uploaded_kyc_doc', filename=application.kyc_session.ktp_photo_path) }}" alt="KTP KYC" loading="lazy">
+                    <div class="doc-item-label">KTP (KYC)</div>
+                </div>
+                {% endif %}
+                {% if application.kyc_session.selfie_photo_path %}
+                <div class="doc-item" onclick="viewKycDoc('{{ application.kyc_session.selfie_photo_path }}')">
+                    <img src="{{ url_for('uploaded_kyc_doc', filename=application.kyc_session.selfie_photo_path) }}" alt="Selfie KYC" loading="lazy">
+                    <div class="doc-item-label">Selfie (KYC)</div>
+                </div>
+                {% endif %}
+            </div>
+            {% elif application.biometric_verified %}
+            {#
+               Pengajuan dari alur kredit terintegrasi checkout (auto-approve) menyimpan
+               snapshot biometrik langsung di InstallmentApplication (biometric_verified/
+               biometric_match_score/biometric_liveness_passed) alih-alih menautkan ke
+               KYCVerificationSession terpisah — sesi aslinya bisa saja sudah kedaluwarsa
+               atau tidak tersimpan lagi. Tampilkan snapshot ini sebagai fallback supaya
+               admin tidak melihat status "Tidak Ada" yang keliru.
+            #}
+            <div class="info-row">
+                <span class="label">Skor Kecocokan Wajah</span>
+                <span class="value">
+                    <span style="color:{% if (application.biometric_match_score or 0) > 80 %}var(--detail-success){% elif (application.biometric_match_score or 0) > 50 %}var(--detail-warning){% else %}var(--detail-danger){% endif %};font-weight:700;">
+                        {{ "%.1f"|format(application.biometric_match_score or 0) }}%
+                    </span>
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="label">Liveness Check</span>
+                <span class="value">
+                    {% if application.biometric_liveness_passed %}
+                    <span style="color:var(--detail-success);font-weight:700;"><i class="bi bi-check-circle-fill"></i> Lolos</span>
+                    {% else %}
+                    <span style="color:var(--detail-danger);font-weight:700;"><i class="bi bi-x-circle-fill"></i> Tidak Lolos</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="label">Sumber Verifikasi</span>
+                <span class="value">Snapshot saat pengajuan (kredit terintegrasi checkout)</span>
+            </div>
+            {% else %}
+            <div style="padding:1.5rem;text-align:center;background:rgba(239,68,68,0.04);border-radius:var(--detail-radius-md);border:1px dashed rgba(239,68,68,0.2);">
+                <i class="bi bi-shield-exclamation" style="font-size:2rem;color:var(--detail-danger);opacity:0.6;"></i>
+                <p class="text-muted small mb-0 mt-2">Pengajuan ini tidak tertaut ke sesi verifikasi KYC. Tinjau dokumen di atas secara manual sebelum menyetujui.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div>
+        <!-- Credit Summary -->
+        <div class="detail-card animate-in" style="animation-delay:0.1s;">
+            <div class="detail-card-header">
+                <div class="detail-card-title">
+                    <i class="bi bi-calculator"></i>
+                    Ringkasan Cicilan
+                </div>
+            </div>
+            <div class="info-row">
+                <span class="label">Produk</span>
+                <span class="value">{{ application.product.name if application.product else 'Produk #' + (application.product_id|string) }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Harga Produk</span>
+                {# product_price (credit flow) = cents, always > 0 when this flow was used;
+                   product_amount (installment flow) = rupiah.
+                   FIX: product_price defaults to 0 (not None) on the model, so "is not none"
+                   incorrectly matched normal installment applications too (product_price == 0),
+                   which set price_val to 0 and caused a ZeroDivisionError below on every
+                   normal installment application's detail page. Use a truthy check instead so
+                   the default 0 correctly falls through to the installment-flow branch. #}
+                {% if application.product_price %}
+                <span class="value">{{ format_price(application.product_price) }}</span>
+                {% else %}
+                <span class="value">{{ format_price((application.product_amount or 0) * 100) }}</span>
+                {% endif %}
+            </div>
+            <div class="info-row">
+                <span class="label">Uang Muka (DP)</span>
+                {% set dp_val = (application.dp_amount or application.down_payment or 0) %}
+                {% if application.product_price %}
+                  {% set price_val = (application.product_price / 100) %}
+                {% else %}
+                  {% set price_val = (application.product_amount or 1) %}
+                {% endif %}
+                <span class="value">{{ format_price(dp_val * 100) }} ({{ "%.0f"|format(dp_val / price_val * 100) if price_val else '0' }}%)</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Pokok Pinjaman</span>
+                {# loan_amount/principal = rupiah in both flows #}
+                <span class="value price">{{ format_price((application.loan_amount or application.principal or 0) * 100) }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Tenor</span>
+                <span class="value">{{ application.tenor_months or (application.plan.tenor_months if application.plan else '-') }} bulan</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Bunga/Bulan</span>
+                <span class="value">{{ "%.2f"|format((application.interest_rate_monthly or 0) * 100) }}%</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Tipe Bunga</span>
+                <span class="value">{{ (application.interest_type or 'flat')|title }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Biaya Proses</span>
+                <span class="value">{{ format_price((application.processing_fee_amount or (application.plan.processing_fee if application.plan else 0) or 0) * 100) }}</span>
+            </div>
+            <div class="info-row" style="border-top:2px solid var(--border-default);margin-top:0.5rem;padding-top:0.875rem;">
+                <span class="label">Angsuran/Bulan</span>
+                <span class="value price" style="font-size:1.2rem;">{{ format_price((application.monthly_installment or 0) * 100) }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Total Bunga</span>
+                <span class="value">{{ format_price((application.interest_amount or application.total_interest or 0) * 100) }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Total Pembayaran</span>
+                <span class="value price" style="font-size:1.15rem;">{{ format_price((application.total_loan or application.total_payment or 0) * 100) }}</span>
+            </div>
+        </div>
+
+        <!-- Payment Progress -->
+        {% if application.status == 'approved' and schedules %}
+        {% set paid_count = schedules|selectattr('status', 'equalto', 'paid')|list|length %}
+        {% set total_count = schedules|length %}
+        {% set progress_pct = (paid_count/total_count*100) if total_count > 0 else 0 %}
+        <div class="detail-card animate-in progress-card" style="animation-delay:0.15s;">
+            <div class="detail-card-header">
+                <div class="detail-card-title">
+                    <i class="bi bi-graph-up"></i>
+                    Progress Pembayaran
+                </div>
+            </div>
+            <div class="progress-ring-container">
+                <svg class="progress-ring-svg" width="140" height="140">
+                    <circle class="progress-ring-bg" cx="70" cy="70" r="60"/>
+                    <circle class="progress-ring-fill" id="progressRing" cx="70" cy="70" r="60"
+                        style="stroke-dashoffset: {{ 377 - (377 * progress_pct / 100) }};"/>
+                </svg>
+                <div class="progress-text">
+                    <div class="progress-percent" id="progressPercent">{{ "%.0f"|format(progress_pct) }}%</div>
+                    <div class="progress-label">Terbayar</div>
+                </div>
+            </div>
+            <div class="row text-center g-2">
+                <div class="col-4">
+                    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.3rem;color:var(--detail-success);">{{ paid_count }}</div>
+                    <div style="font-size:0.7rem;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">LUNAS</div>
+                </div>
+                <div class="col-4">
+                    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.3rem;color:var(--detail-warning);">{{ total_count - paid_count }}</div>
+                    <div style="font-size:0.7rem;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">SISA</div>
+                </div>
+                <div class="col-4">
+                    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.3rem;color:var(--primary-400);">{{ total_count }}</div>
+                    <div style="font-size:0.7rem;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">TOTAL</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Schedule Section -->
+{% if schedules %}
+<div class="detail-card animate-in mt-4" style="animation-delay:0.2s;">
+    <div class="detail-card-header">
+        <div class="detail-card-title">
+            <i class="bi bi-calendar-check"></i>
+            Jadwal Pembayaran
+        </div>
+        <span class="badge bg-dark" style="font-size:0.7rem;">{{ schedules|length }} Angsuran</span>
+    </div>
+    <div class="table-responsive" id="scheduleTableWrap">
+        <table class="admin-schedule-table">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Jatuh Tempo</th>
+                    <th>Pokok</th>
+                    <th>Bunga</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sched in schedules %}
+                <tr>
+                    <td style="font-weight:700;color:var(--text-primary);">{{ sched.installment_number }}</td>
+                    <td>{{ sched.due_date.strftime('%d %b %Y') if sched.due_date else '-' }}</td>
+                    <td>{{ format_price((sched.principal_amount or 0) * 100) }}</td>
+                    <td>{{ format_price((sched.interest_amount or 0) * 100) }}</td>
+                    <td style="font-weight:700;">{{ format_price((sched.amount or sched.total_amount or 0) * 100) }}</td>
+                    <td>
+                        {% if sched.status == 'paid' %}
+                        <span class="schedule-item-status paid"><i class="bi bi-check-circle-fill"></i> Lunas</span>
+                        {% elif sched.due_date and sched.due_date < utcnow() and sched.status != 'paid' %}
+                        <span class="schedule-item-status overdue"><i class="bi bi-exclamation-circle-fill"></i> Jatuh Tempo</span>
+                        {% else %}
+                        <span class="schedule-item-status pending"><i class="bi bi-clock"></i> Menunggu</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if sched.status != 'paid' %}
+                        <button type="button" class="pay-btn pending" onclick="markPaid({{ sched.id }})">
+                            <i class="bi bi-check-lg"></i> Bayar
+                        </button>
+                        {% else %}
+                        <span class="pay-btn paid"><i class="bi bi-check-lg"></i> Lunas</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Document Modal -->
+<div class="modal fade" id="docModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="fw-bold"><i class="bi bi-image me-2 text-primary"></i>Dokumen</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-0" style="background:#0a0e1a;">
+                <img id="docModalImage" src="" class="w-100" style="max-height:80vh;object-fit:contain;" alt="Document">
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a id="docModalDownload" href="#" class="btn btn-primary" download target="_blank">
+                    <i class="bi bi-download"></i> Unduh Dokumen
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function viewDoc(filename) {
+    const url = '/static/uploads/installment_docs/' + encodeURIComponent(filename);
+    document.getElementById('docModalImage').src = url;
+    document.getElementById('docModalDownload').href = url;
+    new bootstrap.Modal(document.getElementById('docModal')).show();
+}
+
+function viewKycDoc(filename) {
+    const url = '/static/uploads/kyc_docs/' + encodeURIComponent(filename);
+    document.getElementById('docModalImage').src = url;
+    document.getElementById('docModalDownload').href = url;
+    new bootstrap.Modal(document.getElementById('docModal')).show();
+}
+
+async function reviewApp(action) {
+    let reason = '';
+    if (action === 'reject') {
+        reason = prompt('Alasan penolakan (opsional):') || '';
+        if (reason === null) return;
+    }
+    if (!confirm(`Yakin ingin ${action === 'approve' ? 'menyetujui' : 'menolak'} pengajuan ini?`)) return;
+
+    try {
+        const res = await fetch(`/admin/installment/{{ application.id }}/review`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+            body: JSON.stringify({ action, reason })
+        });
+        const result = await res.json();
+        if (result.success) {
+            showToast(result.message, 'success');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showToast(result.message || 'Gagal', 'error');
+        }
+    } catch (err) {
+        showToast('Terjadi kesalahan', 'error');
+    }
+}
+
+async function markPaid(scheduleId) {
+    if (!confirm('Tandai angsuran ini sebagai lunas?')) return;
+
+    try {
+        const res = await fetch(`/admin/installment/schedule/${scheduleId}/pay`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+            body: JSON.stringify({ payment_method: 'transfer' })
+        });
+        const result = await res.json();
+        if (result.success) {
+            showToast('Pembayaran tercatat', 'success');
+            setTimeout(() => location.reload(), 600);
+        } else {
+            showToast(result.message || 'Gagal', 'error');
+        }
+    } catch (err) {
+        showToast('Terjadi kesalahan', 'error');
+    }
+}
+
+// Table scroll hint
+const tableWrap = document.getElementById('scheduleTableWrap');
+if (tableWrap) {
+    tableWrap.addEventListener('scroll', () => {
+        if (tableWrap.scrollLeft + tableWrap.clientWidth < tableWrap.scrollWidth - 5) {
+            tableWrap.classList.add('scrollable');
+        } else {
+            tableWrap.classList.remove('scrollable');
+        }
+    });
+}
+
+// Animate progress ring on load
+document.addEventListener('DOMContentLoaded', () => {
+    const ring = document.getElementById('progressRing');
+    if (ring) {
+        const offset = ring.style.strokeDashoffset;
+        ring.style.strokeDashoffset = '377';
+        setTimeout(() => {
+            ring.style.strokeDashoffset = offset;
+        }, 300);
+    }
+});
+</script>
+{% endblock %}

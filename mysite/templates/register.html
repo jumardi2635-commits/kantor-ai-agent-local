@@ -1,0 +1,1015 @@
+{% extends "base.html" %}
+{% block title %}Daftar Akun - {{ site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ================================================================
+   AUTH PAGE — REGISTER
+   Inherits all CSS tokens from base.html (:root)
+   + Fallback token sekunder
+   + Light mode overrides
+   ================================================================ */
+
+.auth-page-wrap {
+    --auth-secondary-400: var(--secondary-400, #a78bfa);
+    --auth-secondary-glow: var(--secondary-glow, rgba(168, 85, 247, 0.22));
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - var(--nav-h) - 9rem);
+    padding: 1rem 0 2rem;
+}
+
+.auth-split-card {
+    width: 100%;
+    max-width: 900px;
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    border: 1px solid var(--border-default);
+    box-shadow:
+        var(--shadow-lg),
+        0 0 80px rgba(99, 102, 241, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    animation: auth-card-in 0.55s var(--ease-out-expo) both;
+}
+
+@keyframes auth-card-in {
+    from { opacity: 0; transform: translateY(28px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+/* ================================================================
+   LEFT PANEL — Branding
+   ================================================================ */
+.auth-left {
+    position: relative;
+    overflow: hidden;
+    padding: 3rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: linear-gradient(155deg,
+        rgba(168,85,247,0.1) 0%,
+        rgba(99,102,241,0.07) 45%,
+        rgba(34,211,238,0.05) 100%
+    );
+    border-right: 1px solid var(--border-subtle);
+}
+
+.a-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(55px);
+    pointer-events: none;
+    animation: orb-drift ease-in-out infinite;
+}
+.a-orb-1 { width: 240px; height: 240px; background: rgba(168,85,247,0.28); top: -80px; left: -60px; animation-duration: 16s; }
+.a-orb-2 { width: 190px; height: 190px; background: rgba(99,102,241,0.22); bottom: -20px; right: -40px; animation-duration: 20s; animation-delay: -7s; }
+.a-orb-3 { width: 120px; height: 120px; background: rgba(34,211,238,0.18); top: 48%; left: 48%; animation-duration: 12s; animation-delay: -4s; }
+
+@keyframes orb-drift {
+    0%,100% { transform: translate(0,0) scale(1);       }
+    33%      { transform: translate(16px,-24px) scale(1.06); }
+    66%      { transform: translate(-10px,16px) scale(0.94); }
+}
+
+.auth-grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+        linear-gradient(rgba(99,102,241,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,102,241,0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 35%, transparent 80%);
+    pointer-events: none;
+}
+
+.auth-left-body { position: relative; z-index: 1; }
+
+.auth-brand-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+}
+
+.auth-brand-icon {
+    width: 46px; height: 46px;
+    border-radius: var(--r-lg);
+    background: linear-gradient(135deg, var(--secondary-500), var(--primary-500));
+    display: grid; place-items: center;
+    color: white; font-size: 1.25rem;
+    box-shadow: 0 8px 28px var(--auth-secondary-glow);
+    animation: brand-float 3.5s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+@keyframes brand-float {
+    0%,100% { transform: translateY(0);    }
+    50%      { transform: translateY(-6px); }
+}
+
+.auth-brand-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 1.2;
+    background: linear-gradient(135deg, var(--text-primary), var(--auth-secondary-400));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-headline {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    color: var(--text-primary);
+    margin-bottom: 0.875rem;
+}
+
+.auth-headline em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--auth-secondary-400), var(--accent-400));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-tagline {
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+    line-height: 1.75;
+    margin-bottom: 2.25rem;
+}
+
+.auth-perks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.auth-perk {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: var(--r-md);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-subtle);
+    transition: all var(--duration-fast);
+}
+.auth-perk:hover {
+    background: rgba(168,85,247,0.06);
+    border-color: rgba(168,85,247,0.18);
+    transform: translateX(4px);
+}
+
+.perk-icon {
+    width: 32px; height: 32px;
+    border-radius: var(--r-sm);
+    background: rgba(168,85,247,0.12);
+    border: 1px solid rgba(168,85,247,0.22);
+    display: grid; place-items: center;
+    color: var(--auth-secondary-400);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.perk-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 0.15rem;
+}
+.perk-desc {
+    font-size: 0.75rem;
+    color: var(--text-disabled);
+    line-height: 1.4;
+}
+
+/* ================================================================
+   RIGHT PANEL — Form
+   ================================================================ */
+.auth-right {
+    background: rgba(11, 17, 32, 0.88);
+    padding: 2.25rem 2.75rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.auth-form-header {
+    margin-bottom: 1.625rem;
+    animation: slide-up 0.5s var(--ease-out-expo) 0.12s both;
+}
+
+.auth-emblem {
+    width: 52px; height: 52px;
+    border-radius: var(--r-xl);
+    background: linear-gradient(135deg,
+        rgba(168,85,247,0.14),
+        rgba(99,102,241,0.08)
+    );
+    border: 1px solid rgba(168,85,247,0.28);
+    display: grid; place-items: center;
+    margin-bottom: 1.25rem;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.auth-emblem > i {
+    font-size: 1.35rem;
+    background: linear-gradient(135deg, var(--auth-secondary-400), var(--primary-400));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    z-index: 2;
+}
+
+.auth-emblem::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(168,85,247,0.3), transparent 65%);
+    animation: emblem-glow 2.5s ease-in-out infinite;
+    z-index: 1;
+}
+@keyframes emblem-glow {
+    0%,100% { opacity: 0.45; transform: scale(0.9);  }
+    50%      { opacity: 1;    transform: scale(1.1);  }
+}
+
+.auth-form-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--text-primary);
+    margin-bottom: 0.3rem;
+}
+
+.auth-form-sub {
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+}
+
+.auth-notif {
+    display: none;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--r-md);
+    font-size: 0.85rem;
+    margin-bottom: 1.125rem;
+    border: 1px solid;
+}
+.auth-notif.show    { display: flex; animation: slide-up 0.3s var(--ease-out-expo); }
+.auth-notif.danger  { background: var(--danger-bg);  border-color: rgba(239,68,68,0.22);  color: #fca5a5; }
+.auth-notif.success { background: var(--success-bg); border-color: rgba(16,185,129,0.22); color: #6ee7b7; }
+
+@keyframes slide-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0);    }
+}
+
+.auth-field {
+    position: relative;
+    margin-bottom: 1rem;
+    animation: slide-up 0.42s var(--ease-out-expo) both;
+}
+/* FIX: sebelumnya pakai nth-of-type(1..5,7) yang rapuh terhadap perubahan
+   urutan DOM. Sekarang pakai data-anim yang eksplisit. */
+.auth-field[data-anim="1"] { animation-delay: 0.20s; }
+.auth-field[data-anim="2"] { animation-delay: 0.27s; }
+.auth-field[data-anim="3"] { animation-delay: 0.34s; }
+.auth-field[data-anim="4"] { animation-delay: 0.40s; }
+.auth-field[data-anim="5"] { animation-delay: 0.46s; }
+.auth-field[data-anim="6"] { animation-delay: 0.48s; }
+
+.auth-input {
+    width: 100%;
+    height: 56px;
+    background: var(--bg-elevated);
+    border: 1.5px solid var(--border-default);
+    border-radius: var(--r-md);
+    padding: 1.15rem 1rem 0.45rem;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.25s;
+    box-sizing: border-box;
+}
+.auth-input::placeholder { color: transparent; }
+.auth-input:focus {
+    outline: none;
+    background: var(--bg-surface);
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px var(--primary-glow-soft);
+}
+.auth-input.has-toggle { padding-right: 3rem; }
+
+.auth-label {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition:
+        top 0.2s var(--ease-out-expo),
+        transform 0.2s var(--ease-out-expo),
+        font-size 0.2s, color 0.2s;
+}
+.auth-input:focus ~ .auth-label,
+.auth-input:not(:placeholder-shown) ~ .auth-label {
+    top: 0.58rem;
+    transform: translateY(0);
+    font-size: 0.67rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--primary-400);
+}
+.auth-input:focus ~ .auth-label .lbl-ico,
+.auth-input:not(:placeholder-shown) ~ .auth-label .lbl-ico { display: none; }
+
+.lbl-optional {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--text-disabled);
+    text-transform: none;
+    letter-spacing: 0;
+    background: var(--bg-surface-hover);
+    padding: 1px 6px;
+    border-radius: var(--r-full);
+    border: 1px solid var(--border-subtle);
+    margin-left: 0.25rem;
+}
+
+.pwd-toggle {
+    position: absolute;
+    right: 0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-disabled);
+    font-size: 1rem;
+    transition: color 0.2s;
+    z-index: 5;
+}
+.pwd-toggle:hover { color: var(--primary-400); }
+
+/* ── Password Strength ── */
+.pwd-strength {
+    padding: 0 0.25rem;
+    margin-top: -0.65rem;
+    margin-bottom: 0.875rem;
+    animation: slide-up 0.42s var(--ease-out-expo) 0.44s both;
+}
+
+.strength-bars {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 5px;
+}
+
+.s-bar {
+    flex: 1;
+    height: 3px;
+    border-radius: var(--r-full);
+    background: var(--border-default);
+    transition: background 0.35s, transform 0.35s;
+}
+.s-bar.w { background: var(--danger); }
+.s-bar.m { background: var(--warning); }
+.s-bar.s { background: var(--success); }
+.s-bar.lit { transform: scaleY(1.4); }
+
+.strength-label {
+    font-size: 0.72rem;
+    color: var(--text-disabled);
+    transition: color 0.3s;
+}
+.strength-label.w { color: var(--danger); }
+.strength-label.m { color: var(--warning); }
+.strength-label.s { color: var(--success); }
+
+/* ── Submit CTA ── */
+.auth-cta {
+    width: 100%;
+    height: 50px;
+    background: linear-gradient(135deg, var(--secondary-500) 0%, var(--primary-500) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--r-md);
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 6px 24px var(--auth-secondary-glow);
+    transition: all 0.25s var(--ease-out-expo);
+    margin-top: 0.375rem;
+    animation: slide-up 0.42s var(--ease-out-expo) 0.52s both;
+}
+.auth-cta::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.65s;
+}
+.auth-cta:hover          { transform: translateY(-2px); box-shadow: 0 12px 36px var(--auth-secondary-glow); }
+.auth-cta:hover::after   { transform: translateX(100%); }
+.auth-cta:active         { transform: scale(0.98); }
+.auth-cta:disabled       { opacity: 0.65; cursor: not-allowed; transform: none !important; box-shadow: none; animation: none; }
+.auth-cta.ready {
+    box-shadow: 0 6px 28px var(--auth-secondary-glow), 0 0 0 0 rgba(168,85,247,0.5);
+    animation: cta-pulse 2s ease-in-out infinite, slide-up 0.42s var(--ease-out-expo) 0.52s both;
+}
+@keyframes cta-pulse {
+    0%,100% { box-shadow: 0 6px 28px var(--auth-secondary-glow); }
+    50%      { box-shadow: 0 6px 28px var(--auth-secondary-glow), 0 0 0 8px rgba(168,85,247,0.12); }
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.375rem 0;
+    color: var(--text-disabled);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    animation: slide-up 0.42s var(--ease-out-expo) 0.56s both;
+}
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-subtle);
+}
+
+.auth-google-btn {
+    width: 100%;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    background: var(--bg-elevated);
+    border: 1.5px solid var(--border-default);
+    border-radius: var(--r-md);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.22s var(--ease-out-expo);
+    animation: slide-up 0.42s var(--ease-out-expo) 0.6s both;
+}
+.auth-google-btn:hover {
+    background: var(--bg-surface);
+    border-color: var(--primary-400);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+.auth-google-btn:active { transform: scale(0.98); }
+.auth-google-btn svg { flex-shrink: 0; }
+
+.auth-switch {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+    animation: slide-up 0.42s var(--ease-out-expo) 0.58s both;
+}
+.auth-switch a {
+    color: var(--auth-secondary-400);
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.auth-switch a:hover { color: var(--primary-400); }
+
+/* ================================================================
+   LIGHT MODE OVERRIDES
+   ================================================================ */
+html[data-theme="light"] .auth-page-wrap {
+    --auth-secondary-400: var(--secondary-400, #7c3aed);
+    --auth-secondary-glow: rgba(124, 58, 237, 0.20);
+}
+
+html[data-theme="light"] .auth-split-card {
+    border-color: rgba(15, 23, 42, 0.08);
+    box-shadow:
+        0 24px 60px rgba(15, 23, 42, 0.10),
+        0 0 80px rgba(168, 85, 247, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+html[data-theme="light"] .auth-left {
+    background: linear-gradient(155deg,
+        rgba(168,85,247,0.08) 0%,
+        rgba(10,132,255,0.05) 45%,
+        rgba(34,211,238,0.04) 100%
+    );
+    border-right-color: rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .a-orb { filter: blur(75px); }
+html[data-theme="light"] .a-orb-1 { background: rgba(168, 85, 247, 0.26); }
+html[data-theme="light"] .a-orb-2 { background: rgba(99, 102, 241, 0.20); }
+html[data-theme="light"] .a-orb-3 { background: rgba(34, 211, 238, 0.16); }
+
+html[data-theme="light"] .auth-grid-bg {
+    background-image:
+        linear-gradient(rgba(168,85,247,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(168,85,247,0.05) 1px, transparent 1px);
+}
+
+html[data-theme="light"] .auth-perk {
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(15, 23, 42, 0.06);
+}
+html[data-theme="light"] .auth-perk:hover {
+    background: rgba(168, 85, 247, 0.06);
+    border-color: rgba(168, 85, 247, 0.20);
+}
+html[data-theme="light"] .perk-icon {
+    background: rgba(168, 85, 247, 0.10);
+    border-color: rgba(168, 85, 247, 0.20);
+    color: #7c3aed;
+}
+html[data-theme="light"] .perk-title { color: var(--text-primary); }
+html[data-theme="light"] .perk-desc { color: var(--text-tertiary); }
+
+html[data-theme="light"] .auth-right {
+    background: rgba(255, 255, 255, 0.92);
+    border-left: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+html[data-theme="light"] .auth-emblem {
+    background: linear-gradient(135deg,
+        rgba(168,85,247,0.12),
+        rgba(10,132,255,0.06)
+    );
+    border-color: rgba(168,85,247,0.25);
+}
+html[data-theme="light"] .auth-emblem::after {
+    background: radial-gradient(circle at 50% 50%, rgba(168,85,247,0.25), transparent 65%);
+}
+
+html[data-theme="light"] .auth-input {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(15, 23, 42, 0.12);
+    color: var(--text-primary);
+}
+html[data-theme="light"] .auth-input:focus {
+    background: #ffffff;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.12);
+}
+html[data-theme="light"] .auth-label { color: var(--text-tertiary); }
+html[data-theme="light"] .auth-input:focus ~ .auth-label,
+html[data-theme="light"] .auth-input:not(:placeholder-shown) ~ .auth-label {
+    color: var(--primary-500);
+}
+
+html[data-theme="light"] .lbl-optional {
+    background: rgba(15, 23, 42, 0.06);
+    border-color: rgba(15, 23, 42, 0.08);
+    color: rgba(15, 23, 42, 0.45);
+}
+
+html[data-theme="light"] .pwd-toggle { color: rgba(15, 23, 42, 0.35); }
+html[data-theme="light"] .pwd-toggle:hover { color: var(--primary-500); }
+
+html[data-theme="light"] .auth-divider { color: rgba(15, 23, 42, 0.35); }
+html[data-theme="light"] .auth-divider::before,
+html[data-theme="light"] .auth-divider::after {
+    background: rgba(15, 23, 42, 0.10);
+}
+
+html[data-theme="light"] .auth-google-btn {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.12);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+html[data-theme="light"] .auth-google-btn:hover {
+    background: #ffffff;
+    border-color: var(--primary-500);
+    box-shadow: 0 8px 24px rgba(10, 132, 255, 0.15);
+}
+
+html[data-theme="light"] .auth-switch {
+    border-top-color: rgba(15, 23, 42, 0.08);
+    color: var(--text-tertiary);
+}
+html[data-theme="light"] .auth-switch a { color: #7c3aed; }
+html[data-theme="light"] .auth-switch a:hover { color: var(--primary-500); }
+
+html[data-theme="light"] .auth-notif.danger {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.20);
+    color: #b91c1c;
+}
+html[data-theme="light"] .auth-notif.success {
+    background: rgba(5, 150, 105, 0.08);
+    border-color: rgba(5, 150, 105, 0.20);
+    color: #047857;
+}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 768px) {
+    .auth-split-card {
+        grid-template-columns: 1fr;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+    .auth-left {
+        padding: 1.75rem 2rem 1.5rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+    html[data-theme="light"] .auth-left {
+        border-bottom-color: rgba(15, 23, 42, 0.06);
+    }
+    .auth-headline { font-size: 1.45rem; }
+    .auth-perks    { display: none; }
+    .auth-tagline  { margin-bottom: 0; font-size: 0.82rem; }
+    .auth-right    { padding: 1.75rem 2rem 2.25rem; }
+}
+
+@media (max-width: 480px) {
+    .auth-left { display: none; }
+    .auth-split-card { max-width: 100%; }
+    .auth-right { padding: 2rem 1.25rem 2.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .a-orb,
+    .auth-brand-icon,
+    .auth-emblem::after,
+    .auth-cta.ready { animation: none !important; }
+    .auth-field,
+    .auth-form-header,
+    .auth-notif.show { animation: none !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page-wrap">
+    <div class="auth-split-card">
+
+        <!-- ════ LEFT: BRANDING ════ -->
+        <div class="auth-left">
+            <div class="a-orb a-orb-1"></div>
+            <div class="a-orb a-orb-2"></div>
+            <div class="a-orb a-orb-3"></div>
+            <div class="auth-grid-bg"></div>
+
+            <div class="auth-left-body">
+                <div class="auth-brand-row">
+                    <div class="auth-brand-icon">
+                        <i class="bi bi-device-ssd-fill"></i>
+                    </div>
+                    <span class="auth-brand-name">{{ site_name or 'Pusat Gadai HP' }}</span>
+                </div>
+
+                <h2 class="auth-headline">
+                    Bergabung &amp;<br><em>Mulai Berbelanja</em>
+                </h2>
+                <p class="auth-tagline">
+                    Daftar gratis dalam 60 detik dan nikmati semua keuntungan member eksklusif.
+                </p>
+
+                <div class="auth-perks">
+                    <div class="auth-perk">
+                        <div class="perk-icon"><i class="bi bi-tag-fill"></i></div>
+                        <div>
+                            <div class="perk-title">Harga Spesial Member</div>
+                            <div class="perk-desc">Akses diskon eksklusif &amp; flash sale harian</div>
+                        </div>
+                    </div>
+                    <div class="auth-perk">
+                        <div class="perk-icon"><i class="bi bi-clock-history"></i></div>
+                        <div>
+                            <div class="perk-title">Riwayat Transaksi</div>
+                            <div class="perk-desc">Pantau semua pesanan &amp; status pengiriman real-time</div>
+                        </div>
+                    </div>
+                    <div class="auth-perk">
+                        <div class="perk-icon"><i class="bi bi-cash-stack"></i></div>
+                        <div>
+                            <div class="perk-title">Cicilan Fleksibel</div>
+                            <div class="perk-desc">0% hingga 24 bulan, DP mulai 30%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════ RIGHT: FORM ════ -->
+        <div class="auth-right">
+
+            <div class="auth-form-header">
+                <div class="auth-emblem">
+                    <i class="bi bi-person-plus-fill"></i>
+                </div>
+                <h1 class="auth-form-title">Buat Akun Baru</h1>
+                <p class="auth-form-sub">Bergabunglah dengan ribuan pembeli terpercaya.</p>
+            </div>
+
+            <div id="authNotif" class="auth-notif" role="alert">
+                <i class="bi" id="notifIcon"></i>
+                <span id="notifText"></span>
+            </div>
+
+            <form id="registerForm" method="POST" action="{{ url_for('user_register') }}" novalidate>
+
+                <div class="auth-field" data-anim="1">
+                    <input type="text" class="auth-input" id="fullname" name="fullname"
+                           placeholder=" " required autocomplete="name">
+                    <label class="auth-label" for="fullname">
+                        <i class="bi bi-person-badge lbl-ico"></i> Nama Lengkap
+                    </label>
+                </div>
+
+                <div class="auth-field" data-anim="2">
+                    <input type="text" class="auth-input" id="username" name="username"
+                           placeholder=" " required autocomplete="username"
+                           pattern="[a-zA-Z0-9_.]{3,20}"
+                           title="3-20 karakter: huruf, angka, titik, atau garis bawah">
+                    <label class="auth-label" for="username">
+                        <i class="bi bi-at lbl-ico"></i> Username
+                    </label>
+                </div>
+
+                <div class="auth-field" data-anim="3">
+                    <input type="email" class="auth-input" id="email" name="email"
+                           placeholder=" " required autocomplete="email">
+                    <label class="auth-label" for="email">
+                        <i class="bi bi-envelope lbl-ico"></i> Alamat Email
+                    </label>
+                </div>
+
+                <div class="auth-field" data-anim="4">
+                    <input type="tel" class="auth-input" id="phone" name="phone"
+                           placeholder=" " autocomplete="tel">
+                    <label class="auth-label" for="phone">
+                        <i class="bi bi-telephone lbl-ico"></i> Nomor Telepon
+                        <span class="lbl-optional">Opsional</span>
+                    </label>
+                </div>
+
+                <div class="auth-field" data-anim="5" style="margin-bottom: 0.375rem;">
+                    <input type="password" class="auth-input has-toggle" id="password" name="password"
+                           placeholder=" " required autocomplete="new-password">
+                    <label class="auth-label" for="password">
+                        <i class="bi bi-key lbl-ico"></i> Kata Sandi
+                    </label>
+                    <button type="button" class="pwd-toggle" onclick="togglePwd('password', this)"
+                            aria-label="Tampilkan/sembunyikan kata sandi">
+                        <i class="bi bi-eye-slash"></i>
+                    </button>
+                </div>
+
+                <div class="pwd-strength" id="pwdStrength" aria-live="polite">
+                    <div class="strength-bars">
+                        <div class="s-bar" id="sBar1"></div>
+                        <div class="s-bar" id="sBar2"></div>
+                        <div class="s-bar" id="sBar3"></div>
+                    </div>
+                    <span class="strength-label" id="sLabel"></span>
+                </div>
+
+                <div class="auth-field" data-anim="6">
+                    <input type="password" class="auth-input has-toggle" id="confirm_password" name="confirm_password"
+                           placeholder=" " required autocomplete="new-password">
+                    <label class="auth-label" for="confirm_password">
+                        <i class="bi bi-shield-check lbl-ico"></i> Konfirmasi Kata Sandi
+                    </label>
+                    <button type="button" class="pwd-toggle" onclick="togglePwd('confirm_password', this)"
+                            aria-label="Tampilkan/sembunyikan konfirmasi">
+                        <i class="bi bi-eye-slash"></i>
+                    </button>
+                </div>
+
+                <button type="submit" id="submitBtn" class="auth-cta">
+                    <span id="btnText">Daftar Sekarang</span>
+                    <i class="bi bi-arrow-right-short" style="font-size: 1.3rem;"></i>
+                </button>
+            </form>
+
+            {% if google_oauth_enabled %}
+            <div class="auth-divider">Atau</div>
+
+            {% set next_url = request.args.get('next', '') %}
+            <a href="{{ url_for('google_login', next=next_url) if next_url else url_for('google_login') }}"
+               class="auth-google-btn">
+                <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.87 2.69-6.64z"/>
+                    <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.35 0-4.34-1.58-5.05-3.71H.98v2.34C2.46 15.98 5.48 18 9 18z"/>
+                    <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.65 9c0-.59.1-1.17.3-1.7V4.96H.98A8.99 8.99 0 0 0 0 9c0 1.45.35 2.83.98 4.04l2.97-2.34z"/>
+                    <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.46 2.02.98 4.96l2.97 2.34C4.66 5.16 6.65 3.58 9 3.58z"/>
+                </svg>
+                Daftar dengan Google
+            </a>
+            {% endif %}
+
+            <div class="auth-switch">
+                Sudah punya akun?
+                <a href="{{ url_for('user_login') }}">Masuk di sini</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const form          = document.getElementById('registerForm');
+    const submitBtn     = document.getElementById('submitBtn');
+    const passwordInput = document.getElementById('password');
+    const confirmInput  = document.getElementById('confirm_password');
+    const notif         = document.getElementById('authNotif');
+    const notifIcon     = document.getElementById('notifIcon');
+    const notifText     = document.getElementById('notifText');
+
+    function showNotif(msg, type = 'danger') {
+        notif.className = 'auth-notif show ' + type;
+        notifIcon.className = type === 'danger'
+            ? 'bi bi-exclamation-triangle-fill'
+            : 'bi bi-check-circle-fill';
+        notifText.textContent = msg;
+        notif.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    window.togglePwd = function (id, btn) {
+        const inp  = document.getElementById(id);
+        const icon = btn.querySelector('i');
+        if (inp.type === 'password') {
+            inp.type       = 'text';
+            icon.className = 'bi bi-eye';
+        } else {
+            inp.type       = 'password';
+            icon.className = 'bi bi-eye-slash';
+        }
+    };
+
+    /* Password strength */
+    const bars = [
+        document.getElementById('sBar1'),
+        document.getElementById('sBar2'),
+        document.getElementById('sBar3')
+    ];
+    const sLbl = document.getElementById('sLabel');
+
+    function calcStrength(pw) {
+        let s = 0;
+        if (pw.length >= 8)                          s++;
+        if (pw.match(/[a-z]/) && pw.match(/[A-Z]/)) s++;
+        if (pw.match(/\d/))                          s++;
+        if (pw.match(/[^a-zA-Z\d]/))                 s++;
+        return s;
+    }
+
+    function updateStrength() {
+        const pw = passwordInput.value;
+        bars.forEach(b => b.className = 's-bar');
+        sLbl.className = 'strength-label';
+        sLbl.textContent = '';
+
+        if (!pw) { checkReadiness(); return; }
+
+        const str = calcStrength(pw);
+        if (str <= 1) {
+            bars[0].classList.add('w', 'lit');
+            sLbl.textContent = 'Kata sandi lemah';
+            sLbl.classList.add('w');
+        } else if (str === 2) {
+            bars[0].classList.add('m', 'lit');
+            bars[1].classList.add('m', 'lit');
+            sLbl.textContent = 'Kata sandi sedang';
+            sLbl.classList.add('m');
+        } else {
+            bars.forEach(b => b.classList.add('s', 'lit'));
+            sLbl.textContent = 'Kata sandi kuat ✓';
+            sLbl.classList.add('s');
+        }
+        checkReadiness();
+    }
+
+    function checkReadiness() {
+        const allFilled = ['fullname', 'username', 'email', 'password', 'confirm_password']
+            .every(id => document.getElementById(id).value.trim() !== '');
+        submitBtn.classList.toggle('ready', allFilled && !submitBtn.disabled);
+    }
+
+    passwordInput.addEventListener('input', updateStrength);
+    ['fullname', 'username', 'email', 'phone', 'confirm_password'].forEach(id => {
+        document.getElementById(id).addEventListener('input', checkReadiness);
+    });
+
+    function setLoading(on) {
+        submitBtn.disabled = on;
+        /* FIX: hapus .ready supaya animasi pulse tidak menyalak di tombol
+           yang sedang disabled saat proses submit. */
+        submitBtn.classList.remove('ready');
+        submitBtn.innerHTML = on
+            ? '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Memproses...'
+            : '<span>Daftar Sekarang</span><i class="bi bi-arrow-right-short" style="font-size:1.3rem;"></i>';
+        if (!on) checkReadiness();
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        notif.classList.remove('show');
+
+        const fullname = document.getElementById('fullname').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const email    = document.getElementById('email').value.trim();
+        const password = passwordInput.value;
+        const confirm  = confirmInput.value;
+
+        if (!fullname || !username || !email || !password) {
+            showNotif('Harap isi semua kolom yang wajib diisi.'); return;
+        }
+        if (!/^[a-zA-Z0-9_.]{3,20}$/.test(username)) {
+            showNotif('Username 3-20 karakter: huruf, angka, titik, atau garis bawah (tanpa spasi).'); return;
+        }
+        if (password.length < 8) {
+            showNotif('Kata sandi minimal 8 karakter.'); return;
+        }
+        if (password !== confirm) {
+            showNotif('Konfirmasi kata sandi tidak cocok.'); return;
+        }
+
+        setLoading(true);
+        try {
+            const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+            const ct  = res.headers.get('content-type') || '';
+
+            if (ct.includes('application/json')) {
+                const data = await res.json();
+                if (data.success) {
+                    /* Backend otomatis login-kan user setelah registrasi
+                       sukses — ikuti `data.redirect` (default: profil). */
+                    showNotif('Pendaftaran berhasil! Mengalihkan...', 'success');
+                    setTimeout(() => window.location.href = data.redirect || '{{ url_for("user_profile") }}', 1500);
+                } else {
+                    showNotif(data.message || 'Gagal mendaftar. Email mungkin sudah terdaftar.');
+                    setLoading(false);
+                }
+            } else {
+                if (res.redirected) {
+                    window.location.href = res.url;
+                } else if (res.ok) {
+                    showNotif('Pendaftaran berhasil! Mengalihkan...', 'success');
+                    setTimeout(() => window.location.href = '{{ url_for("user_profile") }}', 1500);
+                } else {
+                    showNotif('Terjadi kesalahan pada server. Silakan coba lagi.');
+                    setLoading(false);
+                }
+            }
+        } catch {
+            showNotif('Kesalahan jaringan. Periksa koneksi internet Anda.');
+            setLoading(false);
+        }
+    });
+})();
+</script>
+{% endblock %}

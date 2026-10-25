@@ -1,0 +1,905 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}Manajemen Produk{% endblock %}
+
+{% block content %}
+<!-- PERBAIKAN: max-w-full agar lebar penuh, dan px-2 di mobile -->
+<div x-data="productManagement()" x-init="init()" class="relative w-full max-w-full mx-auto px-2 sm:px-6 lg:px-8" @keydown.escape="closeAllModals()">
+
+    <!-- Toast Notification System -->
+    <div class="fixed top-6 right-6 z-50 space-y-3 pointer-events-none max-w-sm w-full">
+        <template x-for="(toast, index) in toasts" :key="toast.id">
+            <div x-show="toast.show"
+                 x-transition:enter="transform ease-out duration-300 transition"
+                 x-transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+                 x-transition:enter-end="translate-y-0 opacity-100 sm:translate-x-0"
+                 x-transition:leave="transition ease-in duration-100"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="pointer-events-auto bg-gray-900 rounded-xl shadow-2xl border-l-4 flex items-start p-4 gap-3"
+                 :class="{ 'border-green-500': toast.type === 'success', 'border-red-500': toast.type === 'error', 'border-yellow-500': toast.type === 'warning', 'border-blue-500': toast.type === 'info' }">
+                <div class="flex-shrink-0 mt-0.5">
+                    <i class="fas text-lg" :class="{ 'fa-check-circle text-green-500': toast.type === 'success', 'fa-exclamation-circle text-red-500': toast.type === 'error', 'fa-exclamation-triangle text-yellow-500': toast.type === 'warning', 'fa-info-circle text-blue-500': toast.type === 'info' }"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-white" x-text="toast.title"></p>
+                    <p class="text-sm text-gray-400 mt-0.5" x-text="toast.message"></p>
+                </div>
+                <button @click="removeToast(toast.id)" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition p-0.5">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+        </template>
+    </div>
+
+    <!-- Breadcrumb & Header -->
+    <div class="mb-8">
+        <nav class="flex mb-4" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="{{ url_for('admin_dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-400 hover:text-blue-600 transition">
+                        <i class="fas fa-home mr-2"></i> Dashboard
+                    </a>
+                </li>
+                <li aria-current="page">
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 text-xs mx-2"></i>
+                        <span class="text-sm font-medium text-gray-700">Manajemen Produk</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+                        <i class="fas fa-boxes text-white text-lg sm:text-xl"></i>
+                    </div>
+                    Manajemen Produk
+                </h1>
+                <p class="mt-2 text-sm text-gray-400">Kelola katalog produk, stok, dan pengaturan penjualan.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <button @click="refreshData()" :disabled="refreshing"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-700/50 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                    <i class="fas fa-sync-alt" :class="refreshing ? 'fa-spin' : ''"></i>
+                    <span x-text="refreshing ? 'Memuat...' : 'Segarkan'"></span>
+                </button>
+                <button @click="exportData()"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-700/50 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <a href="{{ url_for('admin_product_new') }}"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-all">
+                    <i class="fas fa-plus"></i> Tambah Produk
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Dashboard -->
+    {% set total_products = products|length if products else 0 %}
+    {% set in_stock = products|selectattr('stock', 'gt', 0)|list|length %}
+    {% set low_stock = products|selectattr('stock', 'le', 10)|selectattr('stock', 'gt', 0)|list|length %}
+    {% set out_of_stock = products|selectattr('stock', 'equalto', 0)|list|length %}
+    {% set featured_count = products|selectattr('is_featured', 'equalto', true)|list|length %}
+    {% set ns = namespace(total_inventory_value=0) %}
+    {% for product in products %}
+        {% set ns.total_inventory_value = ns.total_inventory_value + (product.stock * product.price) %}
+    {% endfor %}
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div class="admin-card border-gray-700/50 p-4 sm:p-5 flex flex-col relative overflow-hidden hover:shadow-md transition-shadow cursor-pointer" @click="filterByStock('')">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-gray-100 rounded-bl-full opacity-50"></div>
+            <div class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Total Produk</div>
+            <div class="text-xl sm:text-2xl font-bold text-white">{{ total_products }}</div>
+            <div class="mt-2 text-xs text-gray-400">Semua kondisi</div>
+        </div>
+
+        <div class="admin-card border-gray-700/50 p-4 sm:p-5 flex flex-col relative overflow-hidden hover:shadow-md transition-shadow cursor-pointer" @click="filterByStock('in_stock')">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-green-50 rounded-bl-full opacity-50"></div>
+            <div class="flex items-center gap-2 mb-1">
+                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                <div class="text-xs text-green-600 font-semibold uppercase tracking-wider">Tersedia</div>
+            </div>
+            <div class="text-xl sm:text-2xl font-bold text-white">{{ in_stock }}</div>
+            <div class="mt-2 text-xs text-gray-400">Stok > 0</div>
+        </div>
+
+        <div class="admin-card border-gray-700/50 p-4 sm:p-5 flex flex-col relative overflow-hidden hover:shadow-md transition-shadow cursor-pointer" @click="filterByStock('low_stock')">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-yellow-50 rounded-bl-full opacity-50"></div>
+            <div class="flex items-center gap-2 mb-1">
+                <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                <div class="text-xs text-yellow-600 font-semibold uppercase tracking-wider">Menipis</div>
+            </div>
+            <div class="text-xl sm:text-2xl font-bold text-white">{{ low_stock }}</div>
+            {% if low_stock > 0 %}
+            <div class="mt-2 text-xs text-yellow-600 font-medium">Perlu restock</div>
+            {% else %}
+            <div class="mt-2 text-xs text-gray-400">Stok aman</div>
+            {% endif %}
+        </div>
+
+        <div class="admin-card border-gray-700/50 p-4 sm:p-5 flex flex-col relative overflow-hidden hover:shadow-md transition-shadow cursor-pointer" @click="filterByStock('out_of_stock')">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-red-50 rounded-bl-full opacity-50"></div>
+            <div class="flex items-center gap-2 mb-1">
+                <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                <div class="text-xs text-red-600 font-semibold uppercase tracking-wider">Habis</div>
+            </div>
+            <div class="text-xl sm:text-2xl font-bold text-white">{{ out_of_stock }}</div>
+            <div class="mt-2 text-xs text-gray-400">Stok = 0</div>
+        </div>
+
+        <div class="admin-card border-gray-700/50 p-4 sm:p-5 flex flex-col relative overflow-hidden hover:shadow-md transition-shadow cursor-pointer" @click="filterByFeatured()">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-bl-full opacity-50"></div>
+            <div class="flex items-center gap-2 mb-1">
+                <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider">Unggulan</div>
+            </div>
+            <div class="text-xl sm:text-2xl font-bold text-white">{{ featured_count }}</div>
+            <div class="mt-2 text-xs text-gray-400">Di homepage</div>
+        </div>
+
+        <div class="admin-card border-gray-700/50 p-4 sm:p-5 flex flex-col relative overflow-hidden hover:shadow-md transition-shadow">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-bl-full opacity-50"></div>
+            <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">Nilai Stok</div>
+            <div class="text-lg sm:text-xl font-bold text-white">{{ format_price(ns.total_inventory_value) }}</div>
+            <div class="mt-2 text-xs text-gray-400">Total inventory</div>
+        </div>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="admin-card border-gray-700/50 overflow-hidden mb-6">
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-700/50 flex items-center justify-between cursor-pointer select-none" @click="showFilters = !showFilters">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-filter text-blue-600"></i>
+                <h2 class="text-sm font-semibold text-gray-800">Filter & Pencarian</h2>
+                <span x-show="activeFilterCount > 0" class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full" x-text="activeFilterCount" style="display: none;"></span>
+            </div>
+            <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300" :class="showFilters ? 'rotate-180' : ''"></i>
+        </div>
+        <div x-show="showFilters"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-2"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-2"
+             class="p-4 sm:p-6" style="display: none;">
+            <form method="GET" action="{{ url_for('admin_products') }}" class="space-y-4" id="filterForm">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Pencarian</label>
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" name="q" value="{{ request.args.get('q', '') }}"
+                                   placeholder="Nama, brand, model..."
+                                   class="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Kondisi</label>
+                        <select name="condition" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all appearance-none">
+                            <option value="">Semua Kondisi</option>
+                            <option value="Baru" {% if request.args.get('condition') == 'Baru' %}selected{% endif %}>🆕 Baru</option>
+                            <option value="Like New" {% if request.args.get('condition') == 'Like New' %}selected{% endif %}>✨ Like New</option>
+                            <option value="Excellent" {% if request.args.get('condition') == 'Excellent' %}selected{% endif %}>⭐ Excellent</option>
+                            <option value="Very Good" {% if request.args.get('condition') == 'Very Good' %}selected{% endif %}>👍 Very Good</option>
+                            <option value="Good" {% if request.args.get('condition') == 'Good' %}selected{% endif %}>👌 Good</option>
+                            <option value="Fair" {% if request.args.get('condition') == 'Fair' %}selected{% endif %}>⚠️ Fair</option>
+                            <option value="Poor" {% if request.args.get('condition') == 'Poor' %}selected{% endif %}>🔴 Poor</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Status Stok</label>
+                        <select name="stock_status" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all appearance-none">
+                            <option value="">Semua Status</option>
+                            <option value="in_stock" {% if request.args.get('stock_status') == 'in_stock' %}selected{% endif %}>🟢 Tersedia</option>
+                            <option value="low_stock" {% if request.args.get('stock_status') == 'low_stock' %}selected{% endif %}>🟡 Stok Menipis</option>
+                            <option value="out_of_stock" {% if request.args.get('stock_status') == 'out_of_stock' %}selected{% endif %}>🔴 Habis</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Brand</label>
+                        <select name="brand" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all appearance-none">
+                            <option value="">Semua Brand</option>
+                            <option value="Apple" {% if request.args.get('brand') == 'Apple' %}selected{% endif %}>Apple</option>
+                            <option value="Samsung" {% if request.args.get('brand') == 'Samsung' %}selected{% endif %}>Samsung</option>
+                            <option value="Xiaomi" {% if request.args.get('brand') == 'Xiaomi' %}selected{% endif %}>Xiaomi</option>
+                            <option value="Oppo" {% if request.args.get('brand') == 'Oppo' %}selected{% endif %}>Oppo</option>
+                            <option value="Vivo" {% if request.args.get('brand') == 'Vivo' %}selected{% endif %}>Vivo</option>
+                            <option value="Realme" {% if request.args.get('brand') == 'Realme' %}selected{% endif %}>Realme</option>
+                            <option value="OnePlus" {% if request.args.get('brand') == 'OnePlus' %}selected{% endif %}>OnePlus</option>
+                            <option value="Google" {% if request.args.get('brand') == 'Google' %}selected{% endif %}>Google</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Urutkan</label>
+                        <select name="sort" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-700/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all appearance-none">
+                            <option value="newest" {% if request.args.get('sort', 'newest') == 'newest' %}selected{% endif %}>📅 Terbaru</option>
+                            <option value="price_asc" {% if request.args.get('sort') == 'price_asc' %}selected{% endif %}>💰 Harga Termurah</option>
+                            <option value="price_desc" {% if request.args.get('sort') == 'price_desc' %}selected{% endif %}>💰 Harga Termahal</option>
+                            <option value="name" {% if request.args.get('sort') == 'name' %}selected{% endif %}>🔤 Nama A-Z</option>
+                            <option value="stock_low" {% if request.args.get('sort') == 'stock_low' %}selected{% endif %}>📉 Stok Terendah</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
+                    <div class="flex flex-wrap items-center gap-4">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="featured_only" value="1" {% if request.args.get('featured_only') %}checked{% endif %}
+                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-600">Hanya Unggulan</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="on_sale" value="1" {% if request.args.get('on_sale') %}checked{% endif %}
+                                   class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                            <span class="ml-2 text-sm text-gray-600">Sedang Diskon</span>
+                        </label>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" @click="resetFilters()" class="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-700/50 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition-all">
+                            <i class="fas fa-undo text-xs"></i> Reset
+                        </button>
+                        <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-all">
+                            <i class="fas fa-filter text-xs"></i> Terapkan Filter
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="admin-card border-gray-700/50 overflow-hidden">
+        <!-- Table Toolbar -->
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <h2 class="text-lg font-semibold text-white">Daftar Produk</h2>
+                <span class="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-full">{{ total_products }}</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <select x-model="perPage" @change="changePerPage()" class="px-3 py-2 bg-gray-50 border border-gray-700/50 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500">
+                    <option value="10" {% if request.args.get('per_page', '25') == '10' %}selected{% endif %}>10 / halaman</option>
+                    <option value="25" {% if request.args.get('per_page', '25') == '25' %}selected{% endif %}>25 / halaman</option>
+                    <option value="50" {% if request.args.get('per_page', '25') == '50' %}selected{% endif %}>50 / halaman</option>
+                    <option value="100" {% if request.args.get('per_page', '25') == '100' %}selected{% endif %}>100 / halaman</option>
+                </select>
+                <div class="flex bg-gray-100 rounded-lg p-0.5">
+                    <button @click="viewMode = 'table'" :class="viewMode === 'table' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-700'" class="px-3 py-1.5 rounded-md text-sm transition-all">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <button @click="viewMode = 'grid'" :class="viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-700'" class="px-3 py-1.5 rounded-md text-sm transition-all">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table View -->
+        <div x-show="viewMode === 'table'" class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-700/50">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3.5 text-left w-10">
+                            <input type="checkbox" @click="toggleAll()" :checked="selectAll && selectedProducts.length > 0"
+                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition cursor-pointer">
+                        </th>
+                        <th class="px-4 py-3.5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Produk</th>
+                        <th class="px-4 py-3.5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Brand/Model</th>
+                        <th class="px-4 py-3.5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-700 transition" @click="sortBy('price')">
+                            <div class="flex items-center gap-1">Harga <i class="fas fa-sort text-gray-300 text-[10px]"></i></div>
+                        </th>
+                        <th class="px-4 py-3.5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Stok</th>
+                        <th class="px-4 py-3.5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Kondisi</th>
+                        <th class="px-4 py-3.5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                        <th class="px-4 py-3.5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700/50">
+                    {% for product in products %}
+                    <tr class="hover:bg-gray-50/80 transition-colors duration-150 group"
+                        :class="{ 'bg-blue-50/60': selectedProducts.includes('{{ product.id }}') }">
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <input type="checkbox" value="{{ product.id }}" x-model="selectedProducts"
+                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition cursor-pointer">
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-3">
+                                <div class="relative flex-shrink-0">
+                                    {% if product.image_filename %}
+                                    <img src="{{ url_for('uploaded_product_file', filename=product.image_filename) }}"
+                                         alt="{{ product.name }}"
+                                         class="w-12 h-12 object-cover rounded-xl border border-gray-700/50 group-hover:border-blue-300 transition">
+                                    {% else %}
+                                    <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center border border-gray-700/50">
+                                        <i class="fas fa-image text-gray-400 text-sm"></i>
+                                    </div>
+                                    {% endif %}
+                                    {% if product.is_featured %}
+                                    <div class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center shadow-sm" title="Unggulan">
+                                        <i class="fas fa-star text-white text-[8px]"></i>
+                                    </div>
+                                    {% endif %}
+                                    {% if product.compare_at_price and product.compare_at_price > product.price %}
+                                    <div class="absolute -bottom-1.5 -left-1.5 px-1.5 py-0.5 bg-red-500 rounded text-[8px] font-bold text-white shadow-sm">SALE</div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div class="text-sm font-bold text-gray-800">{{ product.name }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <div class="text-sm font-semibold text-gray-700">{{ product.brand }}</div>
+                            <div class="text-xs text-gray-400">{{ product.model or '-' }}</div>
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-gray-900 font-mono">{{ format_price(product.price) }}</span>
+                                {% if product.compare_at_price and product.compare_at_price > product.price %}
+                                <span class="text-xs text-gray-400 line-through">{{ format_price(product.compare_at_price) }}</span>
+                                <span class="text-[10px] text-red-500 font-bold">-{{ ((product.compare_at_price - product.price) / product.compare_at_price * 100)|int }}%</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm font-bold font-mono {% if product.stock == 0 %}text-red-600{% elif product.stock <= 10 %}text-yellow-600{% else %}text-green-600{% endif %}">
+                                    {{ product.stock }}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border {% if product.condition == 'Like New' %}bg-blue-50 text-blue-700 border-blue-200 {% elif product.condition == 'Excellent' %}bg-blue-50 text-blue-700 border-blue-200 {% elif product.condition == 'Baru' %}bg-green-50 text-green-700 border-green-200 {% else %}bg-gray-50 text-gray-700 border-gray-700/50{% endif %}">
+                                {{ product.condition }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            {% if product.stock > 10 %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                                <i class="fas fa-check-circle mr-1 text-[10px]"></i> Aktif
+                            </span>
+                            {% elif product.stock > 0 %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-50 text-yellow-700 border border-yellow-200">
+                                <i class="fas fa-exclamation-triangle mr-1 text-[10px]"></i> Menipis
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+                                <i class="fas fa-times-circle mr-1 text-[10px]"></i> Habis
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                <a href="{{ url_for('admin_product_edit', id=product.id) }}"
+                                   class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all" title="Edit">
+                                    <i class="fas fa-edit text-xs"></i>
+                                </a>
+                                <a href="{{ url_for('product_detail', id=product.id) }}" target="_blank"
+                                   class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all" title="Lihat Toko">
+                                    <i class="fas fa-eye text-xs"></i>
+                                </a>
+                                <button @click="quickEditStock({{ product.id }}, {{ product.stock }})"
+                                        class="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all" title="Edit Stok">
+                                    <i class="fas fa-cubes text-xs"></i>
+                                </button>
+                                <button @click="confirmDelete({{ product.id }}, '{{ product.name|escape }}')"
+                                        class="flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all" title="Hapus">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 border border-gray-100">
+                                    <i class="fas fa-box-open text-3xl text-gray-300"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-800">Tidak ada produk</h3>
+                                <p class="text-sm text-gray-400 mt-1 max-w-sm">Tidak ditemukan produk yang sesuai dengan filter. Coba sesuaikan pencarian atau tambah produk baru.</p>
+                                <div class="flex gap-3 mt-4">
+                                    <button @click="resetFilters()" class="px-4 py-2 bg-blue-50 text-blue-600 text-sm font-medium rounded-xl hover:bg-blue-100 transition">
+                                        Reset Filter
+                                    </button>
+                                    <a href="{{ url_for('admin_product_new') }}" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition">
+                                        Tambah Produk
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Grid View -->
+        <div x-show="viewMode === 'grid'" class="p-4 sm:p-6" style="display: none;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {% for product in products %}
+                <div class="bg-white rounded-2xl border border-gray-700/50 overflow-hidden hover:shadow-lg transition-all duration-300 group">
+                    <div class="relative aspect-square bg-gray-100 overflow-hidden">
+                        {% if product.image_filename %}
+                        <img src="{{ url_for('uploaded_product_file', filename=product.image_filename) }}"
+                             alt="{{ product.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            <i class="fas fa-image text-4xl text-gray-300"></i>
+                        </div>
+                        {% endif %}
+                        {% if product.is_featured %}
+                        <div class="absolute top-3 left-3 px-2 py-1 bg-blue-500 text-white text-[10px] font-bold rounded-lg shadow-sm flex items-center gap-1">
+                            <i class="fas fa-star"></i> UNGGULAN
+                        </div>
+                        {% endif %}
+                        {% if product.compare_at_price and product.compare_at_price > product.price %}
+                        <div class="absolute top-3 right-3 px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded-lg shadow-sm">
+                            -{{ ((product.compare_at_price - product.price) / product.compare_at_price * 100)|int }}%
+                        </div>
+                        {% endif %}
+                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="{{ url_for('admin_product_edit', id=product.id) }}" class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-gray-700 hover:bg-blue-600 hover:text-white transition shadow-lg">
+                                    <i class="fas fa-edit text-sm"></i>
+                                </a>
+                                <a href="{{ url_for('product_detail', id=product.id) }}" target="_blank" class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-gray-700 hover:bg-blue-600 hover:text-white transition shadow-lg">
+                                    <i class="fas fa-eye text-sm"></i>
+                                </a>
+                                <button @click="confirmDelete({{ product.id }}, '{{ product.name|escape }}')" class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-gray-700 hover:bg-red-600 hover:text-white transition shadow-lg">
+                                    <i class="fas fa-trash-alt text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <h3 class="text-sm font-bold text-gray-800 line-clamp-2">{{ product.name }}</h3>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border flex-shrink-0 {% if product.condition == 'Like New' %}bg-blue-50 text-blue-700 border-blue-200 {% elif product.condition == 'Baru' %}bg-green-50 text-green-700 border-green-200 {% else %}bg-gray-50 text-gray-700 border-gray-700/50{% endif %}">
+                                {{ product.condition }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-400 mb-3">{{ product.brand }} {{ product.model or '' }}</p>
+                        <div class="flex items-end justify-between mb-3">
+                            <div>
+                                <div class="text-lg font-bold text-gray-900 font-mono">{{ format_price(product.price) }}</div>
+                                {% if product.compare_at_price and product.compare_at_price > product.price %}
+                                <div class="text-xs text-gray-400 line-through">{{ format_price(product.compare_at_price) }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold font-mono {% if product.stock == 0 %}text-red-600{% elif product.stock <= 10 %}text-yellow-600{% else %}text-green-600{% endif %}">{{ product.stock }}</span>
+                                <span class="text-xs text-gray-400">unit</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination and pagination.pages > 1 %}
+        <div class="px-4 sm:px-6 py-4 border-t border-gray-700/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="text-sm text-gray-400">
+                Menampilkan <span class="font-semibold text-gray-700">{{ (pagination.page - 1) * pagination.per_page + 1 }} - {{ [pagination.page * pagination.per_page, pagination.total]|min }}</span> dari <span class="font-semibold text-gray-700">{{ pagination.total }}</span> produk
+            </div>
+            <nav class="inline-flex rounded-xl shadow-sm overflow-hidden" aria-label="Pagination">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('admin_products', page=pagination.prev_num, q=request.args.get('q'), condition=request.args.get('condition'), stock_status=request.args.get('stock_status'), brand=request.args.get('brand'), sort=request.args.get('sort'), featured_only=request.args.get('featured_only'), on_sale=request.args.get('on_sale'), per_page=request.args.get('per_page', 25)) }}" class="relative inline-flex items-center px-3 py-2 bg-white border border-gray-700/50 text-sm font-medium text-gray-400 hover:bg-gray-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-chevron-left text-xs"></i>
+                </a>
+                {% endif %}
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == pagination.page %}
+                        <span class="relative inline-flex items-center px-3 py-2 bg-blue-600 border border-blue-600 text-sm font-bold text-white">{{ page_num }}</span>
+                        {% else %}
+                        <a href="{{ url_for('admin_products', page=page_num, q=request.args.get('q'), condition=request.args.get('condition'), stock_status=request.args.get('stock_status'), brand=request.args.get('brand'), sort=request.args.get('sort'), featured_only=request.args.get('featured_only'), on_sale=request.args.get('on_sale'), per_page=request.args.get('per_page', 25)) }}" class="relative inline-flex items-center px-3 py-2 bg-white border border-gray-700/50 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors">{{ page_num }}</a>
+                        {% endif %}
+                    {% else %}
+                        <span class="relative inline-flex items-center px-3 py-2 bg-white border border-gray-700/50 text-sm font-medium text-gray-400">...</span>
+                    {% endif %}
+                {% endfor %}
+                {% if pagination.has_next %}
+                <a href="{{ url_for('admin_products', page=pagination.next_num, q=request.args.get('q'), condition=request.args.get('condition'), stock_status=request.args.get('stock_status'), brand=request.args.get('brand'), sort=request.args.get('sort'), featured_only=request.args.get('featured_only'), on_sale=request.args.get('on_sale'), per_page=request.args.get('per_page', 25)) }}" class="relative inline-flex items-center px-3 py-2 bg-white border border-gray-700/50 text-sm font-medium text-gray-400 hover:bg-gray-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-chevron-right text-xs"></i>
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Bulk Action Bar -->
+    <div x-show="selectedProducts.length > 0"
+         x-transition:enter="transform ease-out duration-300"
+         x-transition:enter-start="translate-y-full opacity-0"
+         x-transition:enter-end="translate-y-0 opacity-100"
+         x-transition:leave="transform ease-in duration-200"
+         x-transition:leave-start="translate-y-0 opacity-100"
+         x-transition:leave-end="translate-y-full opacity-0"
+         class="fixed bottom-6 left-4 right-4 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:max-w-3xl bg-gray-900 text-white px-4 sm:px-6 py-3 rounded-2xl shadow-2xl z-50 flex flex-wrap items-center justify-center gap-4 border border-gray-700"
+         style="display: none;">
+        <div class="flex items-center gap-2 pr-4 border-r border-gray-700">
+            <span class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold" x-text="selectedProducts.length"></span>
+            <span class="text-sm font-medium">produk dipilih</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-1">
+            <button @click="bulkToggleFeatured(true)" class="px-3 py-1.5 text-sm hover:bg-gray-800 rounded-lg transition flex items-center gap-1.5">
+                <i class="fas fa-star text-xs text-blue-400"></i> Jadikan Unggulan
+            </button>
+            <button @click="bulkDelete()" class="px-3 py-1.5 text-sm hover:bg-gray-800 rounded-lg transition flex items-center gap-1.5">
+                <i class="fas fa-trash-alt text-xs text-red-400"></i> Hapus
+            </button>
+            <button @click="bulkExport()" class="px-3 py-1.5 text-sm hover:bg-gray-800 rounded-lg transition flex items-center gap-1.5">
+                <i class="fas fa-file-export text-xs text-blue-400"></i> Export
+            </button>
+        </div>
+        <div class="pl-4 border-l border-gray-700">
+            <button @click="selectedProducts = []" class="text-sm text-red-400 hover:text-red-300 transition flex items-center gap-1">
+                <i class="fas fa-times text-xs"></i> Batal
+            </button>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div x-show="showDeleteModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="showDeleteModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity backdrop-blur-sm"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <div x-show="showDeleteModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-gray-900 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full">
+                <div class="bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fas fa-exclamation-triangle text-red-600"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-white">Hapus Produk</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-400">Apakah Anda yakin ingin menghapus produk <strong x-text="deleteData.productName" class="text-gray-200"></strong>? Tindakan ini tidak dapat dibatalkan.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" @click="executeDelete()" :disabled="loading" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 transition">
+                        <i class="fas fa-spinner fa-spin mr-2" x-show="loading"></i>
+                        <span x-text="loading ? 'Menghapus...' : 'Hapus'"></span>
+                    </button>
+                    <button type="button" @click="showDeleteModal = false" class="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-600 shadow-sm px-4 py-2 bg-gray-700 text-base font-medium text-gray-300 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition">Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stock Edit Modal -->
+    <div x-show="showStockModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="showStockModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity backdrop-blur-sm"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <div x-show="showStockModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-gray-900 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm w-full">
+                <div class="bg-gray-800 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fas fa-cubes text-amber-600"></i> Edit Stok Cepat
+                    </h3>
+                    <button @click="showStockModal = false" class="text-gray-400 hover:text-gray-200 transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form @submit.prevent="updateStock()" class="p-6 space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Stok Saat Ini</label>
+                        <div class="px-4 py-3 bg-gray-700 rounded-xl text-center">
+                            <span class="text-2xl font-bold text-white font-mono" x-text="stockData.currentStock"></span>
+                            <span class="text-sm text-gray-400 ml-1">unit</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Update Stok</label>
+                        <div class="flex items-center gap-3">
+                            <button type="button" @click="stockData.newStock = Math.max(0, stockData.newStock - 1)" class="w-10 h-10 rounded-xl bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center justify-center">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" x-model="stockData.newStock" min="0"
+                                   class="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-center text-lg font-bold font-mono text-white focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all">
+                            <button type="button" @click="stockData.newStock++" class="w-10 h-10 rounded-xl bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center justify-center">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" @click="showStockModal = false" class="flex-1 px-4 py-3 border border-gray-600 rounded-xl text-gray-300 hover:bg-gray-700 font-medium transition">Batal</button>
+                        <button type="submit" :disabled="updatingStock" class="flex-1 px-4 py-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 font-medium transition disabled:opacity-50 flex items-center justify-center gap-2">
+                            <i class="fas fa-spinner fa-spin" x-show="updatingStock"></i>
+                            <span x-text="updatingStock ? 'Menyimpan...' : 'Update Stok'"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function productManagement() {
+    return {
+        selectedProducts: [],
+        selectAll: false,
+        showDeleteModal: false,
+        showStockModal: false,
+        showFilters: false,
+        refreshing: false,
+        loading: false,
+        updatingStock: false,
+        viewMode: 'table',
+        perPage: '{{ request.args.get("per_page", 25) }}',
+
+        deleteData: {
+            productId: null,
+            productName: ''
+        },
+        stockData: {
+            productId: null,
+            currentStock: 0,
+            newStock: 0
+        },
+
+        toasts: [],
+        toastId: 0,
+
+        init() {
+            this.$watch('selectedProducts', value => {
+                const checkboxes = document.querySelectorAll('tbody input[type="checkbox"][value]');
+                this.selectAll = value.length > 0 && value.length === checkboxes.length;
+            });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const perPageParam = urlParams.get('per_page');
+            if (perPageParam) this.perPage = perPageParam;
+
+            if (this.activeFilterCount > 0) this.showFilters = true;
+        },
+
+        get activeFilterCount() {
+            let count = 0;
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('q')) count++;
+            if (params.get('condition')) count++;
+            if (params.get('stock_status')) count++;
+            if (params.get('brand')) count++;
+            if (params.get('sort') && params.get('sort') !== 'newest') count++;
+            if (params.get('featured_only')) count++;
+            if (params.get('on_sale')) count++;
+            return count;
+        },
+
+        addToast(title, message, type = 'success') {
+            const id = ++this.toastId;
+            this.toasts.push({ id, title, message, type, show: true });
+            setTimeout(() => this.removeToast(id), 5000);
+        },
+
+        removeToast(id) {
+            const toast = this.toasts.find(t => t.id === id);
+            if (toast) toast.show = false;
+            setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 300);
+        },
+
+        closeAllModals() {
+            this.showDeleteModal = false;
+            this.showStockModal = false;
+        },
+
+        toggleAll() {
+            const checkboxes = document.querySelectorAll('tbody input[type="checkbox"][value]');
+            if (this.selectedProducts.length === checkboxes.length) {
+                this.selectedProducts = [];
+                this.selectAll = false;
+            } else {
+                this.selectedProducts = Array.from(checkboxes).map(cb => cb.value);
+                this.selectAll = true;
+            }
+        },
+
+        filterByStock(status) {
+            const url = new URL(window.location.href);
+            if (status) {
+                url.searchParams.set('stock_status', status);
+            } else {
+                url.searchParams.delete('stock_status');
+            }
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        },
+
+        filterByFeatured() {
+            const url = new URL(window.location.href);
+            const current = url.searchParams.get('featured_only');
+            if (current) {
+                url.searchParams.delete('featured_only');
+            } else {
+                url.searchParams.set('featured_only', '1');
+            }
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        },
+
+        resetFilters() {
+            window.location.href = '{{ url_for("admin_products") }}';
+        },
+
+        sortBy(field) {
+            this.addToast('Info', 'Gunakan dropdown Urutkan di panel filter untuk mengurutkan data', 'info');
+        },
+
+        changePerPage() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('per_page', this.perPage);
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        },
+
+        refreshData() {
+            this.refreshing = true;
+            window.location.reload();
+        },
+
+        exportData() {
+            window.location.href = '{{ url_for("admin_products_export") }}?' + new URLSearchParams(window.location.search).toString();
+        },
+
+        confirmDelete(productId, productName) {
+            this.deleteData.productId = productId;
+            this.deleteData.productName = productName;
+            this.showDeleteModal = true;
+        },
+
+        executeDelete() {
+            if (!this.deleteData.productId) return;
+            this.loading = true;
+
+            fetch(`/admin/product/${this.deleteData.productId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                this.loading = false;
+                if (data.success) {
+                    this.showDeleteModal = false;
+                    this.addToast('Berhasil!', 'Produk berhasil dihapus', 'success');
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    throw new Error(data.message || 'Gagal menghapus produk');
+                }
+            })
+            .catch(err => {
+                this.loading = false;
+                this.addToast('Error', err.message, 'error');
+            });
+        },
+
+        quickEditStock(productId, currentStock) {
+            this.stockData.productId = productId;
+            this.stockData.currentStock = currentStock;
+            this.stockData.newStock = currentStock;
+            this.showStockModal = true;
+        },
+
+        updateStock() {
+            if (this.stockData.newStock < 0) {
+                this.addToast('Error', 'Stok tidak boleh negatif', 'error');
+                return;
+            }
+            this.updatingStock = true;
+
+            fetch(`/admin/product/${this.stockData.productId}/stock`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ stock: parseInt(this.stockData.newStock) })
+            })
+            .then(res => res.json())
+            .then(data => {
+                this.updatingStock = false;
+                if (data.success) {
+                    this.showStockModal = false;
+                    this.addToast('Berhasil!', 'Stok berhasil diupdate', 'success');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    throw new Error(data.message || 'Gagal update stok');
+                }
+            })
+            .catch(err => {
+                this.updatingStock = false;
+                this.addToast('Error', err.message, 'error');
+            });
+        },
+
+        bulkToggleFeatured(featured) {
+            if (this.selectedProducts.length === 0) {
+                this.addToast('Pilih produk', 'Tidak ada produk yang dipilih', 'warning');
+                return;
+            }
+            if (!confirm(`${featured ? 'Jadikan' : 'Hapus'} unggulan untuk ${this.selectedProducts.length} produk?`)) return;
+
+            fetch('{{ url_for("admin_bulk_toggle_featured") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ product_ids: this.selectedProducts, featured: featured })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    this.addToast('Berhasil!', `${data.updated} produk diupdate`, 'success');
+                    this.selectedProducts = [];
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    throw new Error(data.message || 'Gagal update');
+                }
+            })
+            .catch(err => { this.addToast('Error', err.message, 'error'); });
+        },
+
+        bulkDelete() {
+            if (this.selectedProducts.length === 0) {
+                this.addToast('Pilih produk', 'Tidak ada produk yang dipilih', 'warning');
+                return;
+            }
+            if (!confirm(`Hapus ${this.selectedProducts.length} produk? Tindakan ini tidak dapat dibatalkan.`)) return;
+
+            fetch('{{ url_for("admin_bulk_delete_products") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ product_ids: this.selectedProducts })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    this.addToast('Berhasil!', `${data.deleted} produk dihapus`, 'success');
+                    this.selectedProducts = [];
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    throw new Error(data.message || 'Gagal menghapus');
+                }
+            })
+            .catch(err => { this.addToast('Error', err.message, 'error'); });
+        },
+
+        bulkExport() {
+            if (this.selectedProducts.length === 0) {
+                this.addToast('Pilih produk', 'Tidak ada produk yang dipilih', 'warning');
+                return;
+            }
+            const ids = this.selectedProducts.join(',');
+            window.location.href = `{{ url_for("admin_products_export") }}?ids=${ids}`;
+        },
+    }
+}
+
+/* ─── OpenRouter AI Integration ─── */
+window.aiPageContext = {
+    page: 'admin_products',
+    prompt: 'Anda adalah asisten produk untuk admin ATLANTIS CELULAR. Membantu admin dengan:\n- Tips SEO dan keyword untuk deskripsi produk\n- Saran spesifikasi dan condition grading\n- Strategi pricing dan discount\n- Rekomendasi foto dan presentasi produk\n- Panduan stok management dan restocking\n- Tips marketing dan product promotion\nJawab dengan profesional, fokus bisnis, dan gunakan bahasa Indonesia.'
+};
+</script>
+{% endblock %}

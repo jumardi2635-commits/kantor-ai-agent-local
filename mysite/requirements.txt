@@ -1,0 +1,41 @@
+Flask==3.0.3
+Authlib>=1.6,<2
+cryptography>=41.0.5,<44
+cffi>=1.12,<2
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-Cors==4.0.1
+SQLAlchemy==2.0.35
+Werkzeug==3.0.4
+python-dotenv==1.0.1
+python-dateutil==2.9.0.post0
+requests==2.32.3
+
+# Production WSGI server
+gunicorn==22.0.0
+
+# Postgres driver -- uncomment if DATABASE_URL points to Postgres
+# (Railway, Render, Supabase, Neon, RDS, etc.). Not needed for SQLite.
+# psycopg2-binary==2.9.9
+python-telegram-bot==21.6
+httpx==0.27.2
+# Core Flask dependencies
+Flask>=2.3.0
+Flask-Login>=0.6.2
+Flask-SQLAlchemy>=3.0.0
+Werkzeug>=2.3.0
+
+# Database
+SQLAlchemy>=2.0.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# HTTP requests (for Telegram, WhatsApp, Open Claw)
+requests>=2.31.0
+
+# CORS support
+Flask-CORS>=4.0.0
+
+# Optional: for better performance in production
+gunicorn>=21.0.0

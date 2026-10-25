@@ -1,0 +1,384 @@
+{% extends "admin/base_admin.html" %}
+{% block page_title %}Manajemen Pesanan{% endblock %}
+{% block content %}
+<div x-data="ordersPage()" x-init="init()">
+    <!-- Toast Notifikasi Sederhana -->
+    <div x-show="toast.show" x-transition
+         class="fixed top-6 right-6 z-50 px-6 py-3 rounded-xl shadow-lg flex items-center gap-3"
+         :class="toast.type === 'success' ? 'bg-green-600 text-white' : (toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white')">
+        <i class="fas" :class="toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+        <span x-text="toast.message"></span>
+    </div>
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center gap-3">
+            <i class="fas fa-shopping-bag text-2xl text-blue-600"></i>
+            Manajemen Pesanan
+        </h1>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('admin_export_orders') }}" class="flex items-center gap-2 px-4 py-2 admin-card backdrop-blur-sm border border-gray-700/50 text-gray-700 text-sm font-medium rounded-xl hover:bg-dark-800/50 hover:text-blue-600 transition-all shadow-sm">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistik Cepat -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+        <div class="admin-card p-4 text-center">
+            <div class="w-10 h-10 mx-auto rounded-lg bg-yellow-100 flex items-center justify-center mb-2">
+                <i class="fas fa-clock text-yellow-600"></i>
+            </div>
+            <div class="text-xs font-semibold text-yellow-700 uppercase">Pending</div>
+            <div class="text-2xl font-bold text-gray-800">{{ pending_orders_count|default(0) }}</div>
+        </div>
+        <div class="admin-card p-4 text-center">
+            <div class="w-10 h-10 mx-auto rounded-lg bg-blue-100 flex items-center justify-center mb-2">
+                <i class="fas fa-cog text-blue-600"></i>
+            </div>
+            <div class="text-xs font-semibold text-blue-700 uppercase">Diproses</div>
+            <div class="text-2xl font-bold text-gray-800">{{ processing_orders_count|default(0) }}</div>
+        </div>
+        <div class="admin-card p-4 text-center">
+            <div class="w-10 h-10 mx-auto rounded-lg bg-blue-100 flex items-center justify-center mb-2">
+                <i class="fas fa-box text-blue-600"></i>
+            </div>
+            <div class="text-xs font-semibold text-blue-700 uppercase">Siap Kirim</div>
+            <div class="text-2xl font-bold text-gray-800">{{ ready_to_ship_count|default(0) }}</div>
+        </div>
+        <div class="admin-card p-4 text-center">
+            <div class="w-10 h-10 mx-auto rounded-lg bg-cyan-100 flex items-center justify-center mb-2">
+                <i class="fas fa-shipping-fast text-cyan-600"></i>
+            </div>
+            <div class="text-xs font-semibold text-cyan-700 uppercase">Dikirim</div>
+            <div class="text-2xl font-bold text-gray-800">{{ shipped_count|default(0) }}</div>
+        </div>
+        <div class="admin-card p-4 text-center">
+            <div class="w-10 h-10 mx-auto rounded-lg bg-green-100 flex items-center justify-center mb-2">
+                <i class="fas fa-check-circle text-green-600"></i>
+            </div>
+            <div class="text-xs font-semibold text-green-700 uppercase">Selesai</div>
+            <div class="text-2xl font-bold text-gray-800">{{ completed_count|default(0) }}</div>
+        </div>
+        <div class="admin-card p-4 text-center">
+            <div class="w-10 h-10 mx-auto rounded-lg bg-blue-100 flex items-center justify-center mb-2">
+                <i class="fas fa-money-bill-wave text-blue-600"></i>
+            </div>
+            <div class="text-xs font-semibold text-blue-700 uppercase">Pendapatan</div>
+            <div class="text-2xl font-bold text-gray-800">{{ format_price(today_revenue|default(0)) }}</div>
+        </div>
+    </div>
+
+    <!-- Filter & Pencarian -->
+    <div class="admin-card p-4 mb-6">
+        <form method="GET" action="{{ url_for('admin_orders') }}" class="flex flex-wrap gap-3 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Pencarian</label>
+                <input type="text" name="q" value="{{ request.args.get('q', '') }}" class="w-full px-3 py-2 admin-card border border-gray-700/50 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" placeholder="No. order, nama, telepon...">
+            </div>
+            <div class="w-36">
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Status</label>
+                <select name="status" class="w-full px-3 py-2 admin-card border border-gray-700/50 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                    <option value="">Semua</option>
+                    <option value="Pending" {% if request.args.get('status')=='Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Paid" {% if request.args.get('status')=='Paid' %}selected{% endif %}>Lunas</option>
+                    <option value="Processing" {% if request.args.get('status')=='Processing' %}selected{% endif %}>Diproses</option>
+                    <option value="Ready_to_Ship" {% if request.args.get('status')=='Ready_to_Ship' %}selected{% endif %}>Siap Kirim</option>
+                    <option value="Shipped" {% if request.args.get('status')=='Shipped' %}selected{% endif %}>Dikirim</option>
+                    <option value="Out_for_Delivery" {% if request.args.get('status')=='Out_for_Delivery' %}selected{% endif %}>Dalam Pengiriman</option>
+                    <option value="Received" {% if request.args.get('status')=='Received' %}selected{% endif %}>Diterima</option>
+                    <option value="Completed" {% if request.args.get('status')=='Completed' %}selected{% endif %}>Selesai</option>
+                    <option value="Cancelled" {% if request.args.get('status')=='Cancelled' %}selected{% endif %}>Dibatalkan</option>
+                </select>
+            </div>
+            <div class="w-28">
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Prioritas</label>
+                <select name="priority" class="w-full px-3 py-2 admin-card border border-gray-700/50 rounded-lg text-sm">
+                    <option value="">Semua</option>
+                    <option value="urgent" {% if request.args.get('priority')=='urgent' %}selected{% endif %}>Urgent</option>
+                    <option value="high" {% if request.args.get('priority')=='high' %}selected{% endif %}>High</option>
+                    <option value="normal" {% if request.args.get('priority')=='normal' %}selected{% endif %}>Normal</option>
+                    <option value="low" {% if request.args.get('priority')=='low' %}selected{% endif %}>Low</option>
+                </select>
+            </div>
+            <div class="w-36">
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Dari Tgl</label>
+                <input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}" class="w-full px-3 py-2 admin-card border border-gray-700/50 rounded-lg text-sm">
+            </div>
+            <div class="w-36">
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Sampai Tgl</label>
+                <input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}" class="w-full px-3 py-2 admin-card border border-gray-700/50 rounded-lg text-sm">
+            </div>
+            <div>
+                <button type="submit" class="btn-primary px-6 py-2">
+                    <i class="fas fa-filter mr-1"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabel Pesanan -->
+    <div class="admin-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-700/50">
+                <thead class="bg-dark-800/50/50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">No. Order</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Pelanggan</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Total</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Prioritas</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Tanggal</th>
+                        <th class="px-4 py-3 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 admin-card">
+                    {% for order in orders %}
+                    <tr class="hover:bg-blue-50/40 transition-colors">
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" class="font-bold text-blue-600 hover:text-blue-800">
+                                #{{ order.order_number }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="font-semibold text-gray-800">{{ order.customer_name }}</div>
+                            <div class="text-xs text-gray-400">{{ order.customer_phone }}</div>
+                        </td>
+                        <td class="px-4 py-3 font-bold text-blue-600">{{ format_price(order.total) }}</td>
+                        <td class="px-4 py-3" x-data="{ open{{ order.id }}: false }">
+                            {% set status_config = {
+                                'Pending':   {'class': 'bg-yellow-100 text-yellow-700 border-yellow-200', 'icon': 'fa-clock'},
+                                'Paid':      {'class': 'badge badge-success border-green-200',   'icon': 'fa-check-circle'},
+                                'Processing':{'class': 'badge badge-info border-blue-200',    'icon': 'fa-cog fa-spin'},
+                                'Ready_to_Ship': {'class': 'badge badge-info border-blue-200', 'icon': 'fa-box'},
+                                'Shipped':   {'class': 'bg-cyan-100 text-cyan-800 border-cyan-200',   'icon': 'fa-shipping-fast'},
+                                'Out_for_Delivery': {'class': 'bg-teal-100 text-teal-800 border-teal-200', 'icon': 'fa-truck'},
+                                'Received':  {'class': 'bg-sky-100 text-sky-800 border-sky-200', 'icon': 'fa-box-open'},
+                                'Completed': {'class': 'badge badge-success border-emerald-200', 'icon': 'fa-check-double'},
+                                'Cancelled': {'class': 'bg-red-100 text-red-700 border-red-200',        'icon': 'fa-times-circle'},
+                                'Returned':  {'class': 'bg-red-100 text-red-700 border-red-200',        'icon': 'fa-undo'}
+                            } %}
+                            {% set cfg = status_config.get(order.status, {'class': 'bg-gray-100 text-gray-600 border-gray-700/50', 'icon': 'fa-circle'}) %}
+
+                            <div class="relative inline-block text-left">
+                                <button @click="open{{ order.id }} = !open{{ order.id }}" 
+                                        @click.away="open{{ order.id }} = false"
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer hover:shadow-sm transition-all {{ cfg.class }}">
+                                    <i class="fas {{ cfg.icon }}"></i>
+                                    <span>{{ order.status.replace('_', ' ') }}</span>
+                                    <i class="fas fa-chevron-down text-[10px] ml-0.5 opacity-60"></i>
+                                </button>
+
+                                <div x-show="open{{ order.id }}" x-transition
+                                     class="absolute z-50 mt-1 w-44 rounded-xl bg-white shadow-lg border border-gray-100 py-1 origin-top-left left-0"
+                                     style="display: none;">
+                                    {% for st, st_cfg in status_config.items() %}
+                                    {% if st != order.status %}
+                                    <button @click="updateStatus('{{ order.id }}', '{{ st }}'); open{{ order.id }} = false"
+                                            class="w-full text-left px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-dark-800/50 transition-colors {{ st_cfg.class }}">
+                                        <i class="fas {{ st_cfg.icon }}"></i>
+                                        {{ st.replace('_', ' ') }}
+                                    </button>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if order.priority == 'urgent' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700"><i class="fas fa-exclamation-triangle mr-1"></i>URGENT</span>
+                            {% elif order.priority == 'high' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-700"><i class="fas fa-arrow-up mr-1"></i>HIGH</span>
+                            {% elif order.priority == 'normal' %}
+                                <span class="text-xs text-gray-400">NORMAL</span>
+                            {% elif order.priority == 'low' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700">LOW</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                            {{ order.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" class="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition" title="Detail">
+                                    <i class="fas fa-eye text-xs"></i>
+                                </a>
+                                {% if order.status == 'Pending' %}
+                                <a href="{{ url_for('admin_konfirmasi_pembayaran', order_id=order.id) }}" class="p-2 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition" title="Konfirmasi Pembayaran">
+                                    <i class="fas fa-money-bill-wave text-xs"></i>
+                                </a>
+                                {% endif %}
+                                {% if order.status in ['Paid', 'Processing'] %}
+                                <a href="{{ url_for('admin_proses_order', order_id=order.id) }}" class="p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition" title="Proses Order">
+                                    <i class="fas fa-cog text-xs"></i>
+                                </a>
+                                {% endif %}
+                                <!-- Tombol Hapus / Batalkan (kecuali status terminal) -->
+                                {% if order.status not in ['Cancelled', 'Returned', 'Completed'] %}
+                                <button @click="openCancelModal('{{ order.id }}', '{{ order.order_number }}')" class="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition" title="Batalkan Pesanan">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
+                                {% endif %}
+                                <a href="{{ url_for('invoice', order_id=order.id) }}" target="_blank" class="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition" title="Cetak Invoice">
+                                    <i class="fas fa-print text-xs"></i>
+                                </a>
+                                {% if order.status in ['Paid', 'Processing', 'Ready_to_Ship', 'Shipped', 'Out_for_Delivery', 'Completed'] %}
+                                <a href="{{ url_for('redemption_letter', order_id=order.id) }}" target="_blank" class="p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition" title="Cetak Surat Penebusan">
+                                    <i class="fas fa-file-signature text-xs"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-12 text-center">
+                            <i class="fas fa-inbox text-4xl text-gray-300 mb-3 block"></i>
+                            <p class="text-gray-400">Tidak ada pesanan ditemukan.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus / Batalkan -->
+    <div x-show="showCancelModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" x-transition>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6" @click.away="showCancelModal = false">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-gray-800">Batalkan Pesanan</h3>
+                    <p class="text-sm text-gray-400 mt-2">
+                        Anda akan membatalkan pesanan <strong x-text="cancelOrderNumber"></strong>.
+                    </p>
+                    <p class="text-sm text-gray-400">Tindakan ini tidak dapat dibatalkan.</p>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6 justify-end">
+                <button @click="showCancelModal = false" class="px-4 py-2 border border-gray-700/50 rounded-xl text-gray-600 hover:bg-dark-800/50 transition">Batal</button>
+                <button @click="confirmCancel()" :disabled="loading" class="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition disabled:opacity-50 flex items-center gap-2">
+                    <i class="fas fa-spinner fa-spin" x-show="loading"></i>
+                    <span x-text="loading ? 'Membatalkan...' : 'Ya, Batalkan'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paginasi -->
+    {% if pagination and pagination.pages > 1 %}
+    <div class="flex justify-center mt-6">
+        <nav class="inline-flex rounded-lg overflow-hidden shadow-sm">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('admin_orders', page=pagination.prev_num, q=request.args.get('q', ''), status=request.args.get('status', ''), priority=request.args.get('priority', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}" class="px-4 py-2 bg-white border border-gray-700/50 text-gray-600 hover:bg-dark-800/50 hover:text-blue-600 transition">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num == pagination.page %}
+                    <span class="px-4 py-2 bg-blue-600 text-white font-bold border border-blue-600">{{ page_num }}</span>
+                    {% else %}
+                    <a href="{{ url_for('admin_orders', page=page_num, q=request.args.get('q', ''), status=request.args.get('status', ''), priority=request.args.get('priority', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}" class="px-4 py-2 bg-white border border-gray-700/50 text-gray-700 hover:bg-dark-800/50 hover:text-blue-600 transition">{{ page_num }}</a>
+                    {% endif %}
+                {% else %}
+                    <span class="px-4 py-2 bg-white border border-gray-700/50 text-gray-400">…</span>
+                {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+            <a href="{{ url_for('admin_orders', page=pagination.next_num, q=request.args.get('q', ''), status=request.args.get('status', ''), priority=request.args.get('priority', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}" class="px-4 py-2 bg-white border border-gray-700/50 text-gray-600 hover:bg-dark-800/50 hover:text-blue-600 transition">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Token CSRF dari server
+const csrfToken = '{{ csrf_token() }}';
+
+function ordersPage() {
+    return {
+        showCancelModal: false,
+        cancelOrderId: null,
+        cancelOrderNumber: '',
+        loading: false,
+        toast: { show: false, message: '', type: 'success' },
+
+        init() {
+            this.$watch('toast.show', (val) => {
+                if (val) setTimeout(() => { this.toast.show = false; }, 4000);
+            });
+        },
+
+        showToast(message, type = 'success') {
+            this.toast.message = message;
+            this.toast.type = type;
+            this.toast.show = true;
+        },
+
+        openCancelModal(orderId, orderNumber) {
+            this.cancelOrderId = orderId;
+            this.cancelOrderNumber = '#' + orderNumber;
+            this.showCancelModal = true;
+        },
+
+        async confirmCancel() {
+            if (!this.cancelOrderId) return;
+            this.loading = true;
+            try {
+                const res = await fetch(`/admin/order/${this.cancelOrderId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ reason: 'Dibatalkan oleh admin' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.showCancelModal = false;
+                    this.showToast('Pesanan berhasil dibatalkan.', 'success');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    this.showToast('Gagal: ' + (data.message || 'Terjadi kesalahan.'), 'error');
+                }
+            } catch (err) {
+                this.showToast('Terjadi kesalahan jaringan.', 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async updateStatus(orderId, newStatus) {
+            try {
+                const res = await fetch(`/admin/order/${orderId}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.showToast(`Status diubah ke ${newStatus.replace('_', ' ')}`, 'success');
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    this.showToast('Gagal: ' + (data.message || 'Terjadi kesalahan.'), 'error');
+                }
+            } catch (err) {
+                this.showToast('Terjadi kesalahan jaringan.', 'error');
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

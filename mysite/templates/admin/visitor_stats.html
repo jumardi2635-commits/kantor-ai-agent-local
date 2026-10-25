@@ -1,0 +1,579 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}Statistik Pengunjung{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ─── RESET & BASE ─── */
+  .stats-section {
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+
+  /* ─── GLASSMORPHISM STAT CARDS ─── */
+  .stat-card-glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1.25rem;
+    padding: 1.5rem 1.75rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card-glass::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.4), transparent);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .stat-card-glass:hover::before {
+    opacity: 1;
+  }
+
+  .stat-card-glass:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.25);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.4);
+  }
+
+  .stat-card-glass .stat-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    transition: all 0.3s ease;
+  }
+
+  .stat-card-glass:hover .stat-icon {
+    transform: scale(1.05);
+  }
+
+  .stat-card-glass .stat-value {
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #f1f5f9 60%, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-card-glass .stat-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .stat-card-glass .stat-sub {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+  }
+
+  .stat-card-glass .stat-sub .trend-up {
+    color: #34d399;
+  }
+  .stat-card-glass .stat-sub .trend-down {
+    color: #f87171;
+  }
+
+  /* ─── COLOR VARIANT ICONS ─── */
+  .icon-blue {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+  }
+  .icon-emerald {
+    background: rgba(52, 211, 153, 0.12);
+    color: #34d399;
+  }
+  .icon-purple {
+    background: rgba(168, 85, 247, 0.12);
+    color: #a78bfa;
+  }
+  .icon-amber {
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+  }
+
+  /* ─── CHART AREA ─── */
+  .chart-container {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 1.25rem;
+    padding: 1.75rem 1.5rem 1.5rem;
+    transition: border-color 0.3s ease;
+  }
+
+  .chart-container:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.25rem;
+    height: 12rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .chart-bar-wrapper {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    min-width: 0;
+    transition: all 0.2s ease;
+  }
+
+  .chart-bar {
+    width: 100%;
+    max-width: 28px;
+    border-radius: 6px 6px 0 0;
+    background: linear-gradient(180deg, #818cf8, #4f46e5);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 2px;
+    position: relative;
+  }
+
+  .chart-bar-wrapper:hover .chart-bar {
+    opacity: 0.8;
+    transform: scaleY(1.02);
+    transform-origin: bottom;
+  }
+
+  .chart-bar-wrapper .chart-label {
+    font-size: 0.6rem;
+    color: #475569;
+    margin-top: 0.5rem;
+    text-align: center;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  /* ─── PROGRESS BARS (Top Pages / Referrers) ─── */
+  .progress-track {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 9999px;
+    overflow: hidden;
+    height: 0.375rem;
+    transition: background 0.3s ease;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #4f46e5, #818cf8);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .progress-fill-green {
+    background: linear-gradient(90deg, #059669, #34d399);
+  }
+
+  .progress-fill-purple {
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  }
+
+  /* ─── BREAKDOWN ITEMS ─── */
+  .breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    transition: background 0.2s ease;
+  }
+
+  .breakdown-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .breakdown-item .badge-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+  }
+
+  .breakdown-item .badge-icon.purple-light {
+    background: rgba(168, 85, 247, 0.1);
+    color: #a78bfa;
+  }
+
+  .breakdown-item .badge-icon.amber-light {
+    background: rgba(251, 191, 36, 0.1);
+    color: #fbbf24;
+  }
+
+  /* ─── BROWSER / OS GRID ─── */
+  .browser-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .browser-grid .sub-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #475569;
+    margin-bottom: 0.75rem;
+  }
+
+  .browser-grid .item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    font-size: 0.875rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  .browser-grid .item-row:last-child {
+    border-bottom: none;
+  }
+
+  .browser-grid .item-row .name {
+    color: #cbd5e1;
+  }
+
+  .browser-grid .item-row .count {
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+
+  /* ─── RESPONSIVE TWEAKS ─── */
+  @media (max-width: 640px) {
+    .stat-card-glass .stat-value {
+      font-size: 1.75rem;
+    }
+    .browser-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .chart-bars {
+      height: 8rem;
+    }
+  }
+
+  /* ─── ANIMATION ─── */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-up {
+    animation: fadeInUp 0.5s ease forwards;
+  }
+
+  .animate-fade-up:nth-child(2) {
+    animation-delay: 0.05s;
+  }
+  .animate-fade-up:nth-child(3) {
+    animation-delay: 0.1s;
+  }
+  .animate-fade-up:nth-child(4) {
+    animation-delay: 0.15s;
+  }
+  .animate-fade-up:nth-child(5) {
+    animation-delay: 0.2s;
+  }
+  .animate-fade-up:nth-child(6) {
+    animation-delay: 0.25s;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-section space-y-6">
+
+  <!-- ─── HEADER ─── -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-bold text-gray-100 tracking-tight">
+        Ringkasan <span class="text-indigo-400">{{ stats.days }}</span> Hari Terakhir
+      </h2>
+      <p class="text-sm text-gray-500 mt-0.5">
+        Statistik dihitung dari kunjungan halaman publik &bull; bot/crawler dikecualikan
+      </p>
+    </div>
+    <div class="flex items-center gap-3">
+      <form method="get" class="flex items-center gap-2">
+        <label for="days" class="text-xs font-medium text-gray-400 uppercase tracking-wider">Rentang</label>
+        <select
+          name="days"
+          id="days"
+          class="bg-gray-800/60 border border-gray-700/60 text-gray-200 text-sm rounded-xl px-3 py-2.5 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition cursor-pointer appearance-none"
+          style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22%3E%3Cpath fill=%22%2364748b%22 d=%22M6 8L1 3h10z%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 0.75rem;"
+          onchange="this.form.submit()"
+        >
+          <option value="7" {{ 'selected' if stats.days == 7 else '' }}>7 hari</option>
+          <option value="14" {{ 'selected' if stats.days == 14 else '' }}>14 hari</option>
+          <option value="30" {{ 'selected' if stats.days == 30 else '' }}>30 hari</option>
+          <option value="90" {{ 'selected' if stats.days == 90 else '' }}>90 hari</option>
+        </select>
+      </form>
+      <a
+        href="{{ url_for('visitor_stats.admin_visitor_stats_export', days=stats.days) }}"
+        class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30"
+      >
+        <i class="fas fa-download text-xs"></i>
+        <span>Export CSV</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ─── STAT CARDS (4-column grid) ─── -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Card 1: Today -->
+    <div class="stat-card-glass animate-fade-up">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="stat-label">Kunjungan Hari Ini</p>
+          <p class="stat-value">{{ stats.today_visits }}</p>
+          <p class="stat-sub">
+            {{ stats.today_unique }} pengunjung unik
+            {% if stats.yesterday_visits %}
+              {% set diff = stats.today_visits - stats.yesterday_visits %}
+              <span class="{{ 'trend-up' if diff >= 0 else 'trend-down' }} ml-1">
+                <i class="fas {{ 'fa-arrow-up' if diff >= 0 else 'fa-arrow-down' }} text-[10px]"></i>
+                {{ diff|abs }} vs kemarin
+              </span>
+            {% endif %}
+          </p>
+        </div>
+        <div class="stat-icon icon-blue">
+          <i class="fas fa-eye"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Total -->
+    <div class="stat-card-glass animate-fade-up">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="stat-label">Total Kunjungan</p>
+          <p class="stat-value">{{ stats.total_visits }}</p>
+          <p class="stat-sub">{{ stats.days }} hari terakhir</p>
+        </div>
+        <div class="stat-icon icon-emerald">
+          <i class="fas fa-chart-line"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Unique -->
+    <div class="stat-card-glass animate-fade-up">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="stat-label">Pengunjung Unik</p>
+          <p class="stat-value">{{ stats.unique_visitors }}</p>
+          <p class="stat-sub">Berdasarkan sesi browser</p>
+        </div>
+        <div class="stat-icon icon-purple">
+          <i class="fas fa-users"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Average -->
+    <div class="stat-card-glass animate-fade-up">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="stat-label">Rata-rata Harian</p>
+          <p class="stat-value">{{ stats.avg_daily_visits }}</p>
+          <p class="stat-sub">{{ stats.bot_count }} kunjungan bot dikecualikan</p>
+        </div>
+        <div class="stat-icon icon-amber">
+          <i class="fas fa-calendar-day"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── CHART ─── -->
+  <div class="chart-container animate-fade-up">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-semibold text-gray-200 tracking-tight">
+        <i class="fas fa-chart-bar text-indigo-400 mr-2"></i>Tren Kunjungan Harian
+      </h3>
+      <div class="flex items-center gap-3 text-xs text-gray-500">
+        <span class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-indigo-500"></span> Kunjungan
+        </span>
+      </div>
+    </div>
+    <div class="chart-bars">
+      {% for d in stats.daily_chart %}
+      <div class="chart-bar-wrapper" title="{{ d.label }}: {{ d.visits }} kunjungan ({{ d.unique }} unik)">
+        <div class="chart-bar" style="height: {{ d.percent }}%; min-height: 2px;"></div>
+        {% if loop.index0 % (2 if stats.days > 30 else 1) == 0 %}
+        <span class="chart-label">{{ d.label }}</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ─── BOTTOM GRID (2 columns) ─── -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- LEFT COLUMN -->
+    <div class="space-y-6">
+
+      <!-- Top Pages -->
+      <div class="stat-card-glass animate-fade-up">
+        <h3 class="text-sm font-semibold text-gray-200 mb-4 tracking-tight">
+          <i class="fas fa-file-alt text-indigo-400 mr-2"></i>Halaman Terpopuler
+        </h3>
+        {% if stats.top_pages %}
+          {% set max_page_count = stats.top_pages[0].count if stats.top_pages else 1 %}
+          <div class="space-y-3">
+            {% for p in stats.top_pages %}
+            <div>
+              <div class="flex items-center justify-between text-sm mb-1">
+                <span class="text-gray-300 truncate max-w-[70%]" title="{{ p.path }}">{{ p.path }}</span>
+                <span class="text-gray-400 font-medium text-xs">{{ p.count }}</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: {{ (p.count / max_page_count * 100)|round(1) }}%"></div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-gray-500">Belum ada data kunjungan.</p>
+        {% endif %}
+      </div>
+
+      <!-- Referrers -->
+      <div class="stat-card-glass animate-fade-up">
+        <h3 class="text-sm font-semibold text-gray-200 mb-4 tracking-tight">
+          <i class="fas fa-external-link-alt text-emerald-400 mr-2"></i>Sumber Kunjungan (Referrer)
+        </h3>
+        {% if stats.top_referrers %}
+          {% set max_ref_count = stats.top_referrers[0].count if stats.top_referrers else 1 %}
+          <div class="space-y-3">
+            {% for r in stats.top_referrers %}
+            <div>
+              <div class="flex items-center justify-between text-sm mb-1">
+                <span class="text-gray-300 truncate max-w-[70%]" title="{{ r.referrer }}">{{ r.referrer }}</span>
+                <span class="text-gray-400 font-medium text-xs">{{ r.count }}</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill progress-fill-green" style="width: {{ (r.count / max_ref_count * 100)|round(1) }}%"></div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-gray-500">Belum ada data referrer (kunjungan langsung / tanpa referrer).</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="space-y-6">
+
+      <!-- Device Breakdown -->
+      <div class="stat-card-glass animate-fade-up">
+        <h3 class="text-sm font-semibold text-gray-200 mb-4 tracking-tight">
+          <i class="fas fa-mobile-alt text-purple-400 mr-2"></i>Perangkat
+        </h3>
+        {% if stats.device_breakdown %}
+          {% set device_icons = {'desktop': 'fa-desktop', 'mobile': 'fa-mobile-alt', 'tablet': 'fa-tablet-alt', 'unknown': 'fa-question-circle'} %}
+          {% set device_labels = {'desktop': 'Desktop', 'mobile': 'Mobile', 'tablet': 'Tablet', 'unknown': 'Tidak diketahui'} %}
+          {% set total_device = stats.device_breakdown | sum(attribute='count') %}
+          <div class="space-y-2">
+            {% for d in stats.device_breakdown %}
+            <div class="breakdown-item">
+              <div class="badge-icon purple-light">
+                <i class="fas {{ device_icons.get(d.label, 'fa-question-circle') }}"></i>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-300">{{ device_labels.get(d.label, d.label|capitalize) }}</span>
+                  <span class="text-gray-400 text-xs font-medium">{{ d.count }} ({{ (d.count / total_device * 100)|round(1) if total_device else 0 }}%)</span>
+                </div>
+                <div class="progress-track mt-1">
+                  <div class="progress-fill progress-fill-purple" style="width: {{ (d.count / total_device * 100)|round(1) if total_device else 0 }}%"></div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-gray-500">Belum ada data.</p>
+        {% endif %}
+      </div>
+
+      <!-- Browser & OS -->
+      <div class="stat-card-glass animate-fade-up">
+        <h3 class="text-sm font-semibold text-gray-200 mb-4 tracking-tight">
+          <i class="fas fa-globe text-amber-400 mr-2"></i>Browser &amp; Sistem Operasi
+        </h3>
+        <div class="browser-grid">
+          <!-- Browser -->
+          <div>
+            <p class="sub-label">Browser</p>
+            <div class="space-y-0.5">
+              {% for b in stats.browser_breakdown %}
+              <div class="item-row">
+                <span class="name">{{ b.label }}</span>
+                <span class="count">{{ b.count }}</span>
+              </div>
+              {% else %}
+              <p class="text-xs text-gray-500">Tidak ada data.</p>
+              {% endfor %}
+            </div>
+          </div>
+          <!-- OS -->
+          <div>
+            <p class="sub-label">Sistem Operasi</p>
+            <div class="space-y-0.5">
+              {% for o in stats.os_breakdown %}
+              <div class="item-row">
+                <span class="name">{{ o.label }}</span>
+                <span class="count">{{ o.count }}</span>
+              </div>
+              {% else %}
+              <p class="text-xs text-gray-500">Tidak ada data.</p>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

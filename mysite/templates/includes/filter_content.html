@@ -1,0 +1,67 @@
+<!-- Filter: Brand -->
+<div class="mb-4">
+    <h6 class="d-flex justify-content-between align-items-center fw-semibold mb-3 cursor-pointer" onclick="toggleFilter('brand-filter')">
+        {{ _('brand') }}
+        <span class="fs-6">▼</span>
+    </h6>
+    <div id="brand-filter" class="filter-section mt-2">
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="brand" value="all" id="brandAll" {% if not request.args.brand %}checked{% endif %} style="border-color: var(--primary);">
+            <label class="form-check-label" for="brandAll">{{ _('all') }}</label>
+        </div>
+        {% for brand in brands %}
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="brand" value="{{ brand }}" id="brand{{ loop.index }}" {% if request.args.brand == brand %}checked{% endif %} style="border-color: var(--primary);">
+            <label class="form-check-label" for="brand{{ loop.index }}">{{ brand }}</label>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<!-- Filter: Condition -->
+<div class="mb-4">
+    <h6 class="d-flex justify-content-between align-items-center fw-semibold mb-3 cursor-pointer" onclick="toggleFilter('condition-filter')">
+        {{ _('condition') }}
+        <span class="fs-6">▼</span>
+    </h6>
+    <div id="condition-filter" class="filter-section mt-2">
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="condition" value="Used" id="conditionUsed" style="border-color: var(--primary);">
+            <label class="form-check-label" for="conditionUsed">Used</label>
+        </div>
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="condition" value="Like New" id="conditionLikeNew" style="border-color: var(--primary);">
+            <label class="form-check-label" for="conditionLikeNew">Like New</label>
+        </div>
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="condition" value="Excellent" id="conditionExcellent" style="border-color: var(--primary);">
+            <label class="form-check-label" for="conditionExcellent">Excellent</label>
+        </div>
+    </div>
+</div>
+<!-- Filter: Price Range -->
+<div class="mb-4">
+    <h6 class="d-flex justify-content-between align-items-center fw-semibold mb-3 cursor-pointer" onclick="toggleFilter('price-filter')">
+        {{ _('price_range') }}
+        <span class="fs-6">▼</span>
+    </h6>
+    <div id="price-filter" class="filter-section mt-2">
+        <div class="d-flex gap-2">
+            <input type="number" placeholder="Min" class="form-control form-control-sm rounded-pill" style="border-color: #ddd;">
+            <input type="number" placeholder="Max" class="form-control form-control-sm rounded-pill" style="border-color: #ddd;">
+        </div>
+        <button class="btn btn-primary btn-sm w-100 mt-3 rounded-pill">{{ _('apply') }}</button>
+    </div>
+</div>
+<!-- Filter: Other -->
+<div class="mb-4">
+    <h6 class="d-flex justify-content-between align-items-center fw-semibold mb-3 cursor-pointer" onclick="toggleFilter('other-filter')">
+        {{ _('other') }}
+        <span class="fs-6">▼</span>
+    </h6>
+    <div id="other-filter" class="filter-section mt-2">
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="in_stock" id="inStock" style="border-color: var(--primary);">
+            <label class="form-check-label" for="inStock">{{ _('in_stock') }}</label>
+        </div>
+    </div>
+</div>

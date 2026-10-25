@@ -1,0 +1,142 @@
+<!-- _filter_sidebar.html - Sidebar filter untuk halaman katalog -->
+<div class="filter-sidebar">
+    <h4 class="filter-title"><i class="fas fa-filter"></i> {{ _('filter') }}</h4>
+    
+    <!-- Form filter -->
+    <form method="GET" action="{{ url_for('catalog') }}" id="filterForm">
+        <!-- Pencarian -->
+        <div class="filter-group">
+            <label for="q">{{ _('search') }}</label>
+            <input type="text" name="q" id="q" class="form-control" 
+                   placeholder="Cari nama, brand, model..." 
+                   value="{{ request.args.get('q', '') }}">
+        </div>
+
+        <!-- Filter Merek -->
+        <div class="filter-group">
+            <label for="brand">{{ _('brand') }}</label>
+            <select name="brand" id="brand" class="form-select">
+                <option value="all" {% if current_brand == 'all' or not current_brand %}selected{% endif %}>
+                    {{ _('all') }}
+                </option>
+                {% for brand in brands %}
+                <option value="{{ brand }}" {% if current_brand == brand %}selected{% endif %}>
+                    {{ brand }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Filter Kondisi -->
+        <div class="filter-group">
+            <label for="condition">{{ _('condition') }}</label>
+            <select name="condition" id="condition" class="form-select">
+                <option value="all" {% if current_condition == 'all' or not current_condition %}selected{% endif %}>
+                    {{ _('all') }}
+                </option>
+                {% for cond in conditions %}
+                <option value="{{ cond }}" {% if current_condition == cond %}selected{% endif %}>
+                    {{ cond }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Urutkan -->
+        <div class="filter-group">
+            <label for="sort">{{ _('sort_by') }}</label>
+            <select name="sort" id="sort" class="form-select">
+                <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>
+                    {{ _('newest') }}
+                </option>
+                <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>
+                    {{ _('price_low_high') }}
+                </option>
+                <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>
+                    {{ _('price_high_low') }}
+                </option>
+            </select>
+        </div>
+
+        <!-- Tombol Aksi -->
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary w-100 mb-2">
+                <i class="fas fa-search"></i> {{ _('apply') }}
+            </button>
+            <a href="{{ url_for('catalog') }}" class="btn btn-secondary w-100">
+                <i class="fas fa-trash-alt"></i> {{ _('clear_all') }}
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .filter-sidebar {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 1.5rem;
+    }
+    .filter-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1.2rem;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 0.75rem;
+        color: #2c3e50;
+    }
+    .filter-group {
+        margin-bottom: 1.2rem;
+    }
+    .filter-group label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+        color: #495057;
+    }
+    .form-control, .form-select {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    }
+    .filter-actions {
+        margin-top: 1.5rem;
+    }
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: 0.2s;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        border: none;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+    @media (max-width: 768px) {
+        .filter-sidebar {
+            padding: 1rem;
+        }
+    }
+</style>

@@ -1,0 +1,858 @@
+{% extends "base.html" %}
+
+{% block title %}Hubungi Kami — {{ global_settings.site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════
+   CONTACT PAGE — PREMIUM RESPONSIVE EDITION
+   ═══════════════════════════════════════════════ */
+
+/* ─── HERO ─── */
+.contact-hero-r {
+    position: relative;
+    min-height: 45vh;
+    min-height: 45dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse 70% 60% at 30% 50%, rgba(99,102,241,0.1), transparent),
+        radial-gradient(ellipse 50% 40% at 80% 20%, rgba(168,85,247,0.08), transparent),
+        var(--bg-base);
+    padding: 6rem 1rem 3rem;
+}
+.contact-hero-r::before {
+    content: ''; position: absolute; inset: 0;
+    background: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiP72o56DtNyvkCyVmlDVsaZrmLwgXmCCRC0eRvYKc6wuRL6SyG3I8CwQ0fRLvoorRNAvyPMPvzl0sNndj1HImiG18xtlrGsfh6TpvbuGppXsmKYHLCBFKDpjtMRKDeQ1heCfCfkPxyH3Oqp000PqOxbI1obeDn74vxyEqP1mXuXfqVVZ_8uDEtvZYI3sw/s320/Screenshot%202026-05-24%20233336.png') center/cover;
+    opacity: 0.035; mix-blend-mode: luminosity;
+}
+.contact-hero-r__content {
+    position: relative; z-index: 2;
+    text-align: center; max-width: 640px;
+    padding: 0 1rem;
+}
+.contact-hero-r__eyebrow {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.18em;
+    color: var(--primary-400);
+    background: var(--primary-glow-soft);
+    border: 1px solid rgba(99,102,241,0.25);
+    padding: 0.45rem 1.1rem; border-radius: var(--r-full);
+    margin-bottom: 1.25rem;
+}
+.contact-hero-r__title {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 800;
+    font-size: clamp(1.8rem, 5vw, 3.2rem); line-height: 1.05; letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 20%, var(--primary-300));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 0.75rem;
+}
+.contact-hero-r__subtitle {
+    font-size: clamp(0.9rem, 1.6vw, 1.15rem);
+    color: var(--text-tertiary);
+    line-height: 1.7; max-width: 480px;
+    margin: 0 auto;
+}
+
+/* ─── CONTACT CARDS ─── */
+.contact-cards-r {
+    position: relative;
+    padding: 0 0 4rem;
+    margin-top: -3rem;
+    z-index: 3;
+}
+.contact-cards-r__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+.contact-card-r {
+    background: linear-gradient(180deg, rgba(15,23,42,0.95), rgba(11,17,32,0.9));
+    backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    padding: 2.25rem 1.75rem;
+    text-align: center;
+    position: relative; overflow: hidden;
+    transition: all 0.4s var(--ease-out-expo);
+}
+.contact-card-r::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
+    transform: scaleX(0);
+    transition: transform 0.4s var(--ease-out-expo);
+}
+.contact-card-r:hover { transform: translateY(-8px); border-color: var(--border-strong); box-shadow: var(--shadow-lg); }
+.contact-card-r:hover::before { transform: scaleX(1); }
+.contact-card-r__icon {
+    width: 60px; height: 60px; border-radius: var(--r-lg);
+    background: linear-gradient(135deg, var(--primary-glow-soft), var(--secondary-glow));
+    display: grid; place-items: center;
+    margin: 0 auto 1.1rem;
+    color: var(--primary-400); font-size: 1.6rem;
+    box-shadow: 0 8px 24px var(--primary-glow-soft);
+}
+.contact-card-r__title {
+    font-size: 1.1rem; font-weight: 700;
+    color: var(--text-primary); margin-bottom: 0.6rem;
+}
+.contact-card-r__text {
+    color: var(--text-secondary);
+    font-size: 0.92rem; line-height: 1.6;
+    margin-bottom: 0.4rem;
+}
+.contact-card-r__subtext {
+    color: var(--text-disabled);
+    font-size: 0.78rem; line-height: 1.5;
+    margin-bottom: 1.1rem;
+}
+.contact-card-r__link {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    color: var(--primary-400); font-size: 0.85rem;
+    font-weight: 700; text-decoration: none;
+    transition: all 0.2s;
+}
+.contact-card-r__link:hover { color: var(--primary-300); gap: 0.6rem; }
+.contact-card-r__link--wa {
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    color: white; padding: 0.5rem 1.25rem;
+    border-radius: var(--r-full); font-size: 0.82rem;
+    box-shadow: 0 4px 16px rgba(37,211,102,0.2);
+}
+.contact-card-r__link--wa:hover {
+    color: white;
+    box-shadow: 0 8px 24px rgba(37,211,102,0.3);
+    transform: translateY(-2px);
+}
+
+/* ─── MAP & FORM ─── */
+.mapform-r { padding: 1rem 0 5rem; }
+.mapform-r__grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+.mapform-r__map {
+    position: relative;
+    border-radius: var(--r-xl); overflow: hidden;
+    border: 1px solid var(--border-default);
+    min-height: 480px;
+    background: var(--bg-elevated);
+}
+.mapform-r__map iframe {
+    width: 100%; height: 100%; border: none;
+    filter: grayscale(40%) contrast(1.05) brightness(0.9);
+}
+.mapform-r__pin {
+    position: absolute; bottom: 1.25rem; left: 1.25rem;
+    display: flex; align-items: center; gap: 0.75rem;
+    background: rgba(2,6,23,0.92); backdrop-filter: blur(12px);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    padding: 0.875rem 1.25rem;
+    box-shadow: var(--shadow-md);
+    max-width: calc(100% - 2.5rem);
+}
+.mapform-r__pin-icon {
+    width: 38px; height: 38px; border-radius: var(--r-md);
+    background: linear-gradient(135deg, var(--danger), var(--danger));
+    display: grid; place-items: center;
+    color: white; font-size: 1rem;
+    flex-shrink: 0;
+}
+.mapform-r__pin-text h4 {
+    font-size: 0.88rem; font-weight: 700;
+    color: var(--text-primary); margin: 0;
+}
+.mapform-r__pin-text p {
+    font-size: 0.78rem; color: var(--text-tertiary); margin: 0;
+}
+
+/* Form Wrapper */
+.mapform-r__formwrap {
+    background: linear-gradient(180deg, rgba(15,23,42,0.8), rgba(11,17,32,0.7));
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-xl);
+    padding: 2.25rem;
+}
+.mapform-r__header { margin-bottom: 1.75rem; }
+.mapform-r__header h2 {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+    font-size: 1.4rem; color: var(--text-primary);
+    margin-bottom: 0.4rem;
+}
+.mapform-r__header p {
+    color: var(--text-tertiary); font-size: 0.92rem;
+}
+
+/* Floating Label Inputs */
+.fl-group-r {
+    position: relative; margin-bottom: 1.1rem;
+}
+.fl-group-r--half {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.fl-input-r {
+    width: 100%;
+    padding: 0.95rem 1rem 0.95rem 2.6rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-md);
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    transition: all 0.2s;
+    outline: none;
+}
+.fl-input-r:focus {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px var(--primary-glow-soft);
+    background: var(--bg-surface);
+}
+.fl-input-r::placeholder { color: transparent; }
+.fl-label-r {
+    position: absolute;
+    left: 2.6rem; top: 0.95rem;
+    color: var(--text-disabled);
+    font-size: 0.88rem;
+    pointer-events: none;
+    transition: all 0.2s var(--ease-out-expo);
+    background: transparent;
+    padding: 0 0.25rem;
+}
+.fl-input-r:focus ~ .fl-label-r,
+.fl-input-r:not(:placeholder-shown) ~ .fl-label-r {
+    top: -0.5rem; left: 0.65rem;
+    font-size: 0.68rem;
+    color: var(--primary-400);
+    font-weight: 700;
+    background: var(--bg-surface);
+    border-radius: 3px;
+}
+.fl-icon-r {
+    position: absolute;
+    left: 0.9rem; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-disabled);
+    font-size: 0.95rem;
+    transition: color 0.2s;
+}
+.fl-input-r:focus ~ .fl-icon-r { color: var(--primary-400); }
+.fl-textarea-r {
+    min-height: 110px;
+    padding-top: 1.1rem;
+    resize: vertical;
+}
+.fl-textarea-r ~ .fl-icon-r { top: 1.1rem; transform: none; }
+.fl-textarea-r ~ .fl-label-r { top: 1.1rem; }
+.fl-textarea-r:focus ~ .fl-label-r,
+.fl-textarea-r:not(:placeholder-shown) ~ .fl-label-r { top: -0.5rem; }
+
+/* Submit Button */
+.btn-submit-r {
+    width: 100%; padding: 0.95rem;
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    color: white; font-weight: 700;
+    font-size: 0.9rem; border: none;
+    border-radius: var(--r-md); cursor: pointer;
+    box-shadow: 0 4px 20px var(--primary-glow-soft);
+    transition: all 0.2s var(--ease-out-expo);
+    position: relative; overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.btn-submit-r:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px var(--primary-glow);
+}
+.btn-submit-r:active { transform: scale(0.98); }
+.btn-submit-r::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.12), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+}
+.btn-submit-r:hover::after { transform: translateX(100%); }
+.btn-submit-r:disabled {
+    opacity: 0.65; cursor: not-allowed;
+    transform: none;
+}
+
+/* Form Note */
+.form-note-r {
+    display: flex; align-items: flex-start; gap: 0.6rem;
+    margin-top: 1.1rem;
+    padding: 0.875rem 1rem;
+    background: var(--primary-glow-soft);
+    border: 1px solid rgba(99,102,241,0.15);
+    border-radius: var(--r-md);
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+}
+.form-note-r i {
+    color: var(--primary-400);
+    font-size: 1rem; margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+
+/* Alert */
+.alert-r {
+    margin-top: 1rem;
+    padding: 0.875rem 1.25rem;
+    border-radius: var(--r-md);
+    font-size: 0.88rem; font-weight: 600;
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+.alert-r--success {
+    background: var(--success-bg);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: var(--success);
+}
+.alert-r--error {
+    background: var(--danger-bg);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: var(--danger);
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── FAQ ─── */
+.faq-r { padding: 4rem 0; position: relative; }
+.faq-r::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 50% 30% at 50% 0%, rgba(99,102,241,0.05), transparent);
+    pointer-events: none;
+}
+.faq-r__header {
+    text-align: center; max-width: 560px;
+    margin: 0 auto 2.5rem; padding: 0 1rem;
+}
+.faq-r__eyebrow {
+    display: inline-block;
+    font-size: 0.7rem; font-weight: 800; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--primary-400);
+    background: var(--primary-glow-soft);
+    border: 1px solid rgba(99,102,241,0.2);
+    padding: 0.4rem 1rem; border-radius: var(--r-full);
+    margin-bottom: 0.875rem;
+}
+.faq-r__title {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+    font-size: clamp(1.4rem, 3vw, 2.25rem);
+    color: var(--text-primary);
+}
+.faq-r__list {
+    max-width: 760px; margin: 0 auto;
+    display: flex; flex-direction: column; gap: 0.625rem;
+    padding: 0 1rem;
+}
+.faq-r__item {
+    background: linear-gradient(180deg, rgba(15,23,42,0.7), rgba(11,17,32,0.6));
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    transition: all 0.3s var(--ease-out-expo);
+}
+.faq-r__item:hover { border-color: var(--border-strong); }
+.faq-r__item.active {
+    border-color: rgba(99,102,241,0.3);
+    box-shadow: var(--shadow-glow);
+}
+.faq-r__q {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 1.25rem;
+    background: none; border: none;
+    color: var(--text-primary);
+    font-size: 0.92rem; font-weight: 600;
+    text-align: left; cursor: pointer;
+    transition: color 0.2s;
+    gap: 1rem;
+}
+.faq-r__q:hover { color: var(--primary-400); }
+.faq-r__q i {
+    font-size: 0.95rem;
+    color: var(--text-disabled);
+    transition: all 0.3s var(--ease-out-back);
+    flex-shrink: 0;
+}
+.faq-r__item.active .faq-r__q i {
+    transform: rotate(180deg);
+    color: var(--primary-400);
+}
+.faq-r__a {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.4s var(--ease-out-expo), padding 0.4s;
+    padding: 0 1.25rem;
+}
+.faq-r__item.active .faq-r__a {
+    max-height: 300px;
+    padding: 0 1.25rem 1.1rem;
+}
+.faq-r__a p {
+    color: var(--text-tertiary);
+    font-size: 0.88rem; line-height: 1.7;
+    margin: 0;
+}
+
+/* ─── SOCIAL ─── */
+.social-r { padding: 1rem 0 4rem; }
+.social-r__card {
+    text-align: center; padding: 2.75rem;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.06));
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(99,102,241,0.15);
+    border-radius: var(--r-xl);
+    position: relative; overflow: hidden;
+}
+.social-r__card::before {
+    content: ''; position: absolute;
+    top: -50%; left: 50%; transform: translateX(-50%);
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, var(--primary-glow-soft), transparent 70%);
+    pointer-events: none;
+}
+.social-r__title {
+    font-size: 1.4rem; font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+    position: relative;
+}
+.social-r__desc {
+    color: var(--text-tertiary);
+    margin-bottom: 1.5rem; position: relative;
+    font-size: 0.95rem;
+}
+.social-r__links {
+    display: flex; justify-content: center;
+    gap: 0.875rem; position: relative;
+    flex-wrap: wrap;
+}
+.social-r__link {
+    width: 50px; height: 50px;
+    border-radius: var(--r-lg);
+    background: var(--bg-surface-hover);
+    border: 1px solid var(--border-default);
+    display: grid; place-items: center;
+    color: var(--text-tertiary);
+    font-size: 1.2rem; text-decoration: none;
+    transition: all 0.3s var(--ease-out-back);
+}
+.social-r__link:hover {
+    background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+    border-color: transparent; color: white;
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 12px 32px var(--primary-glow-soft);
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ═══════════════════════════════════════════════ */
+
+/* Tablet Landscape & Below (≤1199px) */
+@media (max-width: 1199px) {
+    .contact-cards-r__grid { gap: 0.875rem; }
+    .contact-card-r { padding: 2rem 1.5rem; }
+    .mapform-r__grid { grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .mapform-r__map { min-height: 420px; }
+    .mapform-r__formwrap { padding: 2rem; }
+}
+
+/* Tablet Portrait (≤991px) */
+@media (max-width: 991px) {
+    .contact-hero-r { min-height: auto; padding: 6.5rem 1rem 2.5rem; }
+    .contact-hero-r__title { font-size: clamp(1.7rem, 5.5vw, 2.6rem); }
+    .contact-cards-r { margin-top: -2rem; padding-bottom: 3rem; }
+    .contact-cards-r__grid { grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+    .contact-card-r { padding: 1.75rem 1.25rem; border-radius: var(--r-lg); }
+    .contact-card-r__icon { width: 52px; height: 52px; font-size: 1.4rem; margin-bottom: 0.875rem; }
+    .contact-card-r__title { font-size: 1rem; }
+    .contact-card-r__text { font-size: 0.88rem; }
+    .mapform-r { padding: 1rem 0 3.5rem; }
+    .mapform-r__grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .mapform-r__map { min-height: 350px; border-radius: var(--r-lg); }
+    .mapform-r__formwrap { padding: 2rem; border-radius: var(--r-lg); }
+    .faq-r { padding: 3rem 0; }
+    .social-r__card { padding: 2.25rem; }
+}
+
+/* Small Tablets & Large Phones (≤767px) */
+@media (max-width: 767px) {
+    .contact-cards-r__grid { grid-template-columns: 1fr; gap: 0.875rem; }
+    .contact-card-r {
+        padding: 1.5rem;
+        display: flex; align-items: center;
+        gap: 1.25rem; text-align: left;
+    }
+    .contact-card-r__icon { margin: 0; width: 48px; height: 48px; font-size: 1.25rem; flex-shrink: 0; }
+    .contact-card-r__body { flex: 1; }
+    .contact-card-r__title { font-size: 1.05rem; margin-bottom: 0.35rem; }
+    .contact-card-r__text { font-size: 0.85rem; margin-bottom: 0.25rem; }
+    .contact-card-r__subtext { font-size: 0.75rem; margin-bottom: 0.75rem; }
+    .contact-card-r__link { font-size: 0.82rem; }
+    .mapform-r__map { min-height: 300px; }
+    .mapform-r__pin { padding: 0.75rem 1rem; bottom: 1rem; left: 1rem; }
+    .mapform-r__pin-icon { width: 34px; height: 34px; font-size: 0.9rem; }
+    .mapform-r__formwrap { padding: 1.75rem; }
+    .fl-group-r--half { gap: 0.875rem; }
+    .faq-r__q { padding: 1rem 1.1rem; font-size: 0.88rem; }
+    .faq-r__item.active .faq-r__a { padding: 0 1.1rem 1rem; }
+    .social-r__link { width: 46px; height: 46px; font-size: 1.1rem; }
+}
+
+/* Mobile (≤575px) */
+@media (max-width: 575px) {
+    .contact-hero-r { padding: 5.5rem 0.75rem 2rem; }
+    .contact-hero-r__eyebrow { font-size: 0.65rem; padding: 0.4rem 0.9rem; margin-bottom: 1rem; }
+    .contact-hero-r__title { font-size: 1.6rem; letter-spacing: -0.02em; }
+    .contact-hero-r__subtitle { font-size: 0.88rem; line-height: 1.65; }
+    .contact-cards-r { margin-top: -1.5rem; padding-bottom: 2.5rem; }
+    .contact-card-r {
+        padding: 1.25rem;
+        gap: 1rem;
+        border-radius: var(--r-md);
+    }
+    .contact-card-r__icon { width: 44px; height: 44px; font-size: 1.15rem; border-radius: var(--r-md); }
+    .contact-card-r__title { font-size: 1rem; }
+    .contact-card-r__text { font-size: 0.85rem; }
+    .contact-card-r__subtext { font-size: 0.72rem; }
+    .contact-card-r__link--wa { padding: 0.45rem 1rem; font-size: 0.78rem; }
+    .mapform-r { padding: 0.5rem 0 2.5rem; }
+    .mapform-r__grid { gap: 1rem; }
+    .mapform-r__map { min-height: 260px; border-radius: var(--r-md); }
+    .mapform-r__pin { display: none; }
+    .mapform-r__formwrap { padding: 1.5rem; border-radius: var(--r-md); }
+    .mapform-r__header { margin-bottom: 1.25rem; }
+    .mapform-r__header h2 { font-size: 1.25rem; }
+    .mapform-r__header p { font-size: 0.85rem; }
+    .fl-group-r { margin-bottom: 0.95rem; }
+    .fl-group-r--half { grid-template-columns: 1fr; gap: 0.95rem; }
+    .fl-input-r {
+        padding: 0.875rem 1rem 0.875rem 2.4rem;
+        font-size: 0.85rem;
+        border-radius: var(--r-sm);
+    }
+    .fl-label-r { left: 2.4rem; top: 0.875rem; font-size: 0.85rem; }
+    .fl-input-r:focus ~ .fl-label-r,
+    .fl-input-r:not(:placeholder-shown) ~ .fl-label-r {
+        top: -0.45rem; left: 0.55rem;
+        font-size: 0.65rem;
+    }
+    .fl-icon-r { left: 0.8rem; font-size: 0.9rem; }
+    .fl-textarea-r { min-height: 90px; padding-top: 1rem; }
+    .fl-textarea-r ~ .fl-icon-r { top: 1rem; }
+    .fl-textarea-r ~ .fl-label-r { top: 1rem; }
+    .fl-textarea-r:focus ~ .fl-label-r,
+    .fl-textarea-r:not(:placeholder-shown) ~ .fl-label-r { top: -0.45rem; }
+    .btn-submit-r { padding: 0.875rem; font-size: 0.88rem; border-radius: var(--r-sm); }
+    .form-note-r { padding: 0.75rem; font-size: 0.72rem; margin-top: 0.875rem; }
+    .alert-r { padding: 0.75rem 1rem; font-size: 0.82rem; }
+    .faq-r { padding: 2.5rem 0; }
+    .faq-r__header { margin-bottom: 1.75rem; }
+    .faq-r__eyebrow { font-size: 0.65rem; padding: 0.35rem 0.85rem; }
+    .faq-r__title { font-size: 1.3rem; }
+    .faq-r__list { gap: 0.5rem; }
+    .faq-r__q { padding: 0.95rem 1rem; font-size: 0.85rem; }
+    .faq-r__q i { font-size: 0.9rem; }
+    .faq-r__item.active .faq-r__a { padding: 0 1rem 0.875rem; }
+    .faq-r__a p { font-size: 0.82rem; }
+    .social-r { padding: 0.5rem 0 3rem; }
+    .social-r__card { padding: 1.75rem 1.25rem; border-radius: var(--r-lg); }
+    .social-r__title { font-size: 1.2rem; }
+    .social-r__desc { font-size: 0.88rem; margin-bottom: 1.25rem; }
+    .social-r__links { gap: 0.75rem; }
+    .social-r__link { width: 44px; height: 44px; border-radius: var(--r-md); font-size: 1.05rem; }
+}
+
+/* Very Small Mobile (≤360px) */
+@media (max-width: 360px) {
+    .contact-hero-r__title { font-size: 1.45rem; }
+    .contact-card-r { padding: 1.1rem; gap: 0.875rem; }
+    .contact-card-r__icon { width: 40px; height: 40px; font-size: 1.05rem; }
+    .contact-card-r__title { font-size: 0.95rem; }
+    .mapform-r__formwrap { padding: 1.25rem; }
+    .fl-input-r { padding-left: 2.2rem; }
+    .fl-icon-r { left: 0.7rem; }
+    .fl-label-r { left: 2.2rem; }
+    .faq-r__q { font-size: 0.82rem; padding: 0.875rem; }
+    .social-r__link { width: 40px; height: 40px; font-size: 1rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ===== HERO ===== -->
+<section class="contact-hero-r">
+    <div class="contact-hero-r__content reveal">
+        <span class="contact-hero-r__eyebrow"><i class="bi bi-envelope-paper-fill"></i> Get in Touch</span>
+        <h1 class="contact-hero-r__title">Hubungi Kami</h1>
+        <p class="contact-hero-r__subtitle">Kami siap membantu Anda menemukan perangkat impian atau menjawab pertanyaan apa pun seputar produk dan layanan.</p>
+    </div>
+</section>
+
+<!-- ===== CONTACT CARDS ===== -->
+<section class="contact-cards-r">
+    <div class="container" style="max-width: var(--container-max);">
+        <div class="contact-cards-r__grid">
+            <div class="contact-card-r reveal reveal-delay-1">
+                <div class="contact-card-r__icon"><i class="bi bi-geo-alt-fill"></i></div>
+                <div class="contact-card-r__body">
+                    <h3 class="contact-card-r__title">Alamat</h3>
+                    {% set addr_line = settings.get('store_address', '') %}
+                    {% set addr_city = [settings.get('store_city', ''), settings.get('store_province', '')] | select | join(', ') %}
+                    {% set addr_postal = settings.get('store_postal', '') %}
+                    {% if addr_line or addr_city %}
+                    <p class="contact-card-r__text">{{ addr_line }}{% if addr_line and addr_city %}<br>{% endif %}{{ addr_city }}{% if addr_postal %} {{ addr_postal }}{% endif %}</p>
+                    {% else %}
+                    <p class="contact-card-r__text">Jl. Siliwangi, Kahuripan<br>Kec. Tawang, Kab. Tasikmalaya<br>Jawa Barat 46115</p>
+                    {% endif %}
+                    <a href="https://maps.google.com/?q={{ (addr_line + ' ' + addr_city) | default('Jl Siliwangi Tasikmalaya', true) | urlencode }}" target="_blank" class="contact-card-r__link">
+                        Lihat di Peta <i class="bi bi-arrow-right-short"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="contact-card-r reveal reveal-delay-2">
+                <div class="contact-card-r__icon"><i class="bi bi-telephone-fill"></i></div>
+                <div class="contact-card-r__body">
+                    <h3 class="contact-card-r__title">Telepon & WhatsApp</h3>
+                    {% set contact_wa = settings.get('store_whatsapp') or settings.get('whatsapp_recipient_number') or '6289530052136' %}
+                    <p class="contact-card-r__text">+{{ contact_wa }}</p>
+                    <p class="contact-card-r__subtext">Senin–Jumat: 10:00–20:00<br>Sabtu–Minggu: 12:00–18:00</p>
+                    <a href="https://wa.me/{{ contact_wa }}" target="_blank" class="contact-card-r__link contact-card-r__link--wa">
+                        <i class="bi bi-whatsapp"></i> Chat Sekarang
+                    </a>
+                </div>
+            </div>
+
+            <div class="contact-card-r reveal reveal-delay-3">
+                <div class="contact-card-r__icon"><i class="bi bi-envelope-fill"></i></div>
+                <div class="contact-card-r__body">
+                    <h3 class="contact-card-r__title">Email</h3>
+                    {% set contact_email = settings.get('store_email') or 'info@cspgi.com' %}
+                    <p class="contact-card-r__text">{{ contact_email }}</p>
+                    <a href="mailto:{{ contact_email }}" class="contact-card-r__link">
+                        Kirim Email <i class="bi bi-arrow-right-short"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== MAP & FORM ===== -->
+<section class="mapform-r">
+    <div class="container" style="max-width: var(--container-max);">
+        <div class="mapform-r__grid">
+            <!-- Map -->
+            <div class="mapform-r__map reveal">
+                <iframe
+                    src="https://www.google.com/maps?q={{ (addr_line + ' ' + addr_city) | default('Jalan Siliwangi Tasikmalaya', true) | urlencode }}&output=embed"
+                    width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy">
+                </iframe>
+                <div class="mapform-r__pin">
+                    <div class="mapform-r__pin-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                    <div class="mapform-r__pin-text">
+                        <h4>{{ global_settings.site_name }}</h4>
+                        <p>{{ addr_line if addr_line else 'Jl. Siliwangi, Tasikmalaya' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <div class="mapform-r__formwrap reveal">
+                <div class="mapform-r__header">
+                    <h2>Kirim Pesan</h2>
+                    <p>Isi form di bawah ini dan tim kami akan membalas dalam waktu 1×24 jam.</p>
+                </div>
+
+                <form id="contactFormR">
+                    <div class="fl-group-r fl-group-r--half">
+                        <div class="fl-group-r">
+                            <input type="text" id="contactName" class="fl-input-r" placeholder=" " required>
+                            <label class="fl-label-r" for="contactName">Nama Lengkap</label>
+                            <i class="bi bi-person fl-icon-r"></i>
+                        </div>
+                        <div class="fl-group-r">
+                            <input type="email" id="contactEmail" class="fl-input-r" placeholder=" " required>
+                            <label class="fl-label-r" for="contactEmail">Email</label>
+                            <i class="bi bi-envelope fl-icon-r"></i>
+                        </div>
+                    </div>
+
+                    <div class="fl-group-r">
+                        <input type="text" id="contactSubject" class="fl-input-r" placeholder=" ">
+                        <label class="fl-label-r" for="contactSubject">Subjek</label>
+                        <i class="bi bi-chat-left-text fl-icon-r"></i>
+                    </div>
+
+                    <div class="fl-group-r">
+                        <textarea id="contactMessage" class="fl-input-r fl-textarea-r" rows="4" placeholder=" " required></textarea>
+                        <label class="fl-label-r" for="contactMessage">Pesan Anda</label>
+                        <i class="bi bi-pencil fl-icon-r"></i>
+                    </div>
+
+                    <button type="submit" class="btn-submit-r" id="submitContactBtn">
+                        <span class="btn-text"><i class="bi bi-send-fill me-2"></i>Kirim Pesan</span>
+                        <span class="btn-loader d-none"><span class="spinner-border spinner-border-sm me-2"></span>Mengirim...</span>
+                    </button>
+
+                    <div id="contactAlert" class="alert-r"></div>
+
+                    <div class="form-note-r">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span>Data Anda aman & terenkripsi. Kami tidak pernah membagikan informasi pribadi kepada pihak ketiga.</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FAQ ===== -->
+<section class="faq-r">
+    <div class="container" style="max-width: var(--container-max);">
+        <div class="faq-r__header reveal">
+            <span class="faq-r__eyebrow">FAQ</span>
+            <h2 class="faq-r__title">Pertanyaan yang Sering Diajukan</h2>
+        </div>
+
+        <div class="faq-r__list">
+            <div class="faq-r__item reveal">
+                <button class="faq-r__q" onclick="toggleFaqR(this)">
+                    <span>Bagaimana cara membeli handphone second?</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="faq-r__a">
+                    <p>Pilih produk di katalog, tambahkan ke keranjang, lalu checkout. Kami akan mengirimkan invoice dan menghubungi Anda via WhatsApp untuk konfirmasi pembayaran.</p>
+                </div>
+            </div>
+            <div class="faq-r__item reveal reveal-delay-1">
+                <button class="faq-r__q" onclick="toggleFaqR(this)">
+                    <span>Apakah ada garansi untuk produk second?</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="faq-r__a">
+                    <p>Ya, semua produk kami dilengkapi garansi 30 hari. Jika ada kerusakan fungsional yang tidak disebutkan dalam deskripsi, Anda berhak mengajukan pengembalian atau pergantian unit.</p>
+                </div>
+            </div>
+            <div class="faq-r__item reveal reveal-delay-2">
+                <button class="faq-r__q" onclick="toggleFaqR(this)">
+                    <span>Bagaimana sistem grading kondisi produk?</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="faq-r__a">
+                    <p>Kami menggunakan sistem 5-level: Like New (seperti baru), Excellent (sangat baik), Very Good (baik sekali), Good (baik), dan Fair (cukup). Setiap level memiliki kriteria inspeksi yang jelas.</p>
+                </div>
+            </div>
+            <div class="faq-r__item reveal">
+                <button class="faq-r__q" onclick="toggleFaqR(this)">
+                    <span>Apakah bisa trade-in handphone lama?</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="faq-r__a">
+                    <p>Ya! Program trade-in kami memungkinkan Anda menukar handphone lama dengan diskon untuk pembelian baru. Hubungi kami via WhatsApp untuk appraisal gratis.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== SOCIAL ===== -->
+<section class="social-r">
+    <div class="container" style="max-width: var(--container-max);">
+        <div class="social-r__card reveal">
+            <h3 class="social-r__title">Ikuti Kami</h3>
+            <p class="social-r__desc">Dapatkan update produk terbaru, promo eksklusif, dan tips gadget langsung di timeline Anda.</p>
+            <div class="social-r__links">
+                <a href="#" class="social-r__link" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                <a href="#" class="social-r__link" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                <a href="#" class="social-r__link" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+                <a href="#" class="social-r__link" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+                <a href="#" class="social-r__link" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// FAQ Toggle
+function toggleFaqR(button) {
+    const item = button.closest('.faq-r__item');
+    const isActive = item.classList.contains('active');
+    document.querySelectorAll('.faq-r__item').forEach(i => i.classList.remove('active'));
+    if (!isActive) item.classList.add('active');
+}
+
+// Contact Form
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('contactFormR');
+    const btn = document.getElementById('submitContactBtn');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoader = btn.querySelector('.btn-loader');
+    const alertBox = document.getElementById('contactAlert');
+
+    function showAlert(message, type) {
+        alertBox.textContent = message;
+        alertBox.className = 'alert-r alert-r--' + type;
+        alertBox.style.display = 'block';
+        alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const name = document.getElementById('contactName').value.trim();
+        const email = document.getElementById('contactEmail').value.trim();
+        const subject = document.getElementById('contactSubject').value.trim();
+        const message = document.getElementById('contactMessage').value.trim();
+
+        if (!name || !email || !message) {
+            showAlert('Harap isi nama, email, dan pesan.', 'error');
+            return;
+        }
+
+        btnText.classList.add('d-none');
+        btnLoader.classList.remove('d-none');
+        btn.disabled = true;
+        alertBox.style.display = 'none';
+
+        try {
+            const res = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, subject: subject || 'Tidak ada subjek', message })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showAlert('Pesan Anda telah terkirim! Kami akan segera menghubungi Anda.', 'success');
+                form.reset();
+            } else {
+                throw new Error(data.error || 'Gagal mengirim pesan.');
+            }
+        } catch (err) {
+            showAlert('Terjadi kesalahan: ' + err.message, 'error');
+        } finally {
+            btnText.classList.remove('d-none');
+            btnLoader.classList.add('d-none');
+            btn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

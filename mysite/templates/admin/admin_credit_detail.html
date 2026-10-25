@@ -1,0 +1,496 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Detail Kredit #{{ app.id }} — {{ site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.credit-verification-card {
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.02);
+    overflow: hidden;
+}
+.credit-verification-card .card-header {
+    background: rgba(15,15,26,0.5);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+.verification-image {
+    max-width: 100%;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+}
+.schedule-table th {
+    background: rgba(255,255,255,0.03);
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+}
+.schedule-table td {
+    font-size: 0.9rem;
+}
+.status-badge-lg {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-credit-card-2-front me-2"></i>Detail Kredit #{{ app.id }}
+        </h1>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin_credit_applications') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Kembali
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column: Application Details -->
+        <div class="col-lg-8">
+            <!-- Status Card -->
+            <div class="admin-card mb-4">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Status Pengajuan</h5>
+                        <span class="badge status-badge-lg {% if app.status == 'pending' %}bg-warning text-dark {% elif app.status == 'approved' %}bg-success {% elif app.status == 'active' %}bg-info {% elif app.status == 'completed' %}bg-primary {% elif app.status == 'rejected' %}bg-danger {% elif app.status == 'defaulted' %}bg-dark {% endif %}">
+                            {{ app.status.upper() }}
+                        </span>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block">Diajukan</small>
+                        <strong>{{ app.created_at | format_datetime if app.created_at else '-' }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Applicant Info -->
+            <div class="admin-card mb-4">
+                <div class="card-header border-bottom border-primary pb-3 mb-3">
+                    <i class="bi bi-person me-2 text-primary"></i><span class="text-primary fw-bold">Data Pengaju</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small">Nama Lengkap</label>
+                            <p class="mb-0 fw-bold">{{ app.ktp_name or (user.full_name if user else '-') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">NIK</label>
+                            <p class="mb-0 fw-bold">{{ app.ktp_nik or '-' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Email</label>
+                            <p class="mb-0">{{ user.email if user else '-' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Telepon</label>
+                            <p class="mb-0">{{ user.phone if user else '-' }}</p>
+                        </div>
+                        <div class="col-12">
+                            <label class="text-muted small">Alamat KTP</label>
+                            <p class="mb-0">{{ app.ktp_address or '-' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employment Info -->
+            <div class="admin-card mb-4">
+                <div class="card-header border-bottom border-info pb-3 mb-3">
+                    <i class="bi bi-briefcase me-2 text-info"></i><span class="text-info fw-bold">Data Pekerjaan</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small">Status Pekerjaan</label>
+                            <p class="mb-0 fw-bold">{{ app.employment_status or '-' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Penghasilan Bulanan</label>
+                            <p class="mb-0 fw-bold">{{ format_price(app.monthly_income) if app.monthly_income else '-' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Nama Perusahaan</label>
+                            <p class="mb-0">{{ app.company_name or '-' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Alamat Perusahaan</label>
+                            <p class="mb-0">{{ app.company_address or '-' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div class="admin-card mb-4">
+                <div class="card-header border-bottom border-warning pb-3 mb-3">
+                    <i class="bi bi-telephone-plus me-2 text-warning"></i><span class="text-warning fw-bold">Kontak Darurat</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="text-muted small">Nama</label>
+                            <p class="mb-0 fw-bold">{{ app.emergency_contact_name or '-' }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Telepon</label>
+                            <p class="mb-0">{{ app.emergency_contact_phone or '-' }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Hubungan</label>
+                            <p class="mb-0">{{ app.emergency_contact_relation or '-' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Credit Details -->
+            <div class="admin-card mb-4">
+                <div class="card-header border-bottom border-success pb-3 mb-3">
+                    <i class="bi bi-calculator me-2 text-success"></i><span class="text-success fw-bold">Detail Kredit</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small">Produk</label>
+                            <p class="mb-0 fw-bold">{{ product.name if product else '-' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Harga Produk</label>
+                            <p class="mb-0 fw-bold">{{ format_price(app.product_price) }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Uang Muka (DP)</label>
+                            <p class="mb-0 text-success fw-bold">{{ format_price(app.down_payment) }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Pokok Hutang</label>
+                            <p class="mb-0 fw-bold">{{ format_price(app.principal) }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Bunga Total</label>
+                            <p class="mb-0 text-warning fw-bold">{{ format_price(app.total_interest) }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Angsuran/Bulan</label>
+                            <p class="mb-0 text-primary fw-bold">{{ format_price(app.monthly_installment) }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Tenor</label>
+                            <p class="mb-0 fw-bold">{{ app.tenor_months }} bulan</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Total Pembayaran</label>
+                            <p class="mb-0 fw-bold">{{ format_price(app.total_payment) }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Jenis Bunga</label>
+                            <p class="mb-0">{{ app.interest_type.title() }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Suku Bunga Tahunan</label>
+                            <p class="mb-0">{{ app.interest_rate_annual }}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Installment Schedule -->
+            {% if schedule %}
+            <div class="admin-card">
+                <div class="card-header border-bottom border-light pb-3 mb-3">
+                    <i class="bi bi-calendar3 me-2"></i>Jadwal Angsuran
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover schedule-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Jatuh Tempo</th>
+                                    <th>Pokok</th>
+                                    <th>Bunga</th>
+                                    <th>Total</th>
+                                    <th>Sisa</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in schedule %}
+                                <tr>
+                                    <td>{{ item.installment_no }}</td>
+                                    <td>{{ item.due_date | format_date if item.due_date else '-' }}</td>
+                                    <td>{{ format_price(item.principal) }}</td>
+                                    <td>{{ format_price(item.interest) }}</td>
+                                    <td class="fw-bold">{{ format_price(item.total) }}</td>
+                                    <td>{{ format_price(item.remaining) }}</td>
+                                    <td>
+                                        {% set inst = installments|selectattr('installment_no', 'equalto', item.installment_no)|first %}
+                                        {% if inst %}
+                                            {% if inst.status == 'paid' %}
+                                                <span class="badge bg-success">Lunas</span>
+                                            {% elif inst.status == 'overdue' %}
+                                                <span class="badge bg-danger">Terlambat {{ inst.days_overdue }} hari</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Belum</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">Belum</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column: Verification & Actions -->
+        <div class="col-lg-4">
+            <!-- Face Verification -->
+            <div class="credit-verification-card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-person-bounding-box me-2"></i>Verifikasi Wajah
+                </div>
+                <div class="card-body text-center">
+                    {% set selfie_file = app.selfie_photo_filename or app.selfie_photo %}
+                    {% if selfie_file %}
+                    <img src="{{ url_for('uploaded_selfie_file', filename=selfie_file) }}" 
+                         alt="Selfie" class="verification-image mb-3">
+                    <div class="d-flex justify-content-center gap-2">
+                        <span class="badge {{ 'bg-success' if app.face_verified else 'bg-warning' }}">
+                            <i class="bi bi-{{ 'check-circle' if app.face_verified else 'exclamation-triangle' }}"></i>
+                            {{ 'Terverifikasi' if app.face_verified else 'Belum Terverifikasi' }}
+                        </span>
+                    </div>
+                    {% if app.face_verification_score %}
+                    <small class="text-muted d-block mt-2">Skor: {{ app.face_verification_score }}</small>
+                    {% endif %}
+                    {% else %}
+                    <div class="py-4 text-muted">
+                        <i class="bi bi-image" style="font-size: 3rem;"></i>
+                        <p class="mt-2">Tidak ada foto selfie</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- KTP Verification -->
+            <div class="credit-verification-card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-card-text me-2"></i>Foto KTP
+                </div>
+                <div class="card-body text-center">
+                    {% set ktp_file = app.ktp_photo_filename or app.ktp_photo %}
+                    {% if ktp_file %}
+                    <img src="{{ url_for('uploaded_ktp_file', filename=ktp_file) }}" 
+                         alt="KTP" class="verification-image mb-3">
+                    <div class="d-flex justify-content-center gap-2">
+                        <span class="badge {{ 'bg-success' if app.ktp_verified else 'bg-warning' }}">
+                            <i class="bi bi-{{ 'check-circle' if app.ktp_verified else 'exclamation-triangle' }}"></i>
+                            {{ 'Terverifikasi' if app.ktp_verified else 'Belum Terverifikasi' }}
+                        </span>
+                    </div>
+                    {% else %}
+                    <div class="py-4 text-muted">
+                        <i class="bi bi-image" style="font-size: 3rem;"></i>
+                        <p class="mt-2">Tidak ada foto KTP</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            {% if app.status == 'pending' %}
+            <div class="admin-card">
+                <div class="card-header border-bottom border-primary pb-3 mb-3">
+                    <i class="bi bi-gavel me-2 text-primary"></i><span class="text-primary fw-bold">Keputusan</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Catatan Review</label>
+                        <textarea id="reviewNotes" class="form-control" rows="3" 
+                                  placeholder="Catatan untuk pengaju..."></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button onclick="reviewCredit({{ app.id }}, 'approve')" 
+                                class="btn btn-success">
+                            <i class="bi bi-check-lg me-1"></i> Setujui
+                        </button>
+                        <button onclick="reviewCredit({{ app.id }}, 'reject')" 
+                                class="btn btn-danger">
+                            <i class="bi bi-x-lg me-1"></i> Tolak
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% elif app.status == 'approved' %}
+            <div class="admin-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">Kredit Disetujui</h5>
+                    <p class="text-muted">Menunggu checkout dari pelanggan</p>
+                    <button onclick="updateStatus({{ app.id }}, 'active')" 
+                            class="btn btn-primary">
+                        Aktifkan Manual
+                    </button>
+                </div>
+            </div>
+            {% elif app.status == 'active' %}
+            <div class="admin-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-credit-card-2-front text-info" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">Kredit Aktif</h5>
+                    <p class="text-muted">Pelanggan sedang dalam masa angsuran</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="creditConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.1); border-radius:16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title" id="creditConfirmModalTitle">Konfirmasi Aksi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="creditConfirmModalBody" class="mb-3"></p>
+                <div id="creditRejectReasonBox" style="display:none;">
+                    <label class="form-label small text-muted">Alasan Penolakan</label>
+                    <textarea id="creditRejectReasonInput" class="form-control" rows="3"
+                        placeholder="Masukkan alasan penolakan (opsional)..."
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:#f3f4f6; border-radius:10px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 gap-2">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn" id="creditConfirmBtn" onclick="executeCreditAction()">Konfirmasi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let _creditActionType = null;
+let _creditAppId = null;
+
+function reviewCredit(appId, decision) {
+    _creditAppId = appId;
+    _creditActionType = decision;
+
+    const confirmBtn = document.getElementById('creditConfirmBtn');
+    const rejectBox = document.getElementById('creditRejectReasonBox');
+    const body = document.getElementById('creditConfirmModalBody');
+    const title = document.getElementById('creditConfirmModalTitle');
+
+    if (decision === 'approve') {
+        title.innerHTML = '<i class="bi bi-check-circle text-success me-2"></i>Setujui Pengajuan';
+        body.textContent = 'Anda yakin ingin menyetujui pengajuan kredit ini? Pelanggan akan mendapat notifikasi bahwa kreditnya disetujui.';
+        confirmBtn.className = 'btn btn-success';
+        confirmBtn.textContent = 'Ya, Setujui';
+        rejectBox.style.display = 'none';
+    } else {
+        title.innerHTML = '<i class="bi bi-x-circle text-danger me-2"></i>Tolak Pengajuan';
+        body.textContent = 'Anda yakin ingin menolak pengajuan kredit ini?';
+        confirmBtn.className = 'btn btn-danger';
+        confirmBtn.textContent = 'Ya, Tolak';
+        rejectBox.style.display = '';
+        document.getElementById('creditRejectReasonInput').value = '';
+    }
+
+    new bootstrap.Modal(document.getElementById('creditConfirmModal')).show();
+}
+
+
+
+function updateStatus(appId, status) {
+    _creditAppId = appId;
+    _creditActionType = 'update_status_' + status;
+
+    const confirmBtn = document.getElementById('creditConfirmBtn');
+    const rejectBox = document.getElementById('creditRejectReasonBox');
+    document.getElementById('creditConfirmModalTitle').innerHTML = '<i class="bi bi-arrow-repeat text-primary me-2"></i>Aktifkan Kredit';
+    document.getElementById('creditConfirmModalBody').textContent = 'Aktifkan kredit ini secara manual? Cicilan pelanggan akan mulai berjalan.';
+    confirmBtn.className = 'btn btn-primary';
+    confirmBtn.textContent = 'Ya, Aktifkan';
+    rejectBox.style.display = 'none';
+
+    new bootstrap.Modal(document.getElementById('creditConfirmModal')).show();
+}
+
+async function executeCreditAction() {
+    if (!_creditAppId || !_creditActionType) return;
+
+    const confirmBtn = document.getElementById('creditConfirmBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Memproses...';
+
+    const modalEl = document.getElementById('creditConfirmModal');
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+
+    try {
+        let url, body;
+
+        if (_creditActionType === 'approve') {
+            url = `/admin/credit-application/${_creditAppId}/approve`;
+            body = {};
+        } else if (_creditActionType === 'reject') {
+            const reason = document.getElementById('creditRejectReasonInput')?.value?.trim() || '';
+            url = `/admin/credit-application/${_creditAppId}/reject`;
+            body = { reason };
+        } else {
+            // update_status_xxx
+            const newStatus = _creditActionType.replace('update_status_', '');
+            url = `/admin/credit-application/${_creditAppId}/update-status`;
+            body = { status: newStatus };
+        }
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        modalInstance?.hide();
+
+        if (data.success) {
+            showCreditToast(data.message || 'Berhasil', 'success');
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            showCreditToast(data.message || 'Terjadi kesalahan', 'danger');
+        }
+    } catch (err) {
+        console.error('Credit action error:', err);
+        modalInstance?.hide();
+        showCreditToast('Terjadi kesalahan koneksi', 'danger');
+    } finally {
+        confirmBtn.disabled = false;
+    }
+}
+
+function showCreditToast(message, type) {
+    const bg = type === 'success' ? '#10b981' : '#ef4444';
+    const toastEl = document.createElement('div');
+    toastEl.style.cssText = `position:fixed;top:20px;right:20px;z-index:9999;background:${bg};color:white;padding:12px 20px;border-radius:12px;font-weight:600;font-size:0.9rem;box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:slideIn 0.3s ease;`;
+    toastEl.textContent = message;
+    document.body.appendChild(toastEl);
+    setTimeout(() => toastEl.remove(), 4000);
+}
+</script>
+{% endblock %}

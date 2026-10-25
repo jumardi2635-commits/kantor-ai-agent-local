@@ -1,0 +1,755 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}Detail Order - {{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block content %}
+<div x-data="orderDetail()" x-init="init()" class="relative">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-100 flex items-center gap-3">
+            <i class="fas fa-receipt text-2xl text-blue-600"></i>
+            Order #{{ order.order_number }}
+        </h1>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('admin_orders') }}" class="flex items-center gap-2 px-4 py-2 admin-card backdrop-blur-sm border border-gray-700/50 text-gray-200 text-sm font-medium rounded-xl hover:bg-dark-800/50 hover:text-blue-600 transition-all shadow-sm">
+                <i class="fas fa-arrow-left"></i> Kembali
+            </a>
+            <a href="{{ url_for('invoice', order_id=order.id) }}" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-200 text-sm font-medium rounded-xl hover:bg-gray-200 transition-all shadow-sm">
+                <i class="fas fa-print"></i> Cetak Invoice
+            </a>
+        </div>
+    </div>
+
+    <!-- Order Status Timeline – tidak diubah -->
+    <div class="admin-card p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="fas fa-stream text-blue-600"></i> Timeline Status
+        </h2>
+        <div class="relative">
+            <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+            <div class="space-y-6">
+                {% set flow = status_flow|default(['Pending', 'Paid', 'Processing', 'Ready_to_Ship', 'Shipped', 'Out_for_Delivery', 'Received', 'Completed']) %}
+                {% set terminal = terminal_statuses|default(['Cancelled', 'Returned']) %}
+                {% set is_terminal = order.status in terminal %}
+
+                {% for status in flow %}
+                <div class="relative flex items-start gap-4">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center z-10 text-xs font-bold {% if order.status == status %}bg-blue-600 text-white ring-4 ring-blue-100 {% elif is_terminal %}bg-gray-200 text-gray-400 {% elif order.status in flow and flow.index(status) < flow.index(order.status) %}bg-green-500 text-white {% else %}bg-gray-200 text-gray-400{% endif %}">
+                        {% if is_terminal %}
+                            {{ loop.index }}
+                        {% elif order.status in flow and flow.index(status) < flow.index(order.status) %}
+                            <i class="fas fa-check"></i>
+                        {% else %}
+                            {{ loop.index }}
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 pt-1">
+                        <div class="text-sm font-semibold {% if order.status == status %}text-blue-300 {% elif is_terminal %}text-gray-400 {% elif order.status in flow and flow.index(status) < flow.index(order.status) %}text-green-300 {% else %}text-gray-400{% endif %}">
+                            {{ status.replace('_', ' ') }}
+                        </div>
+                        <div class="text-xs text-gray-400">
+                            {% if status == 'Pending' and order.created_at %}
+                            {{ order.created_at | format_datetime }}
+                            {% elif status == 'Paid' and order.paid_at is defined and order.paid_at %}
+                            {{ order.paid_at | format_datetime }}
+                            {% elif status == 'Shipped' and order.shipped_at is defined and order.shipped_at %}
+                            {{ order.shipped_at | format_datetime }}
+                            {% elif status == 'Completed' and order.completed_at is defined and order.completed_at %}
+                            {{ order.completed_at | format_datetime }}
+                            {% else %}-{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                {% if is_terminal %}
+                <div class="relative flex items-start gap-4">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center z-10 text-xs font-bold bg-red-500 text-white ring-4 ring-red-100">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <div class="flex-1 pt-1">
+                        <div class="text-sm font-semibold text-red-400">
+                            {{ order.status.replace('_', ' ') }}
+                        </div>
+                        <div class="text-xs text-gray-400">
+                            {% if order.updated_at %}
+                            {{ order.updated_at | format_datetime }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Kolom Kiri: Detail Pelanggan & Produk – tidak diubah, sama seperti sebelumnya -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Informasi Pelanggan -->
+            <div class="admin-card p-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-user-circle text-blue-600"></i> Informasi Pelanggan
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="p-3 bg-dark-600/40 rounded-xl">
+                        <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Nama Lengkap</div>
+                        <div class="font-semibold text-gray-100">{{ order.customer_name }}</div>
+                    </div>
+                    <div class="p-3 bg-dark-600/40 rounded-xl">
+                        <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Telepon</div>
+                        <div class="font-semibold text-gray-100 flex items-center gap-2">
+                            {{ order.customer_phone }}
+                            <a href="https://wa.me/{{ order.customer_phone|replace('+','')|replace('-','')|replace(' ','') }}" target="_blank" class="text-green-600 hover:text-green-300">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-dark-600/40 rounded-xl">
+                        <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Email</div>
+                        <div class="font-semibold text-gray-100">{{ order.customer_email or '-' }}</div>
+                    </div>
+                    <div class="p-3 bg-dark-600/40 rounded-xl">
+                        <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Metode Pembayaran</div>
+                        <div class="font-semibold text-gray-100">{{ order.payment_method }}</div>
+                    </div>
+                    <div class="md:col-span-2 p-3 bg-dark-600/40 rounded-xl">
+                        <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Alamat Pengiriman</div>
+                        <div class="font-semibold text-gray-100">{{ order.shipping_address }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bukti Pembayaran (diunggah pelanggan) -->
+            <div class="admin-card p-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-file-invoice-dollar text-blue-600"></i> Bukti Pembayaran
+                </h2>
+                {% if order.payment_proof %}
+                {% set proof_url = url_for('uploaded_payment_proof', filename=order.payment_proof) %}
+                <div class="flex flex-col sm:flex-row gap-4 items-start">
+                    <a href="{{ proof_url }}" target="_blank" rel="noopener"
+                       class="block rounded-xl overflow-hidden border border-white/10 bg-dark-600/40 shrink-0">
+                        <img src="{{ proof_url }}" alt="Bukti pembayaran {{ order.order_number }}"
+                             class="max-h-72 max-w-full sm:max-w-xs object-contain"
+                             onerror="this.closest('a').outerHTML='<div class=&quot;p-4 text-xs text-red-400&quot;>Gambar bukti tidak dapat dimuat (file hilang di server).</div>'">
+                    </a>
+                    <div class="text-sm space-y-3">
+                        <div class="p-3 bg-dark-600/40 rounded-xl">
+                            <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Metode</div>
+                            <div class="font-semibold text-gray-100">{{ order.payment_method }}</div>
+                        </div>
+                        <div class="p-3 bg-dark-600/40 rounded-xl">
+                            <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Nominal Harus Dibayar</div>
+                            <div class="font-semibold text-blue-600">{{ format_price(order.total) }}</div>
+                        </div>
+                        <a href="{{ proof_url }}" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl transition-all">
+                            <i class="fas fa-expand"></i> Buka Ukuran Penuh
+                        </a>
+                        {% if order.status == 'Pending' %}
+                        <p class="text-xs text-yellow-400"><i class="fas fa-info-circle"></i> Cocokkan nominal pada bukti dengan total di atas, lalu gunakan tombol "Tandai Lunas (Paid)".</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-4 bg-dark-600/40 rounded-xl text-sm text-gray-400 flex items-center gap-2">
+                    <i class="fas fa-image"></i> Pelanggan belum mengunggah bukti pembayaran.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Item Produk – tidak diubah -->
+            <div class="admin-card p-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-boxes text-blue-600"></i> Produk Dipesan
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-700/50">
+                        <thead class="bg-dark-600/40">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Produk</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Kondisi</th>
+                                <th class="px-4 py-3 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Qty</th>
+                                <th class="px-4 py-3 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Harga</th>
+                                <th class="px-4 py-3 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for item in order.items %}
+                            <tr class="hover:admin-card transition-colors">
+                                <td class="px-4 py-3 text-sm">
+                                    <div class="font-medium text-gray-100">{{ item.name }}</div>
+                                    <div class="text-xs text-gray-400">{{ item.brand }} {{ item.model }}</div>
+                                </td>
+                                <td class="px-4 py-3 text-sm">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {% if item.condition == 'Like New' %}bg-blue-50 text-blue-300 {% elif item.condition == 'Excellent' %}bg-green-50 text-green-300 {% else %}bg-yellow-50 text-yellow-700{% endif %}">
+                                        {{ item.condition }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-sm text-center font-semibold">{{ item.quantity }}</td>
+                                <td class="px-4 py-3 text-sm text-right">{{ format_price(item.price) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-semibold text-blue-600">{{ format_price(item.price * item.quantity) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="bg-dark-600/40">
+                            <tr>
+                                <td colspan="4" class="px-4 py-2 text-right font-medium text-gray-300">Subtotal</td>
+                                <td class="px-4 py-2 text-right font-semibold">{{ format_price(order.subtotal) }}</td>
+                            </tr>
+                            {% if order.shipping_cost > 0 %}
+                            <tr>
+                                <td colspan="4" class="px-4 py-2 text-right font-medium text-gray-300">Ongkos Kirim</td>
+                                <td class="px-4 py-2 text-right font-semibold">{{ format_price(order.shipping_cost) }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if order.discount > 0 %}
+                            <tr>
+                                <td colspan="4" class="px-4 py-2 text-right font-medium text-gray-300">Diskon</td>
+                                <td class="px-4 py-2 text-right font-semibold text-red-600">- {{ format_price(order.discount) }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr class="border-t-2 border-gray-700/50">
+                                <td colspan="4" class="px-4 py-3 text-right font-bold text-gray-100">Total</td>
+                                <td class="px-4 py-3 text-right font-bold text-lg text-blue-600">{{ format_price(order.total) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tracking / Return Info – tidak diubah -->
+            {% if order.tracking_number %}
+            <div class="admin-card p-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-shipping-fast text-blue-600"></i> Informasi Pengiriman
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/20">
+                        <div class="text-xs text-cyan-400 uppercase tracking-wider mb-1">Kurir</div>
+                        <div class="font-semibold text-gray-100">{{ order.carrier_name|default('-') }}</div>
+                    </div>
+                    <div class="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/20">
+                        <div class="text-xs text-cyan-400 uppercase tracking-wider mb-1">Nomor Resi</div>
+                        <div class="font-semibold text-gray-100">{{ order.tracking_number }}</div>
+                    </div>
+                    <div class="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/20">
+                        <div class="text-xs text-cyan-400 uppercase tracking-wider mb-1">Estimasi Sampai</div>
+                        <div class="font-semibold text-gray-100">
+                            {{ order.estimated_delivery | format_date if order.estimated_delivery else '-' }}
+                        </div>
+                    </div>
+                </div>
+
+                {% if order.shipping_tracking %}
+                <div class="mt-4 pt-4 border-t border-white/8">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <div class="text-xs text-cyan-400 uppercase tracking-wider mb-1">Lokasi Terkini</div>
+                            <div class="font-semibold text-gray-100">
+                                {{ order.shipping_tracking.current_location or 'Belum ada update lokasi' }}
+                                {% if order.shipping_tracking.current_lat is not none and order.shipping_tracking.current_lng is not none %}
+                                <span class="ml-1 text-xs text-green-400"><i class="fas fa-crosshairs"></i> GPS tersimpan</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <a href="{{ url_for('admin_update_shipping', shipment_id=order.shipping_tracking.id) }}"
+                           class="shrink-0 px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-xs font-medium rounded-lg border border-cyan-500/20 transition">
+                            <i class="fas fa-map-marker-alt mr-1"></i> Kelola Tracking
+                        </a>
+                    </div>
+
+                    {% if order.shipping_tracking.current_lat is not none and order.shipping_tracking.current_lng is not none %}
+                    <div id="orderTrackingMap" class="mt-3 rounded-xl overflow-hidden border border-white/8" style="height: 220px;"
+                         data-lat="{{ order.shipping_tracking.current_lat }}" data-lng="{{ order.shipping_tracking.current_lng }}"
+                         data-location="{{ order.shipping_tracking.current_location|default('', true)|e }}"></div>
+                    {% else %}
+                    <p class="text-xs text-gray-400 mt-2">
+                        <i class="fas fa-info-circle"></i> Peta muncul setelah lokasi dipilih dari daftar saran alamat di halaman "Kelola Tracking".
+                    </p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if order.status == 'Returned' and (order.return_reason or order.return_resolution) %}
+            <div class="admin-card p-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-undo text-blue-600"></i> Informasi Return
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+                        <div class="text-xs text-blue-400 uppercase tracking-wider mb-1">Alasan Return</div>
+                        <div class="font-semibold text-gray-100">{{ order.return_reason or '-' }}</div>
+                    </div>
+                    <div class="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+                        <div class="text-xs text-blue-400 uppercase tracking-wider mb-1">Resolusi</div>
+                        <div class="font-semibold text-gray-100">{{ order.return_resolution or '-' }}</div>
+                    </div>
+                    <div class="md:col-span-2 p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+                        <div class="text-xs text-blue-400 uppercase tracking-wider mb-1">Catatan</div>
+                        <div class="font-semibold text-gray-100">{{ order.return_notes or '-' }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar Kanan: Status & Aksi -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Status Card -->
+            <div class="admin-card p-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-cog text-blue-600"></i> Update Status
+                </h2>
+
+                <!-- Current Status -->
+                <div class="mb-4 p-3 rounded-xl text-center {% if order.status == 'Pending' %}bg-yellow-500/15 border border-yellow-400/30 {% elif order.status == 'Paid' %}bg-blue-500/15 border border-blue-400/30 {% elif order.status == 'Processing' %}bg-blue-500/15 border border-blue-400/30 {% elif order.status == 'Ready_to_Ship' %}bg-orange-500/15 border border-orange-400/30 {% elif order.status == 'Shipped' %}bg-cyan-500/15 border border-cyan-400/30 {% elif order.status == 'Out_for_Delivery' %}bg-sky-500/15 border border-sky-400/30 {% elif order.status == 'Completed' %}bg-green-500/15 border border-green-400/30 {% elif order.status == 'Returned' %}bg-blue-500/15 border border-blue-400/30 {% else %}bg-red-500/15 border border-red-400/30{% endif %}">
+                    <div class="text-xs uppercase tracking-wider mb-1 text-gray-400">Status Saat Ini</div>
+                    <div class="text-lg font-bold text-gray-100">{{ order.status.replace('_', ' ') }}</div>
+                </div>
+
+                <!-- Prioritas -->
+                <div class="mb-4 flex items-center justify-between">
+                    <span class="text-sm text-gray-300">Prioritas:</span>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {% if order.priority == 'urgent' %}badge badge-danger {% elif order.priority == 'high' %}badge badge-warning {% elif order.priority == 'normal' %}bg-dark-600/40 text-gray-300 {% else %}bg-blue-50 text-blue-600{% endif %}">
+                        {{ order.priority|default('normal')|upper }}
+                    </span>
+                </div>
+
+                <!-- Aksi Utama sesuai Status – TOMBOL DIUBAH MENJADI FETCH -->
+                <div class="space-y-2">
+                    {% if order.status == 'Pending' %}
+                    <a href="{{ url_for('admin_konfirmasi_pembayaran', order_id=order.id) }}"
+                       class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all shadow-sm">
+                        <i class="fas fa-money-bill-wave"></i> Konfirmasi Pembayaran
+                    </a>
+                    <button @click="updateStatusQuick('Paid')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 text-green-300 font-medium rounded-xl hover:bg-green-100 transition border border-green-200">
+                        <i class="fas fa-check-circle"></i> Tandai Lunas (Paid)
+                    </button>
+                    {% endif %}
+
+                    {% if order.status in ['Pending', 'Paid', 'Processing'] %}
+                    <a href="{{ url_for('admin_proses_order', order_id=order.id) }}"
+                       class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all shadow-sm">
+                        <i class="fas fa-cog"></i> Proses Order
+                    </a>
+                    {% endif %}
+
+                    {% if order.status == 'Ready_to_Ship' %}
+                    <button @click="openShippingModal()"
+                            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-xl transition-all shadow-sm">
+                        <i class="fas fa-truck"></i> Input Resi & Kirim
+                    </button>
+                    {% endif %}
+
+                    {% if order.status == 'Shipped' %}
+                    <button @click="updateStatusQuick('Out_for_Delivery')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl">
+                        <i class="fas fa-motorcycle"></i> Out for Delivery
+                    </button>
+                    <button @click="updateStatusQuick('Received')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-cyan-50 text-cyan-300 font-medium rounded-xl hover:bg-cyan-100 transition border border-cyan-200">
+                        <i class="fas fa-box-open"></i> Tandai Diterima (Received)
+                    </button>
+                    <button @click="updateStatusQuick('Completed')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-300 font-medium rounded-xl hover:bg-emerald-100 transition border border-emerald-200">
+                        <i class="fas fa-flag-checkered"></i> Tandai Selesai (Completed)
+                    </button>
+                    {% endif %}
+
+                    {% if order.status == 'Out_for_Delivery' %}
+                    <button @click="updateStatusQuick('Received')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl">
+                        <i class="fas fa-box-open"></i> Tandai Diterima
+                    </button>
+                    <button @click="updateStatusQuick('Completed')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl">
+                        <i class="fas fa-flag-checkered"></i> Tandai Selesai
+                    </button>
+                    {% endif %}
+
+                    {% if order.status == 'Received' %}
+                    <button @click="updateStatusQuick('Completed')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl">
+                        <i class="fas fa-flag-checkered"></i> Tandai Selesai
+                    </button>
+                    {% endif %}
+
+                    {% if order.status not in ['Cancelled', 'Returned', 'Completed'] %}
+                    <button @click="openCancelModal()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-400 font-medium rounded-xl hover:bg-red-100 transition border border-red-200">
+                        <i class="fas fa-times-circle"></i> Batalkan Order
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- Ubah Prioritas – form diubah menjadi tombol fetch -->
+                <div class="pt-4 mt-4 border-t border-white/8">
+                    <div class="text-xs text-gray-400 uppercase tracking-wider mb-2">Ubah Prioritas</div>
+                    <div class="flex gap-2">
+                        <button @click="setPriority('urgent')" class="flex-1 px-3 py-2 bg-red-50 text-red-400 text-xs font-medium rounded-lg hover:bg-red-100 transition">Urgent</button>
+                        <button @click="setPriority('high')" class="flex-1 px-3 py-2 bg-orange-50 text-orange-300 text-xs font-medium rounded-lg hover:bg-orange-100 transition">High</button>
+                        <button @click="setPriority('normal')" class="flex-1 px-3 py-2 bg-dark-800/50 text-gray-200 text-xs font-medium rounded-lg hover:bg-gray-100 transition">Normal</button>
+                        <button @click="setPriority('low')" class="flex-1 px-3 py-2 bg-blue-50 text-blue-300 text-xs font-medium rounded-lg hover:bg-blue-100 transition">Low</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions – tidak berubah -->
+            <div class="admin-card p-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-bolt text-yellow-500"></i> Aksi Cepat
+                </h2>
+                <div class="space-y-2">
+                    <a href="{{ url_for('invoice', order_id=order.id) }}" target="_blank"
+                       class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-dark-600/50 hover:bg-dark-500/60 text-gray-200 border border-white/10 font-medium rounded-xl transition-all">
+                        <i class="fas fa-print"></i> Cetak Invoice
+                    </a>
+                    <button @click="initiateReturn()"
+                            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-300 font-medium rounded-xl transition-all">
+                        <i class="fas fa-undo"></i> Proses Return
+                    </button>
+                </div>
+            </div>
+
+            <!-- Info Order Singkat – tidak berubah -->
+            <div class="admin-card p-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-blue-600"></i> Info Order
+                </h2>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">No. Order</span>
+                        <span class="font-semibold">{{ order.order_number }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Tanggal</span>
+                        <span class="font-semibold">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Metode Bayar</span>
+                        <span class="font-semibold">{{ order.payment_method }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Total Item</span>
+                        <span class="font-semibold">{{ order.items|list|length }} item</span>
+                    </div>
+                    <div class="pt-2 border-t border-white/8">
+                        <div class="flex justify-between text-lg font-bold">
+                            <span>Total</span>
+                            <span class="text-blue-600">{{ format_price(order.total) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shipping Modal (tidak berubah) -->
+    <div x-show="showShippingModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" x-transition>
+        <div class="admin-card rounded-2xl w-full max-w-md mx-4 p-6 border border-white/10" @click.away="showShippingModal = false">
+            <h3 class="text-lg font-bold text-gray-100 mb-4">Input Nomor Resi</h3>
+            <form @submit.prevent="submitTracking()">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-200 mb-1">Kurir</label>
+                        <select x-model="shippingData.carrier" class="w-full px-4 py-2 border border-gray-700/50 rounded-xl focus:ring-2 focus:ring-blue-500">
+                            <option value="">Pilih Kurir</option>
+                            <option value="jne">JNE</option>
+                            <option value="jnt">J&T Express</option>
+                            <option value="sicepat">SiCepat</option>
+                            <option value="anteraja">AnterAja</option>
+                            <option value="pos">POS Indonesia</option>
+                            <option value="tiki">TIKI</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-200 mb-1">Nomor Resi</label>
+                        <input x-model="shippingData.trackingNumber" type="text" class="w-full px-4 py-2 border border-gray-700/50 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="Masukkan nomor resi">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-200 mb-1">Estimasi Sampai</label>
+                        <input x-model="shippingData.estimatedDelivery" type="date" class="w-full px-4 py-2 border border-gray-700/50 rounded-xl focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="button" @click="showShippingModal = false" class="flex-1 px-4 py-2 border border-gray-700/50 rounded-xl text-gray-300 hover:bg-dark-800/50">Batal</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700">Simpan & Kirim</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Return Modal (tidak berubah) -->
+    <div x-show="showReturnModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" x-transition>
+        <div class="admin-card rounded-2xl w-full max-w-md mx-4 p-6 border border-white/10" @click.away="showReturnModal = false">
+            <h3 class="text-lg font-bold text-gray-100 mb-4">Proses Return Order</h3>
+            <form @submit.prevent="submitReturn()">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-200 mb-1">Alasan Return</label>
+                        <select x-model="returnData.reason" class="w-full px-4 py-2 border border-gray-700/50 rounded-xl focus:ring-2 focus:ring-blue-500">
+                            <option value="">Pilih Alasan</option>
+                            <option value="defective">Barang Rusak/Defect</option>
+                            <option value="wrong_item">Barang Tidak Sesuai</option>
+                            <option value="not_as_described">Tidak Sesuai Deskripsi</option>
+                            <option value="customer_request">Permintaan Pelanggan</option>
+                            <option value="other">Lainnya</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-200 mb-1">Tipe Resolusi</label>
+                        <select x-model="returnData.resolution" class="w-full px-4 py-2 border border-gray-700/50 rounded-xl focus:ring-2 focus:ring-blue-500">
+                            <option value="refund">Refund Uang</option>
+                            <option value="replacement">Ganti Barang Baru</option>
+                            <option value="store_credit">Store Credit</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-200 mb-1">Catatan</label>
+                        <textarea x-model="returnData.notes" rows="3" class="w-full px-4 py-2 border border-gray-700/50 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="Catatan tambahan..."></textarea>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="button" @click="showReturnModal = false" class="flex-1 px-4 py-2 border border-gray-700/50 rounded-xl text-gray-300 hover:bg-dark-800/50">Batal</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700">Proses Return</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cancel Modal (tidak berubah) -->
+    <div x-show="showCancelModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" x-transition>
+        <div class="admin-card rounded-2xl w-full max-w-md mx-4 p-6 border border-white/10" @click.away="showCancelModal = false">
+            <h3 class="text-lg font-bold text-gray-100 mb-4">Batalkan Order</h3>
+            <p class="text-sm text-gray-400 mb-4">Alasan pembatalan (opsional)</p>
+            <textarea x-model="cancelReason" rows="3" class="w-full px-4 py-2 border border-gray-700/50 rounded-xl focus:ring-2 focus:ring-red-500" placeholder="Tulis alasan pembatalan..."></textarea>
+            <div class="flex gap-3 mt-6">
+                <button @click="showCancelModal = false" class="flex-1 px-4 py-2 border border-gray-700/50 rounded-xl text-gray-300 hover:bg-dark-800/50">Batal</button>
+                <button @click="submitCancel()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700">Ya, Batalkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div x-show="toast.show" x-transition class="fixed top-6 right-6 z-50">
+        <div class="px-6 py-3 rounded-xl shadow-lg flex items-center gap-3" :class="toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'">
+            <i class="fas" :class="toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+            <span x-text="toast.message"></span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+function orderDetail() {
+    return {
+        showShippingModal: false,
+        showReturnModal: false,
+        showCancelModal: false,
+        cancelReason: '',
+        shippingData: {
+            carrier: '',
+            trackingNumber: '',
+            estimatedDelivery: ''
+        },
+        returnData: {
+            reason: '',
+            resolution: 'refund',
+            notes: ''
+        },
+        toast: { show: false, message: '', type: 'success' },
+
+        init() {
+            this.initTrackingMap();
+        },
+
+        initTrackingMap() {
+            var el = document.getElementById('orderTrackingMap');
+            if (!el || typeof L === 'undefined') return;
+            var lat = parseFloat(el.dataset.lat);
+            var lng = parseFloat(el.dataset.lng);
+            if (isNaN(lat) || isNaN(lng)) return;
+
+            var map = L.map(el, { zoomControl: false, attributionControl: false }).setView([lat, lng], 14);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+            }).addTo(map);
+            L.control.zoom({ position: 'topright' }).addTo(map);
+
+            var icon = L.divIcon({
+                html: '<div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #020617;box-shadow:0 4px 16px rgba(0,0,0,0.5);background:linear-gradient(135deg,#22d3ee,#6366f1);"><i class="fas fa-box" style="color:white;font-size:0.9rem;"></i></div>',
+                iconSize: [36, 36], className: 'custom-marker', iconAnchor: [18, 18]
+            });
+            var label = el.dataset.location || 'Posisi paket saat ini';
+            L.marker([lat, lng], { icon: icon })
+                .addTo(map)
+                .bindPopup('<div style="padding:4px;font-size:0.8rem;">' + label + '</div>')
+                .openPopup();
+
+            setTimeout(function() { map.invalidateSize(); }, 100);
+        },
+
+        openShippingModal() {
+            this.showShippingModal = true;
+        },
+
+        submitTracking() {
+            if (!this.shippingData.carrier || !this.shippingData.trackingNumber) {
+                this.showToast('Kurir dan nomor resi wajib diisi', 'error');
+                return;
+            }
+            fetch('{{ url_for("admin_update_tracking") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    order_id: parseInt("{{ order.id }}", 10),
+                    carrier: this.shippingData.carrier,
+                    tracking_number: this.shippingData.trackingNumber,
+                    estimated_delivery: this.shippingData.estimatedDelivery
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.showToast('Resi berhasil disimpan', 'success');
+                    this.showShippingModal = false;
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    this.showToast(data.message || 'Gagal', 'error');
+                }
+            })
+            .catch(err => this.showToast('Error: ' + err, 'error'));
+        },
+
+        initiateReturn() {
+            this.showReturnModal = true;
+        },
+
+        submitReturn() {
+            if (!this.returnData.reason) {
+                this.showToast('Pilih alasan return', 'error');
+                return;
+            }
+            fetch('{{ url_for("admin_process_return") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    order_id: parseInt("{{ order.id }}", 10),
+                    reason: this.returnData.reason,
+                    resolution: this.returnData.resolution,
+                    notes: this.returnData.notes
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.showToast('Return berhasil diproses', 'success');
+                    this.showReturnModal = false;
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    this.showToast(data.message || 'Gagal', 'error');
+                }
+            })
+            .catch(err => this.showToast('Error: ' + err, 'error'));
+        },
+
+        openCancelModal() {
+            this.showCancelModal = true;
+            this.cancelReason = '';
+        },
+
+        submitCancel() {
+            fetch('{{ url_for("admin_order_cancel", order_id=order.id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    reason: this.cancelReason
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.showToast('Order berhasil dibatalkan', 'success');
+                    this.showCancelModal = false;
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    this.showToast(data.message || 'Gagal membatalkan order', 'error');
+                }
+            })
+            .catch(err => this.showToast('Error: ' + err, 'error'));
+        },
+
+        // Fungsi update status (Paid, Out_for_Delivery, Completed, dll.)
+        updateStatusQuick(newStatus) {
+            // Konfirmasi langsung tanpa confirm() agar kompatibel dengan in-app browser
+            fetch('{{ url_for("admin_update_order_status", order_id=order.id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.showToast(`Status diubah menjadi ${newStatus.replace('_',' ')}`, 'success');
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    this.showToast(data.message || 'Gagal mengubah status', 'error');
+                }
+            })
+            .catch(err => this.showToast('Error: ' + err, 'error'));
+        },
+
+        // Fungsi ubah prioritas via API
+        setPriority(priority) {
+            fetch('{{ url_for("admin_order_priority", order_id=order.id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ priority: priority })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.showToast(`Prioritas diubah menjadi ${priority}`, 'success');
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    this.showToast(data.message || 'Gagal mengubah prioritas', 'error');
+                }
+            })
+            .catch(err => this.showToast('Error: ' + err, 'error'));
+        },
+
+        showToast(message, type = 'success') {
+            this.toast = { show: true, message, type };
+            setTimeout(() => this.toast.show = false, 3000);
+        }
+    }
+}
+
+/* ─── OpenRouter AI Integration ─── */
+window.aiPageContext = {
+    page: 'admin_order_detail',
+    prompt: 'Anda adalah asisten admin untuk Pusat Gadai Indonesia. Membantu admin dengan:\n- Penjelasan status pesanan dan alur proses\n- Bantuan mengisi data pengiriman dan tracking\n- Saran tentang handling masalah pesanan\n- Template pesan untuk notifikasi pelanggan\n- Panduan kebijakan refund dan retur\n- Tips customer service dan handling complaint\nJawab dengan profesional, detail, dan gunakan bahasa Indonesia.'
+};
+</script>
+{% endblock %}

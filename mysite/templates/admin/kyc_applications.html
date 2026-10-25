@@ -1,0 +1,1014 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}Verifikasi KYC — Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════════════════
+   ADMIN KYC VERIFICATION REVIEW — PROFESSIONAL EDITION
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+    --kyca-primary: var(--primary);
+    --kyca-primary-soft: rgba(59,130,246,0.12);
+    --kyca-success: #10b981;
+    --kyca-success-soft: rgba(16,185,129,0.12);
+    --kyca-warning: #f59e0b;
+    --kyca-warning-soft: rgba(245,158,11,0.12);
+    --kyca-danger: #ef4444;
+    --kyca-danger-soft: rgba(239,68,68,0.12);
+    --kyca-info: #3b82f6;
+    --kyca-info-soft: rgba(59,130,246,0.12);
+    --kyca-slate: #64748b;
+    --kyca-slate-soft: rgba(100,116,139,0.12);
+    --kyca-glass: rgba(255,255,255,0.7);
+    --kyca-glass-border: rgba(15,23,42,0.06);
+    --kyca-radius-sm: 10px;
+    --kyca-radius-md: 14px;
+    --kyca-radius-lg: 20px;
+    --kyca-radius-xl: 24px;
+    --kyca-shadow-md: 0 4px 20px rgba(15,23,42,0.128);
+    --kyca-shadow-lg: 0 8px 40px rgba(15,23,42,0.16);
+    /* Shared text/border/surface tokens (dark theme compatible) */
+    --text-primary: #f3f4f6;
+    --text-secondary: #e5e7eb;
+    --text-tertiary: #9ca3af;
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-default: rgba(255,255,255,0.1);
+    --bg-base: transparent;
+    --bg-elevated: rgba(255,255,255,0.03);
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: fadeInUp 0.4s ease both; }
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--kyca-radius-lg);
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.5rem;
+}
+.page-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    margin: 0;
+}
+.page-header h2 i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--kyca-radius-sm);
+    background: var(--kyca-primary-soft);
+    color: var(--kyca-primary);
+}
+.page-header p {
+    margin: 0.25rem 0 0 3.25rem;
+    color: var(--text-tertiary);
+    font-size: 0.875rem;
+}
+
+/* ── Stats Row ── */
+.kyca-stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.kyca-stat-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--kyca-radius-md);
+    padding: 1.1rem 1.25rem;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform 0.2s, border-color 0.2s;
+}
+.kyca-stat-card:hover { transform: translateY(-2px); border-color: var(--kyca-primary); }
+.kyca-stat-card.is-active { border-color: var(--kyca-primary); box-shadow: 0 0 0 1px var(--kyca-primary); }
+.kyca-stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+.kyca-stat-value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+.kyca-stat-card.stat-total .kyca-stat-value { color: var(--kyca-primary); }
+.kyca-stat-card.stat-pending .kyca-stat-value { color: var(--kyca-warning); }
+.kyca-stat-card.stat-verified .kyca-stat-value { color: var(--kyca-success); }
+.kyca-stat-card.stat-rejected .kyca-stat-value { color: var(--kyca-danger); }
+.kyca-stat-card.stat-cancelled .kyca-stat-value { color: var(--kyca-slate); }
+
+/* ── Status badge ── */
+.kyc-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: 1px solid;
+    white-space: nowrap;
+}
+.kyc-status-badge.pending_review {
+    background: var(--kyca-warning-soft); color: var(--kyca-warning); border-color: rgba(245,158,11,0.3);
+}
+.kyc-status-badge.verified {
+    background: var(--kyca-success-soft); color: var(--kyca-success); border-color: rgba(16,185,129,0.3);
+}
+.kyc-status-badge.expired {
+    background: var(--kyca-slate-soft); color: var(--kyca-slate); border-color: rgba(100,116,139,0.3);
+}
+.kyc-status-badge.rejected {
+    background: var(--kyca-danger-soft); color: var(--kyca-danger); border-color: rgba(239,68,68,0.3);
+}
+.kyc-status-badge.cancelled {
+    background: var(--kyca-slate-soft); color: var(--kyca-slate); border-color: rgba(100,116,139,0.3);
+}
+
+/* ── Score pill ── */
+.kyca-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 700;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.kyca-score::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+}
+.kyca-score.good { color: var(--kyca-success); }
+.kyca-score.good::before { background: var(--kyca-success); }
+.kyca-score.bad { color: var(--kyca-danger); }
+.kyca-score.bad::before { background: var(--kyca-danger); }
+
+/* ── Applications table ── */
+.kyca-table-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--kyca-radius-lg);
+    overflow: hidden;
+}
+.kyca-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.kyca-table thead th {
+    background: rgba(255,255,255,0.02);
+    padding: 0.9rem 1.1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-default);
+    text-align: left;
+    white-space: nowrap;
+}
+.kyca-table tbody td {
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.875rem;
+    vertical-align: middle;
+}
+.kyca-table tbody tr:last-child td { border-bottom: none; }
+.kyca-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+.kyca-code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-weight: 600;
+    color: var(--kyca-primary);
+}
+.kyca-applicant-name { font-weight: 600; }
+.kyca-applicant-sub { font-size: 0.78rem; color: var(--text-tertiary); }
+
+.kyca-filter-tabs {
+    display: none;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+.kyca-filter-tab {
+    padding: 0.5rem 1.1rem;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    color: var(--text-tertiary);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+.kyca-filter-tab:hover { color: var(--text-primary); border-color: var(--kyca-primary); }
+.kyca-filter-tab.active {
+    background: var(--kyca-primary-soft);
+    color: var(--kyca-primary);
+    border-color: var(--kyca-primary);
+}
+
+.kyca-empty-state {
+    text-align: center;
+    padding: 4rem 1.5rem;
+    color: var(--text-tertiary);
+}
+.kyca-empty-state i { font-size: 2.5rem; opacity: 0.4; margin-bottom: 1rem; display: block; }
+
+.kyca-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 1.25rem;
+}
+.kyca-pagination a, .kyca-pagination span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 0.5rem;
+    border-radius: var(--kyca-radius-sm);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.kyca-pagination a:hover { border-color: var(--kyca-primary); color: var(--kyca-primary); }
+.kyca-pagination .active { background: var(--kyca-primary); color: #fff; border-color: var(--kyca-primary); }
+.kyca-pagination .disabled { opacity: 0.35; pointer-events: none; }
+
+/* ── Modal ── */
+.modal-content {
+    background: var(--dark-700, #111720);
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.1));
+    border-radius: var(--kyca-radius-xl);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    color: var(--text-primary);
+}
+.modal-header { border-bottom: 1px solid var(--border-subtle); padding: 1.5rem 1.75rem; }
+.modal-body { padding: 1.75rem; overflow-y: auto; max-height: 70vh; }
+.modal-footer { border-top: 1px solid var(--border-subtle); padding: 1.1rem 1.75rem; flex-direction: column; gap: 0.5rem; align-items: stretch; }
+
+/* ── Confirm Panels in Footer ── */
+#kycRejectConfirmPanel, #kycApproveConfirmPanel {
+    width: 100%;
+    margin: 0;
+}
+#kycRejectConfirmPanel > div,
+#kycApproveConfirmPanel > div {
+    border-radius: var(--kyca-radius-md);
+    padding: 1rem 1.25rem;
+}
+
+.kyca-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin: 0 0 0.75rem;
+}
+.kyca-section-title:not(:first-child) { margin-top: 1.5rem; }
+
+.kyca-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.9rem 1.5rem;
+}
+.kyca-info-item .label {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    margin-bottom: 0.2rem;
+}
+.kyca-info-item .value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+.kyca-gauge-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+.kyca-gauge { background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: var(--kyca-radius-md); padding: 0.9rem 1.1rem; }
+.kyca-gauge-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.kyca-gauge-head .label { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+.kyca-gauge-head .value { font-size: 0.95rem; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; }
+.kyca-gauge-track { height: 8px; border-radius: 100px; background: rgba(255,255,255,0.05); overflow: hidden; }
+.kyca-gauge-fill { height: 100%; border-radius: 100px; transition: width 0.6s ease; }
+.kyca-gauge-fill.good { background: linear-gradient(90deg, var(--kyca-success), #34d399); }
+.kyca-gauge-fill.bad { background: linear-gradient(90deg, var(--kyca-danger), #f87171); }
+.kyca-gauge-threshold { font-size: 0.68rem; color: var(--text-tertiary); margin-top: 0.35rem; }
+
+.kyca-doc-gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.kyca-doc-item {
+    position: relative;
+    border-radius: var(--kyca-radius-md);
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    background: rgba(255,255,255,0.03);
+    transition: all 0.3s ease;
+}
+.kyca-doc-item:hover { border-color: var(--kyca-primary); box-shadow: 0 8px 24px rgba(59,130,246,0.18); transform: translateY(-3px); }
+.kyca-doc-item img { width: 100%; height: 170px; object-fit: cover; display: block; }
+.kyca-doc-item .placeholder {
+    width: 100%; height: 170px; display: flex; align-items: center; justify-content: center;
+    color: var(--text-tertiary); font-size: 2rem; background: var(--bg-base);
+}
+.kyca-doc-item-label {
+    padding: 0.6rem;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: rgba(255,255,255,0.03);
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.kyca-rejection-box {
+    margin-top: 1.5rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: var(--kyca-radius-md);
+    background: var(--kyca-danger-soft);
+    border: 1px solid rgba(239,68,68,0.25);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+.kyca-rejection-box strong { color: var(--kyca-danger); }
+
+.kyca-processed-note {
+    font-size: 0.82rem;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+@media (max-width: 1200px) {
+    .kyca-stats-row { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+    .page-header { flex-direction: column; align-items: stretch; text-align: center; }
+    .page-header p { margin-left: 0; }
+    .kyca-stats-row { display: none; }
+    .kyca-filter-tabs { display: flex; }
+    .kyca-table-card { overflow-x: auto; }
+    .kyca-table { min-width: 760px; }
+    .kyca-info-grid { grid-template-columns: 1fr; }
+    .kyca-gauge-row { grid-template-columns: 1fr; }
+    .kyca-doc-gallery { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="page-header animate-in">
+        <div>
+            <h2><i class="bi bi-fingerprint"></i>Verifikasi KYC</h2>
+            <p>Tinjau, setujui, atau tolak pengajuan verifikasi identitas pelanggan</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('admin_installments') }}" class="btn btn-secondary">
+                <i class="bi bi-credit-card-2-front me-2"></i>Pengajuan Cicilan
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="kyca-stats-row animate-in">
+        <a href="{{ url_for('admin_kyc_applications', status='all') }}" class="kyca-stat-card stat-total {{ 'is-active' if status_filter == 'all' }}">
+            <div class="kyca-stat-label">Total</div>
+            <div class="kyca-stat-value">{{ stats.total }}</div>
+        </a>
+        <a href="{{ url_for('admin_kyc_applications', status='pending_review') }}" class="kyca-stat-card stat-pending {{ 'is-active' if status_filter == 'pending_review' }}">
+            <div class="kyca-stat-label">Menunggu Review</div>
+            <div class="kyca-stat-value">{{ stats.pending_review }}</div>
+        </a>
+        <a href="{{ url_for('admin_kyc_applications', status='verified') }}" class="kyca-stat-card stat-verified {{ 'is-active' if status_filter == 'verified' }}">
+            <div class="kyca-stat-label">Terverifikasi</div>
+            <div class="kyca-stat-value">{{ stats.verified }}</div>
+        </a>
+        <a href="{{ url_for('admin_kyc_applications', status='rejected') }}" class="kyca-stat-card stat-rejected {{ 'is-active' if status_filter == 'rejected' }}">
+            <div class="kyca-stat-label">Ditolak</div>
+            <div class="kyca-stat-value">{{ stats.rejected }}</div>
+        </a>
+        <a href="{{ url_for('admin_kyc_applications', status='cancelled') }}" class="kyca-stat-card stat-cancelled {{ 'is-active' if status_filter == 'cancelled' }}">
+            <div class="kyca-stat-label">Dibatalkan</div>
+            <div class="kyca-stat-value">{{ stats.cancelled }}</div>
+        </a>
+    </div>
+
+    <!-- Filter tabs (mobile-friendly alternative to stat cards) -->
+    <div class="kyca-filter-tabs animate-in">
+        <a href="{{ url_for('admin_kyc_applications', status='all') }}" class="kyca-filter-tab {{ 'active' if status_filter == 'all' }}">Semua</a>
+        <a href="{{ url_for('admin_kyc_applications', status='pending_review') }}" class="kyca-filter-tab {{ 'active' if status_filter == 'pending_review' }}">Menunggu</a>
+        <a href="{{ url_for('admin_kyc_applications', status='verified') }}" class="kyca-filter-tab {{ 'active' if status_filter == 'verified' }}">Terverifikasi</a>
+        <a href="{{ url_for('admin_kyc_applications', status='rejected') }}" class="kyca-filter-tab {{ 'active' if status_filter == 'rejected' }}">Ditolak</a>
+        <a href="{{ url_for('admin_kyc_applications', status='cancelled') }}" class="kyca-filter-tab {{ 'active' if status_filter == 'cancelled' }}">Dibatalkan</a>
+    </div>
+
+    <!-- Sessions table -->
+    <div class="kyca-table-card animate-in">
+        {% if sessions and sessions|length > 0 %}
+        <table class="kyca-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Pemohon</th>
+                    <th>NIK / Nama KTP</th>
+                    <th>Skor Kecocokan</th>
+                    <th>Liveness</th>
+                    <th>Status</th>
+                    <th>Tanggal Ajuan</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sessions %}
+                {% set s = item.session %}
+                {% set u = item.user %}
+                <tr>
+                    <td><span class="kyca-code">#{{ s.id }}</span></td>
+                    <td>
+                        <div class="kyca-applicant-name">{{ u.full_name if u else '-' }}</div>
+                        <div class="kyca-applicant-sub">{{ u.phone if (u and u.phone) else (u.email if u else '-') }}</div>
+                    </td>
+                    <td>
+                        <div>{{ s.ktp_name or '-' }}</div>
+                        <div class="kyca-applicant-sub">{{ s.ktp_nik or '-' }}</div>
+                    </td>
+                    <td>
+                        <span class="kyca-score {{ 'good' if (s.face_match_confidence or 0) >= min_confidence else 'bad' }}">
+                            {{ "%.1f"|format(s.face_match_confidence or 0) }}%
+                        </span>
+                    </td>
+                    <td>
+                        <span class="kyca-score {{ 'good' if (s.liveness_score or 0) >= min_liveness else 'bad' }}">
+                            {{ "%.1f"|format(s.liveness_score or 0) }}%
+                        </span>
+                    </td>
+                    <td>
+                        {% if s.status == 'verified' and s.is_expired() %}
+                        <span class="kyc-status-badge expired"><i class="bi bi-hourglass-bottom"></i> KEDALUWARSA</span>
+                        {% else %}
+                        <span class="kyc-status-badge {{ s.status }}">
+                            {% if s.status == 'pending_review' %}<i class="bi bi-clock"></i> MENUNGGU
+                            {% elif s.status == 'verified' %}<i class="bi bi-patch-check-fill"></i> TERVERIFIKASI
+                            {% elif s.status == 'rejected' %}<i class="bi bi-x-circle"></i> DITOLAK
+                            {% elif s.status == 'cancelled' %}<i class="bi bi-slash-circle"></i> DIBATALKAN
+                            {% endif %}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="kyca-applicant-sub">{{ s.created_at.strftime('%d %b %Y') if s.created_at else '-' }}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="openReviewModal({{ s.id }})">
+                            <i class="bi bi-eye"></i> Tinjau
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if pagination and pagination.pages > 1 %}
+        <div class="kyca-pagination">
+            <a href="{{ url_for('admin_kyc_applications', status=status_filter, page=pagination.prev_num) if pagination.has_prev else '#' }}"
+               class="{{ 'disabled' if not pagination.has_prev }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            {% for p in pagination.iter_pages() %}
+                {% if p %}
+                    <a href="{{ url_for('admin_kyc_applications', status=status_filter, page=p) }}" class="{{ 'active' if p == pagination.page }}">{{ p }}</a>
+                {% else %}
+                    <span>…</span>
+                {% endif %}
+            {% endfor %}
+            <a href="{{ url_for('admin_kyc_applications', status=status_filter, page=pagination.next_num) if pagination.has_next else '#' }}"
+               class="{{ 'disabled' if not pagination.has_next }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="kyca-empty-state">
+            <i class="bi bi-inbox"></i>
+            <p class="mb-0">
+                {% if status_filter and status_filter != 'all' %}
+                    Tidak ada pengajuan KYC dengan status "{{ status_filter }}".
+                {% else %}
+                    Belum ada pengajuan verifikasi KYC.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal fade" id="kycReviewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="fw-bold mb-1"><i class="bi bi-fingerprint me-2 text-primary"></i>Tinjau Verifikasi KYC <span id="kycModalCode" class="text-muted"></span></h5>
+                    <span id="kycModalStatusBadge"></span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="kyca-section-title">Data Pemohon</div>
+                <div class="kyca-info-grid">
+                    <div class="kyca-info-item">
+                        <span class="label">Nama Akun</span>
+                        <span class="value" id="kycModalFullName">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">Email</span>
+                        <span class="value" id="kycModalEmail">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">No. HP</span>
+                        <span class="value" id="kycModalPhone">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">Metode Verifikasi</span>
+                        <span class="value" id="kycModalMethod">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">Nama pada KTP</span>
+                        <span class="value" id="kycModalKtpName">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">NIK</span>
+                        <span class="value" id="kycModalKtpNik">-</span>
+                    </div>
+                    <div class="kyca-info-item" style="grid-column: 1 / -1;">
+                        <span class="label">Alamat pada KTP</span>
+                        <span class="value" id="kycModalKtpAddress">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">Tanggal Lahir</span>
+                        <span class="value" id="kycModalBirthDate">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">Pekerjaan</span>
+                        <span class="value" id="kycModalOccupation">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">Status Pekerjaan</span>
+                        <span class="value" id="kycModalEmpStatus">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">Penghasilan Bulanan</span>
+                        <span class="value" id="kycModalIncome">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">Kontak Darurat</span>
+                        <span class="value" id="kycModalEmergName">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">No. Telepon Darurat</span>
+                        <span class="value" id="kycModalEmergPhone">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">Hubungan</span>
+                        <span class="value" id="kycModalEmergRelation">-</span>
+                    </div>
+                </div>
+
+                <div class="kyca-section-title">Skor Biometrik</div>
+                <div class="kyca-gauge-row">
+                    <div class="kyca-gauge">
+                        <div class="kyca-gauge-head">
+                            <span class="label">Kecocokan Wajah</span>
+                            <span class="value" id="kycModalMatchValue">0%</span>
+                        </div>
+                        <div class="kyca-gauge-track"><div class="kyca-gauge-fill" id="kycModalMatchFill" style="width:0%"></div></div>
+                        <div class="kyca-gauge-threshold" id="kycModalMatchThreshold">Ambang minimum: {{ "%.0f"|format(min_confidence) }}%</div>
+                    </div>
+                    <div class="kyca-gauge">
+                        <div class="kyca-gauge-head">
+                            <span class="label">Liveness (Anti-Spoof)</span>
+                            <span class="value" id="kycModalLivenessValue">0%</span>
+                        </div>
+                        <div class="kyca-gauge-track"><div class="kyca-gauge-fill" id="kycModalLivenessFill" style="width:0%"></div></div>
+                        <div class="kyca-gauge-threshold" id="kycModalLivenessThreshold">Ambang minimum: {{ "%.0f"|format(min_liveness) }}%</div>
+                    </div>
+                </div>
+
+                <div class="kyca-section-title">Dokumen</div>
+                <div class="kyca-doc-gallery">
+                    <div class="kyca-doc-item" id="kycModalKtpDocItem">
+                        <div class="placeholder"><i class="bi bi-image"></i></div>
+                        <div class="kyca-doc-item-label">Foto KTP</div>
+                    </div>
+                    <div class="kyca-doc-item" id="kycModalSelfieDocItem">
+                        <div class="placeholder"><i class="bi bi-image"></i></div>
+                        <div class="kyca-doc-item-label">Foto Selfie</div>
+                    </div>
+                </div>
+
+                <div class="kyca-section-title">Metadata</div>
+                <div class="kyca-info-grid">
+                    <div class="kyca-info-item">
+                        <span class="label">Tanggal Pengajuan</span>
+                        <span class="value" id="kycModalCreatedAt">-</span>
+                    </div>
+                    <div class="kyca-info-item">
+                        <span class="label">Alamat IP</span>
+                        <span class="value" id="kycModalIp">-</span>
+                    </div>
+                    <div class="kyca-info-item" id="kycModalVerifiedAtRow" style="display:none;">
+                        <span class="label">Tanggal Diverifikasi</span>
+                        <span class="value" id="kycModalVerifiedAt">-</span>
+                    </div>
+                    <div class="kyca-info-item" id="kycModalReviewerRow" style="display:none;">
+                        <span class="label">Direview oleh</span>
+                        <span class="value" id="kycModalReviewer">-</span>
+                    </div>
+                </div>
+
+                <div class="kyca-rejection-box" id="kycModalRejectionBox" style="display:none;">
+                    <strong>Alasan Penolakan:</strong> <span id="kycModalRejectionText"></span>
+                </div>
+
+            </div>
+            <!-- modal-footer: semua tombol aksi & konfirmasi ada di sini -->
+            <div class="modal-footer">
+
+                <!-- Tombol utama Tolak / Setujui -->
+                <div id="kycModalActiveActions" class="d-flex gap-2 w-100">
+                    <button type="button" class="btn btn-outline-danger" onclick="showKycRejectPanel()">
+                        <i class="bi bi-x-circle me-1"></i>Tolak
+                    </button>
+                    <button type="button" class="btn btn-primary ms-auto" onclick="showKycApprovePanel()">
+                        <i class="bi bi-check-circle me-1"></i>Setujui
+                    </button>
+                </div>
+
+                <!-- Panel konfirmasi TOLAK (muncul setelah klik Tolak) -->
+                <div id="kycRejectConfirmPanel" style="display:none; width:100%;">
+                    <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:12px; padding:1rem 1.25rem;">
+                        <p class="mb-2" style="font-size:0.875rem; color:#f87171; font-weight:700;">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Konfirmasi Penolakan KYC
+                        </p>
+                        <label class="form-label" style="font-size:0.78rem; color:var(--text-tertiary);">Alasan Penolakan <span style="opacity:0.6;">(opsional)</span></label>
+                        <textarea id="kycRejectReasonInput" class="form-control mb-3" rows="2"
+                            placeholder="Masukkan alasan penolakan..."
+                            style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#f3f4f6; border-radius:8px; resize:none; font-size:0.875rem;"></textarea>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="cancelKycReject()">
+                                <i class="bi bi-arrow-left me-1"></i>Batal
+                            </button>
+                            <button type="button" class="btn btn-danger btn-sm ms-auto" id="kycRejectConfirmBtn" onclick="executeKycReject()">
+                                <i class="bi bi-x-circle me-1"></i>Ya, Tolak KYC Ini
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel konfirmasi SETUJUI (muncul setelah klik Setujui) -->
+                <div id="kycApproveConfirmPanel" style="display:none; width:100%;">
+                    <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:12px; padding:1rem 1.25rem;">
+                        <p class="mb-2" style="font-size:0.875rem; color:#34d399; font-weight:700;">
+                            <i class="bi bi-check-circle-fill me-1"></i>Konfirmasi Persetujuan KYC
+                        </p>
+                        <p style="font-size:0.82rem; color:var(--text-tertiary); margin-bottom:0.75rem;">
+                            Setelah disetujui, identitas pengguna akan terverifikasi dan mereka dapat mengajukan kredit.
+                        </p>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="cancelKycApprove()">
+                                <i class="bi bi-arrow-left me-1"></i>Batal
+                            </button>
+                            <button type="button" class="btn btn-success btn-sm ms-auto" id="kycApproveConfirmBtn" onclick="executeKycApprove()">
+                                <i class="bi bi-check-circle me-1"></i>Ya, Setujui KYC Ini
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status sudah diproses -->
+                <div id="kycModalProcessedNote" class="kyca-processed-note" style="display:none;">
+                    <i class="bi bi-info-circle"></i> Pengajuan ini sudah diproses dan tidak dapat diubah lagi.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fullscreen image lightbox -->
+<div class="modal fade" id="kycImgModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="fw-bold" id="kycImgModalLabel"><i class="bi bi-image me-2 text-primary"></i>Dokumen</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-0" style="background:#0a0e1a;">
+                <img id="kycImgModalImage" src="" class="w-100" style="max-height:80vh;object-fit:contain;" alt="Document">
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a id="kycImgModalDownload" href="#" class="btn btn-primary" download target="_blank">
+                    <i class="bi bi-download"></i> Unduh Dokumen
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Data sesi KYC di halaman ini, di-key berdasarkan ID, dipakai untuk mengisi modal tinjau
+// tanpa perlu render N modal terpisah di server.
+const KYC_SESSIONS = {
+{% for item in sessions %}
+{% set s = item.session %}
+{% set u = item.user %}
+    {{ s.id }}: {
+        id: {{ s.id }},
+        status: {{ s.status | tojson }},
+        is_expired: {{ (s.status == 'verified' and s.is_expired()) | tojson }},
+        full_name: {{ (u.full_name if u else '-') | tojson }},
+        email: {{ (u.email if u else '-') | tojson }},
+        phone: {{ (u.phone if (u and u.phone) else '-') | tojson }},
+        ktp_name: {{ (s.ktp_name or '-') | tojson }},
+        ktp_nik: {{ (s.ktp_nik or '-') | tojson }},
+        ktp_address: {{ (s.ktp_address or '-') | tojson }},
+        birth_date: {{ (s.birth_date.strftime('%d %B %Y') if s.birth_date else '-') | tojson }},
+        occupation: {{ (s.occupation or '-') | tojson }},
+        employment_status: {{ (s.employment_status or '-') | tojson }},
+        monthly_income: {{ (s.monthly_income or 0) | tojson }},
+        emergency_contact_name: {{ (s.emergency_contact_name or '-') | tojson }},
+        emergency_contact_phone: {{ (s.emergency_contact_phone or '-') | tojson }},
+        emergency_contact_relation: {{ (s.emergency_contact_relation or '-') | tojson }},
+        verification_method: {{ (s.verification_method or '-') | tojson }},
+        match_score: {{ (s.face_match_confidence or 0) | tojson }},
+        liveness_score: {{ (s.liveness_score or 0) | tojson }},
+        created_at: {{ (s.created_at.strftime('%d %B %Y %H:%M') if s.created_at else '-') | tojson }},
+        verified_at: {{ (s.verified_at.strftime('%d %B %Y %H:%M') if s.verified_at else none) | tojson }},
+        ip_address: {{ (s.ip_address or '-') | tojson }},
+        reviewer: {{ (s.reviewed_by_admin.username if s.reviewed_by_admin else none) | tojson }},
+        rejection_reason: {{ (s.rejection_reason or none) | tojson }},
+        ktp_photo_url: {{ (url_for('uploaded_kyc_doc', filename=s.ktp_photo_path) if s.ktp_photo_path else none) | tojson }},
+        selfie_photo_url: {{ (url_for('uploaded_kyc_doc', filename=s.selfie_photo_path) if s.selfie_photo_path else none) | tojson }},
+    },
+{% endfor %}
+};
+
+const MIN_CONFIDENCE = {{ min_confidence | tojson }};
+const MIN_LIVENESS = {{ min_liveness | tojson }};
+
+let currentSessionId = null;
+
+const STATUS_LABELS = {
+    pending_review: { text: 'MENUNGGU', cls: 'pending_review', icon: 'bi-clock' },
+    verified:       { text: 'TERVERIFIKASI', cls: 'verified', icon: 'bi-patch-check-fill' },
+    rejected:       { text: 'DITOLAK', cls: 'rejected', icon: 'bi-x-circle' },
+    cancelled:      { text: 'DIBATALKAN', cls: 'cancelled', icon: 'bi-slash-circle' },
+};
+
+const EMP_STATUS_LABELS = {
+    karyawan_tetap: 'Karyawan Tetap',
+    karyawan_kontrak: 'Karyawan Kontrak',
+    wiraswasta: 'Wiraswasta / Pengusaha',
+    freelance: 'Freelance / Pekerja Lepas',
+    ibu_rumah_tangga: 'Ibu Rumah Tangga',
+    pelajar_mahasiswa: 'Pelajar / Mahasiswa',
+    belum_bekerja: 'Belum Bekerja',
+    lainnya: 'Lainnya',
+};
+
+const EMERG_RELATION_LABELS = {
+    orang_tua: 'Orang Tua',
+    pasangan: 'Suami / Istri',
+    saudara_kandung: 'Saudara Kandung',
+    anak: 'Anak',
+    kerabat: 'Kerabat Lain',
+    teman: 'Teman',
+    lainnya: 'Lainnya',
+};
+
+function renderDocItem(containerId, url, label) {
+    const el = document.getElementById(containerId);
+    if (url) {
+        el.innerHTML = `<img src="${url}" alt="${label}" loading="lazy">`;
+        el.onclick = () => viewKycDoc(url, label);
+    } else {
+        el.innerHTML = `<div class="placeholder"><i class="bi bi-image"></i></div>`;
+        el.onclick = null;
+    }
+}
+
+function openReviewModal(id) {
+    const s = KYC_SESSIONS[id];
+    if (!s) return;
+    currentSessionId = id;
+
+    document.getElementById('kycModalCode').textContent = '#' + s.id;
+
+    const statusKey = s.is_expired ? 'expired' : s.status;
+    const statusInfo = s.is_expired
+        ? { text: 'KEDALUWARSA', cls: 'expired', icon: 'bi-hourglass-bottom' }
+        : (STATUS_LABELS[s.status] || { text: s.status.toUpperCase(), cls: s.status, icon: 'bi-question-circle' });
+    document.getElementById('kycModalStatusBadge').innerHTML =
+        `<span class="kyc-status-badge ${statusInfo.cls}"><i class="bi ${statusInfo.icon}"></i> ${statusInfo.text}</span>`;
+
+    document.getElementById('kycModalFullName').textContent = s.full_name;
+    document.getElementById('kycModalEmail').textContent = s.email;
+    document.getElementById('kycModalPhone').textContent = s.phone;
+    document.getElementById('kycModalMethod').textContent = s.verification_method;
+    document.getElementById('kycModalKtpName').textContent = s.ktp_name;
+    document.getElementById('kycModalKtpNik').textContent = s.ktp_nik;
+    document.getElementById('kycModalKtpAddress').textContent = s.ktp_address;
+    document.getElementById('kycModalBirthDate').textContent = s.birth_date;
+    document.getElementById('kycModalOccupation').textContent = s.occupation;
+    document.getElementById('kycModalEmpStatus').textContent = EMP_STATUS_LABELS[s.employment_status] || s.employment_status;
+    document.getElementById('kycModalIncome').textContent = s.monthly_income
+        ? 'Rp ' + Number(s.monthly_income).toLocaleString('id-ID')
+        : '-';
+    document.getElementById('kycModalEmergName').textContent = s.emergency_contact_name;
+    document.getElementById('kycModalEmergPhone').textContent = s.emergency_contact_phone;
+    document.getElementById('kycModalEmergRelation').textContent = EMERG_RELATION_LABELS[s.emergency_contact_relation] || s.emergency_contact_relation;
+
+    const matchGood = s.match_score >= MIN_CONFIDENCE;
+    document.getElementById('kycModalMatchValue').textContent = s.match_score.toFixed(1) + '%';
+    const matchFill = document.getElementById('kycModalMatchFill');
+    matchFill.style.width = Math.min(100, s.match_score) + '%';
+    matchFill.className = 'kyca-gauge-fill ' + (matchGood ? 'good' : 'bad');
+
+    const liveGood = s.liveness_score >= MIN_LIVENESS;
+    document.getElementById('kycModalLivenessValue').textContent = s.liveness_score.toFixed(1) + '%';
+    const liveFill = document.getElementById('kycModalLivenessFill');
+    liveFill.style.width = Math.min(100, s.liveness_score) + '%';
+    liveFill.className = 'kyca-gauge-fill ' + (liveGood ? 'good' : 'bad');
+
+    renderDocItem('kycModalKtpDocItem', s.ktp_photo_url, 'Foto KTP');
+    renderDocItem('kycModalSelfieDocItem', s.selfie_photo_url, 'Foto Selfie');
+
+    document.getElementById('kycModalCreatedAt').textContent = s.created_at;
+    document.getElementById('kycModalIp').textContent = s.ip_address;
+
+    const verifiedAtRow = document.getElementById('kycModalVerifiedAtRow');
+    if (s.verified_at) {
+        verifiedAtRow.style.display = '';
+        document.getElementById('kycModalVerifiedAt').textContent = s.verified_at;
+    } else {
+        verifiedAtRow.style.display = 'none';
+    }
+
+    const reviewerRow = document.getElementById('kycModalReviewerRow');
+    if (s.reviewer) {
+        reviewerRow.style.display = '';
+        document.getElementById('kycModalReviewer').textContent = s.reviewer;
+    } else {
+        reviewerRow.style.display = 'none';
+    }
+
+    const rejectionBox = document.getElementById('kycModalRejectionBox');
+    if (s.status === 'rejected' && s.rejection_reason) {
+        rejectionBox.style.display = '';
+        document.getElementById('kycModalRejectionText').textContent = s.rejection_reason;
+    } else {
+        rejectionBox.style.display = 'none';
+    }
+
+    const isPending = s.status === 'pending_review';
+    document.getElementById('kycModalActiveActions').style.display = isPending ? '' : 'none';
+    document.getElementById('kycModalProcessedNote').style.display = isPending ? 'none' : 'flex';
+    // Reset semua panel sebelum tampilkan modal (penting jika user buka modal berkali-kali)
+    document.getElementById('kycRejectConfirmPanel').style.display = 'none';
+    document.getElementById('kycApproveConfirmPanel').style.display = 'none';
+    document.getElementById('kycRejectReasonInput').value = '';
+
+    const modalEl = document.getElementById('kycReviewModal');
+    const existingInstance = bootstrap.Modal.getInstance(modalEl);
+    if (existingInstance) {
+        existingInstance.show();
+    } else {
+        new bootstrap.Modal(modalEl).show();
+    }
+}
+
+function viewKycDoc(url, label) {
+    document.getElementById('kycImgModalLabel').innerHTML = `<i class="bi bi-image me-2 text-primary"></i>${label}`;
+    document.getElementById('kycImgModalImage').src = url;
+    document.getElementById('kycImgModalDownload').href = url;
+    new bootstrap.Modal(document.getElementById('kycImgModal')).show();
+}
+
+
+function showKycRejectPanel() {
+    document.getElementById('kycRejectConfirmPanel').style.display = '';
+    document.getElementById('kycApproveConfirmPanel').style.display = 'none';
+    document.getElementById('kycModalActiveActions').style.display = 'none';
+    document.getElementById('kycRejectReasonInput').value = '';
+    document.getElementById('kycRejectReasonInput').focus();
+}
+
+function cancelKycReject() {
+    document.getElementById('kycRejectConfirmPanel').style.display = 'none';
+    document.getElementById('kycModalActiveActions').style.display = '';
+}
+
+function showKycApprovePanel() {
+    document.getElementById('kycApproveConfirmPanel').style.display = '';
+    document.getElementById('kycRejectConfirmPanel').style.display = 'none';
+    document.getElementById('kycModalActiveActions').style.display = 'none';
+}
+
+function cancelKycApprove() {
+    document.getElementById('kycApproveConfirmPanel').style.display = 'none';
+    document.getElementById('kycModalActiveActions').style.display = '';
+}
+
+async function executeKycReject() {
+    if (!currentSessionId) return;
+    const btn = document.getElementById('kycRejectConfirmBtn');
+    const reason = document.getElementById('kycRejectReasonInput').value.trim();
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Memproses...';
+    try {
+        const res = await fetch(`/admin/kyc-application/${currentSessionId}/review`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ action: 'reject', reason })
+        });
+        const result = await res.json();
+        if (result.success) {
+            showToast(result.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('kycReviewModal'))?.hide();
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showToast(result.message || 'Gagal memproses', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Ya, Tolak KYC Ini';
+        }
+    } catch (err) {
+        showToast('Terjadi kesalahan koneksi', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Ya, Tolak KYC Ini';
+    }
+}
+
+async function executeKycApprove() {
+    if (!currentSessionId) return;
+    const btn = document.getElementById('kycApproveConfirmBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Memproses...';
+    try {
+        const res = await fetch(`/admin/kyc-application/${currentSessionId}/review`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ action: 'approve' })
+        });
+        const result = await res.json();
+        if (result.success) {
+            showToast(result.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('kycReviewModal'))?.hide();
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showToast(result.message || 'Gagal memproses', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Ya, Setujui KYC Ini';
+        }
+    } catch (err) {
+        showToast('Terjadi kesalahan koneksi', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Ya, Setujui KYC Ini';
+    }
+}
+</script>
+{% endblock %}

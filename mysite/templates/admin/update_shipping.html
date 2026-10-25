@@ -1,0 +1,301 @@
+{# templates/admin/update_shipping.html #}
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}Update Pengiriman #{{ shipment.tracking_number }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Breadcrumbs -->
+    <div class="flex items-center gap-2 text-sm text-gray-400 mb-6">
+        <a href="{{ url_for('admin_dashboard') }}" class="hover:text-primary transition">Dashboard</a>
+        <i class="fas fa-chevron-right text-xs"></i>
+        <a href="{{ url_for('admin_shipping_tracking') }}" class="hover:text-primary transition">Tracking Pengiriman</a>
+        <i class="fas fa-chevron-right text-xs"></i>
+        <span class="text-gray-800 font-medium">Update #{{ shipment.tracking_number }}</span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Form Column -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Details Card -->
+            <div class="admin-card p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-truck text-primary"></i> Detail Pengiriman
+                </h3>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <span class="text-xs text-gray-400 block">No. Resi</span>
+                        <code class="text-sm font-semibold text-primary block">{{ shipment.tracking_number }}</code>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-400 block">Kurir / Layanan</span>
+                        <span class="text-sm font-semibold text-gray-700 block">{{ shipment.carrier|upper }} {% if
+                            shipment.service_type %}({{ shipment.service_type }}){% endif %}</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-400 block">Pesanan</span>
+                        <a href="{{ url_for('admin_order_detail', order_id=shipment.order_id) }}"
+                            class="text-sm font-semibold text-blue-600 hover:underline block">
+                            #{{ shipment.order.order_number }}
+                        </a>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-400 block">Penerima</span>
+                        <span class="text-sm font-semibold text-gray-700 block">
+                            {{ shipment.recipient_name }} ({{ shipment.recipient_phone }})
+                        </span>
+                    </div>
+                </div>
+
+                <hr class="border-gray-700/50/60 my-6">
+
+                <form method="POST" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status Pengiriman</label>
+                        <select name="status" id="status"
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 admin-card p-2.5 border">
+                            <option value="Pending_Pickup" {% if shipment.status=='Pending_Pickup' %}selected{% endif
+                                %}>Menunggu Penjemputan (Pending Pickup)</option>
+                            <option value="Picked_Up" {% if shipment.status=='Picked_Up' %}selected{% endif %}>Sudah
+                                Dijemput (Picked Up)</option>
+                            <option value="In_Transit" {% if shipment.status=='In_Transit' %}selected{% endif %}>Dalam
+                                Pengiriman (In Transit)</option>
+                            <option value="Out_for_Delivery" {% if shipment.status=='Out_for_Delivery' %}selected{%
+                                endif %}>Dalam Perjalanan / Kurir Mengantar (Out for Delivery)</option>
+                            <option value="Delivered" {% if shipment.status=='Delivered' %}selected{% endif %}>Terkirim
+                                (Delivered)</option>
+                            <option value="Received" {% if shipment.status=='Received' %}selected{% endif %}>Diterima
+                                (Received)</option>
+                            <option value="Completed" {% if shipment.status=='Completed' %}selected{% endif %}>Selesai
+                                (Completed)</option>
+                            <option value="Failed_Delivery" {% if shipment.status=='Failed_Delivery' %}selected{% endif
+                                %}>Gagal Terkirim (Failed Delivery)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi Terkini</label>
+                            <input type="text" name="current_location" id="current_location" value="{{ shipment.current_location or '' }}"
+                                class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 admin-card p-2.5 border address-autocomplete"
+                                placeholder="Cari alamat terkini...">
+                            <input type="hidden" name="current_lat" id="current_lat" value="{{ shipment.current_lat if shipment.current_lat is not none else '' }}">
+                            <input type="hidden" name="current_lng" id="current_lng" value="{{ shipment.current_lng if shipment.current_lng is not none else '' }}">
+                            <ul id="current_location_suggestions" class="absolute z-50 w-full bg-white border border-gray-700/50 rounded-lg shadow-lg mt-1 hidden max-h-60 overflow-y-auto"></ul>
+                            <p class="text-xs text-gray-400 mt-1" id="current_coords_hint">
+                                {% if shipment.current_lat is not none and shipment.current_lng is not none %}
+                                <i class="fas fa-crosshairs text-green-500"></i> Koordinat tersimpan ({{ '%.5f'|format(shipment.current_lat) }}, {{ '%.5f'|format(shipment.current_lng) }})
+                                {% else %}
+                                <i class="fas fa-info-circle"></i> Pilih dari daftar saran untuk menyimpan koordinat akurat.
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Estimasi Tiba</label>
+                            <input type="date" name="estimated_delivery"
+                                value="{{ shipment.estimated_delivery.strftime('%Y-%m-%d') if shipment.estimated_delivery else '' }}"
+                                class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 admin-card p-2.5 border">
+                        </div>
+                    </div>
+
+                    <!-- Issues Section -->
+                    <div class="bg-dark-800/50/50 p-4 rounded-2xl border border-gray-700/50/60 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-gray-700">Terdapat Masalah dalam Pengiriman?</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="has_issue" id="has_issue" class="sr-only peer" {% if
+                                    shipment.has_issue %}checked{% endif %}>
+                                <div
+                                    class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:width-5 after:transition-all peer-checked:bg-blue-600">
+                                </div>
+                            </label>
+                        </div>
+
+                        <div id="issue_fields" class="{% if not shipment.has_issue %}hidden{% endif %} space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipe Masalah</label>
+                                <select name="issue_type"
+                                    class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 admin-card p-2.5 border">
+                                    <option value="damaged" {% if shipment.issue_type=='damaged' %}selected{% endif %}>
+                                        Barang Rusak (Damaged)</option>
+                                    <option value="lost" {% if shipment.issue_type=='lost' %}selected{% endif %}>Barang
+                                        Hilang (Lost)</option>
+                                    <option value="delayed" {% if shipment.issue_type=='delayed' %}selected{% endif %}>
+                                        Keterlambatan (Delayed)</option>
+                                    <option value="address_issue" {% if shipment.issue_type=='address_issue'
+                                        %}selected{% endif %}>Masalah Alamat (Address Issue)</option>
+                                    <option value="other" {% if shipment.issue_type=='other' %}selected{% endif %}>
+                                        Lainnya (Other)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan Masalah</label>
+                                <textarea name="issue_description" rows="3"
+                                    class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 admin-card p-2.5 border"
+                                    placeholder="Jelaskan detail kendala pengiriman...">{{ shipment.issue_description or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- New Event Trigger -->
+                    <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/60 space-y-4">
+                        <h4 class="text-sm font-bold text-blue-900 flex items-center gap-2">
+                            <i class="fas fa-plus-circle"></i> Tambah Riwayat Perjalanan (Event Log)
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="relative">
+                                <label class="block text-xs font-medium text-blue-800 mb-1">Lokasi Event</label>
+                                <input type="text" name="event_location" id="event_location"
+                                    class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white p-2 border text-sm address-autocomplete"
+                                    placeholder="Cari lokasi event...">
+                                <ul id="event_location_suggestions" class="absolute z-50 w-full bg-white border border-gray-700/50 rounded-lg shadow-lg mt-1 hidden max-h-60 overflow-y-auto"></ul>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-blue-800 mb-1">Deskripsi Peristiwa</label>
+                                <input type="text" name="event_description"
+                                    class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white p-2 border text-sm"
+                                    placeholder="Misal: Paket disortir di Jakarta Hub">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 pt-4">
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Simpan Perubahan
+                        </button>
+                        <a href="{{ url_for('admin_shipping_tracking') }}"
+                            class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl text-sm transition">
+                            Batal
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- History Timeline Column -->
+        <div class="space-y-6">
+            <div class="admin-card p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-history text-primary"></i> Riwayat Pengiriman
+                </h3>
+
+                {% if shipment.tracking_events %}
+                <div class="relative pl-6 border-l-2 border-gray-700/50/80 space-y-6 ml-2 py-2">
+                    {% for event in shipment.tracking_events|sort(attribute='event_time', reverse=True) %}
+                    <div class="relative">
+                        <!-- Dot -->
+                        <span
+                            class="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow-md flex items-center justify-center"></span>
+
+                        <div>
+                            <span class="text-xs text-gray-400 block">{{ event.event_time.strftime('%d %b %Y, %H:%M')
+                                }}</span>
+                            <span class="text-sm font-semibold text-gray-800 block">{{ event.status.replace('_', ' ')
+                                }}</span>
+                            {% if event.location %}
+                            <span class="text-xs text-gray-400 block"><i
+                                    class="fas fa-map-marker-alt text-xs mr-1 text-gray-400"></i>{{ event.location
+                                }}</span>
+                            {% endif %}
+                            <p class="text-xs text-gray-600 mt-1">{{ event.status_description }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-400 text-center py-6">Belum ada riwayat pengiriman.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('has_issue').addEventListener('change', function () {
+        var fields = document.getElementById('issue_fields');
+        if (this.checked) {
+            fields.classList.remove('hidden');
+        } else {
+            fields.classList.add('hidden');
+        }
+    });
+
+    // Address Autocomplete Logic
+    function setupAutocomplete(inputId, suggestionListId, latFieldId, lngFieldId) {
+        const input = document.getElementById(inputId);
+        const suggestionList = document.getElementById(suggestionListId);
+        const latField = latFieldId ? document.getElementById(latFieldId) : null;
+        const lngField = lngFieldId ? document.getElementById(lngFieldId) : null;
+        let debounceTimer;
+
+        input.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value;
+
+            // Ketikan manual berarti alamat lama sudah tidak valid lagi —
+            // kosongkan koordinat tersimpan sampai admin memilih saran baru.
+            if (latField) latField.value = '';
+            if (lngField) lngField.value = '';
+            const hint = document.getElementById('current_coords_hint');
+            if (hint && inputId === 'current_location') {
+                hint.innerHTML = '<i class="fas fa-info-circle"></i> Pilih dari daftar saran untuk menyimpan koordinat akurat.';
+            }
+
+            if (query.length < 3) {
+                suggestionList.classList.add('hidden');
+                return;
+            }
+
+            suggestionList.innerHTML = '<li class="p-3 text-sm text-gray-400 flex items-center justify-center"><i class="fas fa-spinner fa-spin mr-2"></i>Mencari alamat...</li>';
+            suggestionList.classList.remove('hidden');
+
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10&countrycodes=id`);
+                    const data = await response.json();
+                    
+                    suggestionList.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        suggestionList.innerHTML = '<li class="p-3 text-sm text-gray-400">Alamat tidak ditemukan.</li>';
+                        return;
+                    }
+
+                    data.forEach(item => {
+                        const li = document.createElement('li');
+                        li.className = 'p-3 text-sm hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors flex items-start gap-2';
+                        li.innerHTML = `<i class="fas fa-map-marker-alt text-blue-500 mt-1"></i><span>${item.display_name}</span>`;
+                        li.addEventListener('click', () => {
+                            input.value = item.display_name;
+                            if (latField) latField.value = item.lat;
+                            if (lngField) lngField.value = item.lon;
+                            const hint = document.getElementById('current_coords_hint');
+                            if (hint && inputId === 'current_location') {
+                                hint.innerHTML = `<i class="fas fa-crosshairs text-green-500"></i> Koordinat tersimpan (${parseFloat(item.lat).toFixed(5)}, ${parseFloat(item.lon).toFixed(5)})`;
+                            }
+                            suggestionList.classList.add('hidden');
+                        });
+                        suggestionList.appendChild(li);
+                    });
+                } catch (error) {
+                    suggestionList.innerHTML = '<li class="p-3 text-sm text-red-500">Gagal mengambil data alamat.</li>';
+                }
+            }, 500);
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target !== input && e.target !== suggestionList && !suggestionList.contains(e.target)) {
+                suggestionList.classList.add('hidden');
+            }
+        });
+    }
+
+    setupAutocomplete('current_location', 'current_location_suggestions', 'current_lat', 'current_lng');
+    setupAutocomplete('event_location', 'event_location_suggestions');
+</script>
+{% endblock %}

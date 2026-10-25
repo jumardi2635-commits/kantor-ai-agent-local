@@ -1,0 +1,146 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title %}{{ _('add_new') if not hero else _('edit') }} Hero Slide{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+        <i class="fas fa-images text-2xl text-blue-600"></i>
+        {{ _('add_new') if not hero else _('edit') }} Hero Slide
+    </h1>
+</div>
+
+<div class="admin-card p-8 relative overflow-hidden">
+    <div class="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl z-0"></div>
+    <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl z-0"></div>
+
+    <form id="heroForm" method="POST" action="{{ url_for('admin_hero_edit', id=hero.id) if hero else url_for('admin_hero_new') }}" enctype="multipart/form-data" class="relative z-10">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-6">
+                <div class="admin-card p-4 rounded-xl border border-gray-100 shadow-sm">
+                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-image text-blue-500"></i>
+                        Gambar Banner <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex items-start gap-4">
+                        {% if hero and hero.image_filename %}
+                        <div class="flex-shrink-0 relative group">
+                            <img src="{{ url_for('uploaded_hero_file', filename=hero.image_filename) }}"
+                                 alt="Current"
+                                 class="h-20 w-32 object-cover rounded-lg border border-gray-700/50 shadow-sm transition transform group-hover:scale-105">
+                        </div>
+                        {% endif %}
+                        <div class="flex-1 w-full">
+                            <input type="file" name="image" id="imageInput" accept="image/*" {% if not hero %}required{% endif %}
+                                   class="block w-full text-sm text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer">
+                            {% if hero and hero.image_filename %}
+                                <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle"></i> Biarkan kosong jika tidak ingin mengganti gambar.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-heading text-blue-500"></i>
+                        {{ _('title') }}
+                    </label>
+                    <input type="text" name="title" value="{{ hero.title if hero else '' }}"
+                           class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm">
+                </div>
+
+                <div>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-subscript text-blue-500"></i>
+                        {{ _('subtitle') }}
+                    </label>
+                    <input type="text" name="subtitle" value="{{ hero.subtitle if hero else '' }}"
+                           class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm">
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-rectangle-ad text-blue-500"></i>
+                        Teks Tombol
+                    </label>
+                    <input type="text" name="button_text" value="{{ hero.button_text if hero else '' }}"
+                           class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm">
+                </div>
+
+                <div>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-link text-blue-500"></i>
+                        URL Tombol
+                    </label>
+                    <input type="url" name="button_url" value="{{ hero.button_url if hero else '' }}"
+                           class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm"
+                           placeholder="https://...">
+                </div>
+
+                <div>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-sort-numeric-down text-blue-500"></i>
+                        Urutan Tampil
+                    </label>
+                    <input type="number" name="order" value="{{ hero.sort_order if hero else 0 }}"
+                           class="w-full px-4 py-2.5 admin-card border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm">
+                    <p class="text-xs text-gray-400 mt-1.5"><i class="fas fa-info-circle"></i> Urutan semakin kecil akan tampil lebih dulu.</p>
+                </div>
+
+                <div class="admin-card p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700">Status Publikasi</p>
+                        <p class="text-xs text-gray-400">Tampilkan slide ini di halaman utama?</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="is_active" value="true" {% if not hero or hero.is_active %}checked{% endif %} class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 mt-8 pt-6 border-t border-gray-100/50">
+            <button type="submit" id="submitBtn" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-xl transition-all transform hover:-translate-y-0.5">
+                <i class="fas fa-save"></i>
+                <span id="btnText">{{ _('save') if not hero else _('update') }}</span>
+            </button>
+            <a href="{{ url_for('admin_hero') }}"
+               class="inline-flex items-center gap-2 bg-white hover:bg-dark-800/50 text-gray-700 font-medium py-2.5 px-6 rounded-xl border border-gray-700/50 shadow-sm transition-all transform hover:-translate-y-0.5">
+                <i class="fas fa-times"></i> {{ _('cancel') }}
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+// BUG FIX: form ini sebelumnya di-submit via fetch() dan mengharapkan
+// response JSON ({success, message}), padahal route Flask
+// admin_hero_new / admin_hero_edit TIDAK PERNAH mengembalikan JSON —
+// keduanya cuma melakukan flash() + redirect() biasa. Akibatnya
+// response.json() selalu gagal parsing HTML dan melempar SyntaxError,
+// sehingga form SELALU menampilkan "Koneksi terputus. Gagal menyimpan
+// data." padahal datanya sebenarnya berhasil tersimpan di server.
+//
+// Bug kedua: saat checkbox "is_active" tidak dicentang, kode lama
+// memaksa formData.append('is_active', 'false') — padahal backend
+// hanya mengecek keberadaan key ('is_active' in request.form), bukan
+// nilainya. Jadi hero yang sengaja di-nonaktifkan malah selalu
+// tersimpan sebagai AKTIF. Solusinya: biarkan form submit biasa;
+// browser otomatis TIDAK mengirim checkbox yang tidak dicentang.
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('heroForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+
+    form.addEventListener('submit', function() {
+        submitBtn.disabled = true;
+        btnText.innerText = 'Menyimpan...';
+        submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+    });
+});
+</script>
+{% endblock %}
