@@ -1,0 +1,11 @@
+{
+  "framework": null,
+  "builds": [
+    {
+      "src": "mysite/app.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "50mb", "includeFiles": "mysite/**" }
+    }
+  ],
+  "routes": [{ "src": "/(.*)", "dest": "mysite/app.py" }]
+}

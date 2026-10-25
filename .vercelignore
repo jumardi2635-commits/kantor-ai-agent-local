@@ -1,0 +1,10 @@
+node_modules
+src
+server
+shared
+index.html
+vite.config.js
+package.json
+package-lock.json
+mysite/**/__pycache__
+mysite/*.db
